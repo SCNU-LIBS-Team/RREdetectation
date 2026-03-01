@@ -1,0 +1,101 @@
+hr.noshade {
+  border: 1px solid rgb(128, 128, 128);
+}
+
+#max_res_warning {
+  text-align: center;
+}
+
+#message {
+  color: red;
+}
+
+input[type="number"] {
+  width: 100px;
+}
+
+.file_btn {
+  color: black;
+  background: rgb(218,218,218);
+  margin: auto;
+  text-align: center;
+  width: 120px;
+  height: 15px;
+  cursor: pointer;
+  border: 1px solid black;
+  padding: 3px;
+}
+input.file_btn {
+  opacity: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* for small responsive form on output page */
+
+
+/*
+ *   Responsive form elements
+ *     Flexbox layout
+ *     */
+/*/////////////// GLOBAL STYLES ////////////////////*/
+body{padding: 30px;}
+header{margin-bottom: 5rem;}
+/*/////////////// FONT STYLES ////////////////////*/
+@import url(http://fonts.googleapis.com/css?family=Open+Sans:400,300);
+body, textarea{font-family: 'Open Sans', sans-serif;}
+html{font-size: 100%;}
+html.libs-output{font-size: 62.5%;}
+h1{font-size: 3rem;}
+h2{font-size: 1.6rem;}
+form{font-size: 1.4rem; color: #222;}
+
+/*/////////////// FORM STYLES ////////////////////*/
+.field-groupO{
+  display: flex;
+  margin: 0 0 6px 0;
+  justify-content: flex-start;
+
+}
+.field-groupO .label{
+  flex: 1 0 70px;
+  text-align: right;
+  margin: 0 8px 0 0;
+  padding: 2px 0;
+  max-width: 70px;
+
+}
+.field-groupO .fieldO{
+  flex: 1 0 130px;
+  max-width: 130px;
+}
+input, select, textarea{
+  padding: .6rem 1rem;
+  font-size: 1.6rem;
+  border: solid 1px #eee;
+  background: #fff;
+  box-sizing: border-box;
+}
+textarea {
+  width: 100%;
+}
+input, select{
+  width: 50%;
+}
+input#eden {
+  width: 70%;
+}
+input[type="radio"],
+input[type="checkbox"],
+input[type="submitXXX"]{
+  width: auto;
+}
+
+a.feedback {
+  font-size: 18px;
+}
+
+a.help:link { text-decoration: none; background:rgb(196,222,237); color: blue; }
+a.help:visited { text-decoration: none; background:rgb(196,222,237); color: blue; }
+

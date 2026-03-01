@@ -1,0 +1,1498 @@
+function libs_align_ascii (value, max_length, max_left_length, max_right_length,header) {
+  var parts, result;
+  var nb = ' ';
+  var pad_left, pad_right;
+  var left;
+  var col1 = 0;
+
+  max_length = max_length + 1;  // pad space on end
+  max_right_length = max_right_length +1;
+  var delim = '|';
+  // below the argument to new Array (e.g. pad_right) is increased by 1 because the technique to use new Array and join to repeat the "nb" character will result in one less than is desired
+
+  //if (max_length == 21 ) {  // Ritz wavelength column
+  if (header < 0 ) {  // Ritz wavelength column
+    col1 = 1;
+    if (header == -2 ) {
+      header = 1;
+    } else {
+      if ( max_left_length + max_right_length + 1 < max_length ) {
+        var add_left = Math.floor((max_length - 1)/2);
+        max_left_length = add_left;
+        max_right_length = max_length - 1 - max_left_length;
+      }
+    }
+    //console.log("header="+header+ ", max_length=" +max_length + ", max_left_length="+max_left_length+", max_right_length=" + max_right_length);
+  }
+
+  if (header == 1) {
+    pad_right = max_length - value.toString().length;  // add a space at the end
+    if (pad_right < 0) {
+      pad_right = 0; // mismatch - incoming header is longer than expected.  Not expected (error)
+    }
+    result = value.toString() + new Array (pad_right+1).join(nb) + delim;
+    return (result);
+  }
+
+
+  if (col1 == 1) {
+    if (value.toString().match(/\./) == null) {
+// TODO - fix
+      value = value + ".00";
+    }
+    parts = value.toString().split(".");
+    pad_left = max_left_length - parts[0].length;  // determine how much padding to tack onto the beginning
+    if ( pad_left < -1 ) {
+      pad_left = -1;
+    }
+    pad_right = max_right_length - parts[1].length;  // determine how much padding to tack onto the beginning
+    if ( pad_right < -1 ) {
+      pad_right = -1;
+    }
+    left = new Array (pad_left+1).join(nb) + parts[0];
+    result = left + "." + parts[1] + new Array ( pad_right +1).join(nb) + delim;
+  }
+  else if (value.toString().length == 0) {
+     //HEREresult = new Array(max_length+1).join(nb) + max_length + delim;  // all spaces
+    result = new Array(max_length+1).join(nb) + delim;  // all spaces
+  }
+  else {
+    pad_right = max_length - value.toString().length;
+    result = value + new Array (pad_right+1).join(nb) + delim;
+  }
+
+  return  (result);
+}
+function libs_split_dot (value, max_length, max_dot_length, par, ascii) {
+  var parts, result;
+  var nb = (ascii ? ' ' : '&nbsp;');
+
+  var padding;
+  var pad;
+  var $sp = ' ';   // TODO - unneeded?
+
+
+
+  if (value.toString().match(/\./) != null) {
+    parts = value.toString().split(".");
+    pad = max_dot_length - parts[0].length;  // determine how much padding to tack onto the beginning
+    result = new Array (pad).join(nb) + parts[0] + "." + parts[1];  // use the join method as a trick to repeat char
+  }
+  else if (value.toString().length == 0) {
+     if ($ascii == 1) {
+         result = new Array(max_length+2).join(nb);  // all spaces
+     }
+  }
+ else {   // TODO
+    parts = value.toString().split(".");
+    pad = max_dot_length - parts[0].length;  // determine how much padding to tack onto the beginning
+    result = new Array (pad).join(nb) + parts[0];  // use the join method as a trick to repeat char
+// TODO - rename max_dot_length
+  }
+
+ return  (result);
+}
+
+function saha(temp,eden,cmeV,koeff,z,spectra,levels,gValues,ips) {
+  var sahaIon = {};
+  var rw = koeff*temp*Math.sqrt(temp)/eden;
+  // Sum scaled level populations
+  var sumPop = {};
+  //var prevIon = 1;
+  var prevIon = 0;
+  var prevIonG = 1;
+  var prevIP = 0;
+  var cnt_tot = 0;
+  var maxAbund = 0;
+  for ( var sc in spectra[z] ) {
+    var pf = 0;
+    sumPop[sc] = 0;
+    var cnt = 0;
+    for ( var i = 0; i < levels[z][sc].length; i++ ) {
+      var dp = Math.exp(-levels[z][sc][i]/(temp*cmeV))*gValues[z][sc][i];
+      //if ( (dp + 0) != dp ) {
+        //console.log("saha sc="+sc+ ", dp=" +dp + ", temp="+temp+", cmeV=" + cmeV + ", g=" +gValues[z][sc][i]+", exp=" + (-levels[z][sc][i]/(temp*cmeV)) );
+      //}
+      pf += dp;
+      cnt++;
+    }
+    //console.log("Partition function="+sum);
+    //var mult = rw*prevIon/prevIonG*Math.exp(-prevIP/(temp*cmeV));
+    var logAbund = Math.log(rw*pf/prevIonG) - prevIP/(temp*cmeV) + prevIon;
+    //if ( (mult + 0) != mult ) {
+      //console.log("saha sc="+sc + ", rw="+rw+", prevIon="+prevIon+", prevIonG="+prevIonG+", prevIP=" +prevIP+", exp="+(-prevIP/(temp*cmeV)) );
+    //}
+    if ( logAbund > maxAbund ) {
+      maxAbund = logAbund;
+    }
+    sahaIon[sc] = [logAbund, pf];
+    prevIon = logAbund;
+    prevIonG = pf;
+    prevIP = ips[z][sc];
+    //console.log("saha sc="+sc + ", sum="+sum+ ", cnt="+cnt+", pop=" + sahaIon[sc][0]);
+    //console.log("z="+z);
+    if ( Math.floor(z) == sc ) {
+      // Add partition function for bare nucleus
+      logAbund = Math.log(rw/prevIonG) - prevIP/(temp*cmeV) + prevIon;
+      sahaIon[sc+1] = [logAbund,1];
+    }
+  }
+  //renormalize the ion populations
+  var total = 0;
+  for ( var sc in sahaIon ) {
+    if (sahaIon.hasOwnProperty(sc)) {
+      sahaIon[sc][0] -= maxAbund;
+      total += Math.exp(sahaIon[sc][0]);
+      if (!isFinite(total)) {
+        alert("Numerical overflow in calculation of ionization balance.\nTry lower temperatures.");
+      }
+    }
+  }
+  total = Math.log(total);
+  //console.log("saha total="+total);
+  for ( var sc in sahaIon ) {
+    if (sahaIon.hasOwnProperty(sc)) {
+      sahaIon[sc][0] = Math.exp(sahaIon[sc][0] - total);
+      //console.log("saha z="+z+", sc="+sc + ", sum="+sum+ ", cnt="+cnt+", pop=" + sahaIon[sc][0]);
+    }
+  }
+  return sahaIon;
+}
+function upperFirst(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function elementSymbol(z,spectra) {
+  var elSymb = '';
+  for (var el in spectra) {
+    if ( (z == el) || (z == parseInt(el)) ) {
+      for ( var sc in spectra[el]) {
+        var spName = spectra[el][sc].name;
+        var spArr = spName.split(/ /);
+        elSymb = spArr[0];
+        return elSymb;
+      }
+    }
+  }
+  return elSymb;
+}
+function elementNumber(element,spectra) {
+  var z = 0;
+  element = upperFirst(element);
+  for (var el in spectra) {
+    for ( var sc in spectra[el]) {
+      var spName = spectra[el][sc].name;
+      var spArr = spName.split(/ /);
+      var elName = spArr[0];
+      if ( elName == element ) {
+        return el;
+      }
+    }
+  }
+  return z;
+}
+function makeCompHash(composition,spectra) {
+  var compArray = composition.split(/;/);
+  var compHash = {};
+  for (var i in compArray) {
+    var tok = compArray[i];
+    var elPcnt = tok.split(/:/);
+    var elem = elPcnt[0];
+    var pcnt = elPcnt[1];
+    var z = elementNumber(elem,spectra);
+    if ( z > 0 ) {
+      compHash[z] = pcnt;
+    }
+  }
+  return compHash;
+}
+var delimiter = ' ';
+
+function arrToASCII(arr) {
+  var item, i, j, row, csv, line, dataline, headerline, max_left_Ritz, max_right_Ritz, parts;
+  var header_width;
+  csv = [];
+  hdr_widths = [];
+
+  // Determine decimal dot position in the Ritz wavelength
+  max_left_Ritz = 0;
+  max_right_Ritz = 0;
+  for (i = 1; i < arr.length; ++i) {
+    row = arr[i];
+    item = row[0];
+    if (item.toString().match(/\./) == null) {
+      item = item + ".00";
+    }
+    parts = item.toString().split(".");
+    if ( max_left_Ritz < parts[0].length ) {
+      max_left_Ritz = parts[0].length;
+    }
+    if ( max_right_Ritz < parts[1].length ) {
+      max_right_Ritz = parts[1].length;
+    }
+  }
+
+  // header
+  for (i = 0; i < 1; ++i) {
+    row = arr[i];
+    line = [];
+    for (j = 0; j < row.length; ++j) {
+      item = row[j];
+      if ( (i == 0) && (typeof(item) == 'object') ) {
+        item = item.label;
+      } else {
+        if (item == null) {
+          item = '';
+        }
+      }
+      //if ( (i > 0) && (j > 0) && (item != '') && (item != '0') ) {
+      //  item = (item - 0).toExponential(3);
+      //}
+      item = " " + item;
+      header_width = item.length;
+      if ( (j == 0) && (header_width < (max_left_Ritz + max_right_Ritz + 1)) ) {
+        header_width = (max_left_Ritz + max_right_Ritz + 1);
+      }
+      if (header_width <  11) {  // Sum | Residual |
+        header_width = 11;
+      }
+      hdr_widths[j]=header_width;
+      if (j == 0) {  // Ritz wavelength
+        item = libs_align_ascii(item,hdr_widths[j],0,0,-2);
+      }
+      else if ( j == 1) { // Sum
+        item = libs_align_ascii(item,hdr_widths[j],0,0,1);
+      }
+      else {  // e.g. C I ( 6.9e-01)
+        item = libs_align_ascii(item,hdr_widths[j],0,0,1);
+      }
+      line.push(item);
+    }
+    csv.push(line.join(delimiter));
+    headerline = line.join("");
+    headerline = headerline + "<br>";
+  }
+
+  dataline = "";
+  for (i = 1; i < arr.length; ++i) {
+    row = arr[i];
+    line = [];
+    for (j = 0; j < row.length; ++j) {
+      item = row[j];
+      if ( (i == 0) && (typeof(item) == 'object') ) {
+        item = item.label;
+      } else {
+        if (item == null) {
+          item = '';
+        }
+      }
+      if ( (i > 0) && (j > 0) && (item != '') && (item != '0') ) {
+        item = (item - 0).toExponential(3);
+      }
+      item = " "+item;
+      if (j == 0) {
+        //item = libs_align_ascii(item,hdr_widths[j],17,2,-1);
+        item = libs_align_ascii(item,hdr_widths[j],max_left_Ritz,max_right_Ritz,-1);
+      }
+      else if ( j == 1) { // Sum
+        item = libs_align_ascii(item,hdr_widths[j],1,7,0);
+      }
+      else {
+        item = libs_align_ascii(item,hdr_widths[j],1,7,0);
+      }
+      dataline = dataline + item;
+    }
+    dataline = dataline + "<br>";
+  }
+  dataline = headerline + dataline;
+  return dataline;
+}
+function arrToRealCSV(arr) {
+  delimiter = ',';
+  var item, i, j, row, csv, line;
+  csv = [];
+  for (i = 0; i < arr.length; ++i) {
+    row = arr[i];
+    line = [];
+    for (j = 0; j < row.length; ++j) {
+      item = row[j];
+      if ( (i == 0) && (typeof(item) == 'object') ) {
+        item = item.label;
+      } else {
+        if (item == null) {
+          item = '';
+        }
+      }
+      if ( (i > 0) && (j > 0) && (item != '') && (item != '0') ) {
+        item = (item - 0).toExponential(3);
+      }
+      var re = new RegExp(delimiter);
+      if ( item.toString().match(re) != null ) {
+        item = '"' + item + '"';
+      }
+      line.push(item);
+    }
+    csv.push(line.join(delimiter));
+  }
+  return csv.join("\n");
+}
+function arrToHTML(arr) {
+  var item, i, j, row, csv, line, headerline, dataline, td_class;
+  //for (i = 0; i < arr.length; ++i) {
+  headerline =  '<html><body><table class="libs_data_table" "border="1" padding="2"><thead><tr>';
+  for (i = 0; i < 1;++i) {
+    row = arr[i];
+    line = [];
+    for (j = 0; j < row.length; ++j) {
+      item = row[j];
+      if ( (i == 0) && (typeof(item) == 'object') ) {
+        item = item.label;
+      } else {
+        if (item == null) {
+          item = '';
+        }
+      }
+      line.push(item);
+      headerline += '<th scope="col">' + item + '</th>';
+    }
+  }
+  headerline += "</tr></thead><tbody>";
+
+  csv = [];
+  dataline = "";
+  for (i = 1; i < arr.length; ++i) {
+    dataline += "<TR>";
+    row = arr[i];
+    line = [];
+    for (j = 0; j < row.length; ++j) {
+      item = row[j];
+      if ( (i == 0) && (typeof(item) == 'object') ) {
+        item = item.label;
+      } else {
+        if (item == null) {
+          item = '';
+        }
+      }
+      if ( (i > 0) && (j > 0) && (item != '') && (item != '0') ) {
+        item = (item - 0).toExponential(3);
+      }
+      var re = new RegExp(delimiter);
+      if ( item.toString().match(re) != null ) {
+        item = '"' + item + '"';
+      }
+      if (j == 0) {
+        item = libs_split_dot(item,9,6,'',0);
+      }
+      item = "<td>" + item + '</td>';
+      dataline += item;
+      line.push(item);
+    }
+    dataline += "</tr>";
+    csv.push(line.join(delimiter));
+  }
+  headerline += dataline + "</thead></table>";
+ return headerline;
+}
+function isNumeric(n) {
+  return !isNaN(n) && !isNaN(parseFloat(n)) && isFinite(n);
+}
+function isNonNegative(n) {
+  return isNumeric(n) && (n >= 0);
+}
+
+function csv2array(data, delimiter) {
+  // Retrieve the delimiter
+  if (delimiter == undefined)
+    delimiter = ' ';
+  if (delimiter && delimiter.length > 1)
+    delimiter = ' ';
+
+  // initialize variables
+  var newline = '\n';
+  var eof = '';
+  var i = 0;
+  var c = data.charAt(i);
+  var row = 0;
+  var col = 0;
+  var array = new Array();
+
+  while (c != eof) {
+    // skip whitespaces
+    while (c == ' ' || c == '\t' || c == '\r') {
+      c = data.charAt(++i); // read next char
+    }
+
+    // get value
+    var value = "";
+    if (c == '\"') {
+      // value enclosed by double-quotes
+      c = data.charAt(++i);
+
+      do {
+        if (c != '\"') {
+          // read a regular character and go to the next character
+          value += c;
+          c = data.charAt(++i);
+        }
+
+        if (c == '\"') {
+          // check for escaped double-quote
+          var cnext = data.charAt(i+1);
+          if (cnext == '\"') {
+            // this is an escaped double-quote.
+            // Add a double-quote to the value, and move two characters ahead.
+            value += '\"';
+            i += 2;
+            c = data.charAt(i);
+          }
+        }
+      }
+      while (c != eof && c != '\"');
+
+      if (c == eof) {
+        throw "Unexpected end of data, double-quote expected";
+      }
+
+      c = data.charAt(++i);
+    }
+    else {
+      // value without quotes
+      while (c != eof && c != delimiter && c!= newline && c != ' ' && c != '\t' && c != '\r') {
+        value += c;
+        c = data.charAt(++i);
+      }
+    }
+
+    // add the value to the array
+    if (array.length <= row)
+      array.push(new Array());
+    array[row].push(value);
+    //console.log("row="+row+", col="+col+", pushing value="+value);
+
+    // skip whitespaces
+    while ( ((c == ' ') && ((delimiter != ' ')) )
+        || ((delimiter !='\t') && (c == '\t')) || c == '\r')
+    {
+      //console.log("row="+row+", col="+col+", skipping char <" + c +"> at i=" + i);
+      c = data.charAt(++i);
+    }
+
+    // go to the next row or column
+    if (c == delimiter) {
+      // to the next column
+      col++;
+    }
+    else if (c == newline) {
+      // to the next row
+      col = 0;
+      row++;
+    }
+    else if (c != eof) {
+      // unexpected character
+      throw "Delimiter expected after character " + i;
+      //console.log("row="+row+", col="+col+", c=<"+c+">"+", cPrev=<"+cPrev+">");
+    }
+
+    // go to the next character
+    c = data.charAt(++i);
+  }
+  //for ( var i = 0; i < 10; i++ ) {
+    //console.log('i=' + i + ", array[i].length=" + array[i].length + ", [0]=" + array[i][0] + ", [1]=" + array[i][1]);
+  //}
+  testUserData(array);
+  return array;
+}
+function testUserData(rows) {
+  if ( rows.length < 2 ) {
+    throw("Error: too few rows in the user file (" + rows.length + ")");
+  }
+  if ( rows[0].length != 2 ) {
+    throw('Error: number of columns in the user file (' +
+      rows[0].length + ') differs from 2.');
+  }
+  return;
+}
+function convertValues(rows) {
+  var hasCommaSep = false;
+  var decComma = false;
+  //var maxLinesToTest = 100;
+  for ( var i in rows ) {
+    var row = rows[i];
+    for ( var j in row ) {
+      if (row[j].match(/,\d\d\d[.]|[.]\d\d\d,/) != null) {
+        hasCommaSep = true;
+        break;
+      }
+    }
+    if ( hasCommaSep ) {
+      break;
+    }
+  }
+  //console.log("hasCommaSep=" + hasCommaSep);
+  var re = new RegExp(' ','g');
+  if ( hasCommaSep ) {
+    re = new RegExp('[ ,]','g');
+  }
+  for ( var i in rows ) {
+    var row = rows[i];
+    for ( var j in row ) {
+      row[j] = row[j].replace(re,'');
+    }
+  }
+  for ( var i in rows ) {
+    var row = rows[i];
+    for ( var j in row ) {
+      if (row[j].match(/\d+,\d+/) != null) {
+        decComma = true;
+        break;
+      }
+    }
+    if ( decComma ) {
+      break;
+    }
+  }
+  //console.log("decComma=" + decComma);
+  if ( decComma ) {
+    re = new RegExp('[,]','g');
+    for ( var i in rows ) {
+      var row = rows[i];
+      for ( var j in row ) {
+        row[j] = row[j].replace(re,'.');
+      }
+    }
+  }
+  return rows;
+}
+function CSVtoArr(CSV) {
+  var rows;
+  var delimiter = ' ';
+  try {
+    //alert("trying <" +delimiter + ">");
+    rows = csv2array(CSV, delimiter);
+  } catch(e) {
+    //alert("After trying <" +delimiter + ">:\n" + e);
+    delimiter = ',';
+    try {
+      //alert("trying <" +delimiter + ">");
+      rows = csv2array(CSV, delimiter);
+    } catch(e) {
+      //alert("After trying <" +delimiter + ">:\n" + e);
+      delimiter = '\t';
+      try {
+        //alert("trying <" +delimiter + ">");
+        rows = csv2array(CSV, delimiter);
+      } catch(e) {
+        //if ( e == null ) {
+        //  return ("Error: uncaught exception in file read");
+        //}
+        //alert("After trying tab:\n" + e);
+        if ( e.toString().match(/^Error:/) != null) {
+          return e;
+        }
+        return "Error: unrecognized format of the user file.\n" +
+          "It must be a space-, comma-, or tab-delimited ASCII file.\n" +
+          "More details: " + e;
+      }
+    }
+  }
+  rows = convertValues(rows);
+  var arr = [];
+  var hash = {};
+  var alerts = '';
+  for (var i=0; i < rows.length; i++ ) {
+    var row = rows[i];
+    if ( (row[0] == '') && (row[1] == '') ) {
+      alerts += ((alerts ? '\n' : '') + "Blank row " + i + " skipped.");
+      continue;
+    }
+    if ( row[0] == '' ) {
+      alerts += ((alerts ? '\n' : '') + "Row " + i + " with blank wavelength skipped.");
+      continue;
+    }
+    if ( row[1] == '' ) {
+      alerts += ((alerts ? '\n' : '') + "Row " + i + " with blank intensity skipped.");
+      continue;
+    }
+    if ( row[0] == 0 ) {
+      alerts += ((alerts ? '\n' : '') + "Row " + i + " with zero wavelength skipped.");
+      continue;
+    }
+    if ( row[1] == 0 ) {
+      alerts += ((alerts ? '\n' : '') + "Row " + i + " with zero intensity skipped.");
+      continue;
+    }
+    if ( (i > 0) || isNumeric(row[0]) ) {
+      if ( !isNonNegative(row[0]) || !isNonNegative(row[1]) ) {
+        return "Error in row " + i + " of the user file: \n" +
+          "All values must be non-negative numbers.\n" +
+          "Row content: " + row[0] + delimiter + row[1];
+      }
+      if ( hash[row[0]] != undefined ) {
+        arr[hash[row[0]]] += row[1];
+        alerts += ((alerts ? '\n' : '') + "Duplicate wavelength " + row[0] + "; Intensities from rows with duplicate wavelengths ade summed up.");
+      } else {
+        arr.push(row);
+        hash[row[0]] = arr.length - 1;
+      }
+    }
+  }
+  if ( arr.length < 2 ) {
+    return "Error: too few non-blank data rows in the user file (" + arr.length + ")";
+  }
+  if ( alerts != '' ) {
+    alert(alerts);
+  }
+  return arr;
+}
+function numSort(a,b) {
+  return a-b;
+}
+function indBelow(grid,wlTarget,wlMax) {
+  var last = grid.length - 1;
+  var first = 0;
+  var minWL = grid[0];
+  var maxWL = grid[last];
+  if ( (wlMax < minWL) || (wlTarget > maxWL) ) {
+    return -1;
+  }
+  if ( wlTarget <= minWL ) {
+    return 0;
+  }
+  if ( wlTarget >= maxWL ) {
+    return last;
+  }
+  //console.log("\nindBelow0: wlTarget,wlMax="+wlTarget+","+wlMax);
+  while (last - first > 1) {
+    var i = first + parseInt((last - first)/2);
+    var diff = grid[i] - wlTarget;
+    if ( diff < 0 ) {
+      first = i;
+    } else {
+      last = i;
+    }
+    //console.log("indBelow1: i,diff,first,last="+i+","+diff+","+first+","+last);
+  }
+  var diff1 = grid[first] - wlTarget;
+  var diff2 = grid[last] - wlTarget;
+  //console.log("indBelow2: diff1,diff2,first,last="+diff1+","+diff2+","+first+","+last);
+  if ( diff2 <= 0 ) {
+    return last;
+  } else if (diff1 <= 0) {
+    return first;
+  } else {
+    while ( (diff1 > 0) && (first > 0) ) {
+      first--;
+      diff1 = grid[first] - wlTarget;
+    }
+    //console.log("indBelow3: diff1,first="+diff1+","+first);
+    return first;
+  }
+}
+function indAbove(grid,wlTarget,wlMin) {
+  var last = grid.length - 1;
+  var first = 0;
+  var minWL = grid[0];
+  var maxWL = grid[last];
+  if ( (wlTarget < minWL) || (wlMin > maxWL) ) {
+    return -1;
+  }
+  if ( wlTarget >= maxWL ) {
+    return last;
+  }
+  if ( wlTarget <= minWL ) {
+    return first;
+  }
+  //console.log("\nindAbove0: wlTarget,wlMin="+wlTarget+","+wlMin);
+  while (last - first > 1) {
+    var i = first + parseInt((last - first)/2);
+    var diff = grid[i] - wlTarget;
+    if ( diff < 0 ) {
+      first = i;
+    } else {
+      last = i;
+    }
+    //console.log("indAbove1: i,diff,first,last="+i+","+diff+","+first+","+last);
+  }
+  var diff1 = grid[first] - wlTarget;
+  var diff2 = grid[last] - wlTarget;
+  //console.log("indAbove2: diff1,diff2,first,last="+diff1+","+diff2+","+first+","+last);
+  if ( diff1 >= 0 ) {
+    return first;
+  } else if (diff2 >= 0) {
+    return last;
+  } else {
+    while ( (diff2 < 0) && (last < grid.length - 1) ) {
+      last++;
+      diff2 = grid[last] - wlTarget;
+    }
+    //console.log("indAbove3: diff2,last="+diff2+","+last);
+    return last;
+  }
+}
+function mergeGrids(gridExp,gridCalc,minWL,maxWL,skipFirst) {
+  var grid = [];
+  var wlHash = {};
+  if ( gridExp != null ) {
+    for ( var i in gridExp ) {
+      if ( (gridExp[i][0] >= minWL) && (gridExp[i][0] <= maxWL) && (wlHash[gridExp[i][0]] == null) ) {
+        grid.push(gridExp[i][0]);
+        wlHash[gridExp[i][0]] = 1;
+        //console.log("newExpWL="+gridExp[i][0]);
+      }
+    }
+  }
+  //console.log("gridCalc.length="+gridCalc.length+", gridCalc[0][0]=" + gridCalc[0][0]);
+  //console.log("gridExp.length="+gridExp.length+", gridExp[0][0]=" + gridExp[0][0]);
+  for ( var i in gridCalc ) {
+    if ( skipFirst && (i == 0) ) {
+      continue;
+    }
+    if ( (gridCalc[i][0] - minWL >=0) && (gridCalc[i][0] - maxWL <=0) && (wlHash[gridCalc[i][0]] == null) ) {
+      grid.push(gridCalc[i][0]);
+      wlHash[gridCalc[i][0]] = 1;
+      //console.log("i="+i + ", newCalcWL="+gridCalc[i][0]);
+    }
+  }
+  return grid.sort(numSort);
+}
+function interpolate(data,firstCol,calcRes) {
+  //console.log("firstCol=" + firstCol + ", typeof(data.length)=" + typeof(data.length));
+  if ( typeof(data.length) == "undefined" ) {
+    return;
+  }
+  var numRows = data.length;
+  if ( !numRows ) {
+    return;
+  }
+  var numColumns = data[1].length;
+  //console.log("numColumns=" + numColumns + ", firstCol=" + firstCol);
+  var wlPrev = 0;
+  var resPrev = 0;
+  var intPrev = 0;
+  var sumRes = 0;
+  var sumInt = 0;
+  var wlFirst = 0;
+  var wlLast = 0;
+  for ( var k = firstCol; k < numColumns; k++) {
+    var start = -1;
+    var startInt = null;
+    var startWL = null;
+    // Skip the first row (i=0): it is reserved for column definitions
+    for ( var i = 1; i < numRows; i++) {
+      if ( calcRes && (k == (numColumns - 1)) ) {
+        // Calculate residual: column 1 is exp, intensity, column 2 is total calc intensity
+        if ( (data[i][1] != null) && (data[i][2] != null) ) {
+          data[i][k] = (data[i][1] - data[i][2]); //.toExponential(3);
+          if ( wlPrev != 0 ) {
+            var dWL = data[i][0] - wlPrev;
+            sumRes += (data[i][k]*data[i][k] + resPrev*resPrev)/2*dWL;
+            sumInt += (data[i][1] + intPrev)/2*dWL;
+          }
+          wlPrev = data[i][0];
+          resPrev = data[i][k];
+          intPrev = data[i][1];
+          if ( wlFirst == 0 ) {
+            wlFirst = wlPrev;
+          }
+          wlLast = wlPrev;
+        }
+        continue;
+      }
+      var currWL = data[i][0] - 0;
+      var currI = data[i][k];
+      if ( currI != null ) {
+        currI -= 0;
+        if ( start < 0 ) {
+          start = i;
+          startInt = currI;
+          startWL = currWL;
+        } else {
+          var jMin = start + 1;
+          var jMax = i - 1;
+          var factor = (currI - startInt)/(currWL - startWL);
+          for ( var j = jMin; j <= jMax; j++ ) {
+            data[j][k] = (startInt + factor*(data[j][0] - startWL)); //.toExponential(3)
+            //console.log("start="+start+", i="+i + ", currWL=" + currWL + ", startWL="+startWL + ", startInt=" +startInt+
+            //  ", currI=" + currI + ", j=" + j + ", newWL=" + data[j][0] + ", newInt=" + data[j][k]);
+          }
+          start = i;
+          startInt = currI;
+          startWL = currWL;
+        }
+      }
+    }
+  }
+  return calcRes ? Math.sqrt(sumRes*(wlLast - wlFirst))/sumInt : 0;
+}
+function lte_spectrum_js(spectra,composition,lines,levels,ips,expSpectrum,temp,eden,resolution,cmeV,koeff,xaxisLabel,dataDopplerArray) {
+  var t0 = performance.now();
+  //var newSpectra = {};
+  var newLines = [];
+  var maxWL,minWL,gA,uppE,lowE,i,z,sc,dWL,dl,compHash,minExpWL,maxExpWL;
+
+  var maxExpIntens = 0;
+  if ( expSpectrum != null ) {
+    expSpectrum = expSpectrum.sort(function(a,b){return a[0]-b[0]});
+    var expSpectrumHash = {};
+    for ( i in expSpectrum ) {
+      expSpectrumHash[expSpectrum[i][0]] = i;
+      var intens = expSpectrum[i][1] - 0;
+      if ( intens > maxExpIntens ) {
+        maxExpIntens = intens;
+      }
+    }
+    minWL = expSpectrum[0][0] - 0;
+    maxWL = expSpectrum[expSpectrum.length - 1][0] - 0;
+    minExpWL = minWL;
+    maxExpWL = maxWL;
+    dl = (maxWL-minWL)/Math.min((expSpectrum.length - 1),Math.max(dataDopplerArray.length - 2, 1));
+  } else if (dataDopplerArray != null && dataDopplerArray[1] != null && dataDopplerArray[1][0] != null) {
+    minWL = dataDopplerArray[1][0] - 0;
+    maxWL = dataDopplerArray[dataDopplerArray.length - 1][0] - 0;
+    dl = (maxWL-minWL)/Math.max(dataDopplerArray.length - 2, 1);
+  } else {
+    minWL = 0;
+    maxWL = 0;
+    dl = 0;
+  }
+  dWL = (resolution == 0) ? 0 : maxWL/resolution;
+  minWL -= (dWL*6);
+  minWL = Math.max(minWL,1e-6);
+  maxWL += (dWL*6);
+  if ( expSpectrum != null ) {
+    for (i in lines) {
+      if ( (lines[i][0] >= minWL) && (lines[i][0] <= maxWL) ) {
+        newLines.push(lines[i]);
+        //z = lines[i][3];
+        //sc = lines[i][4];
+        //if (typeof(newSpectra[z]) == "undefined") {
+        //  newSpectra[z] = {};
+        //}
+        //newSpectra[z][sc] = spectra[z][sc];
+      }
+    }
+    lines = newLines;
+    //spectra = newSpectra;
+    //var newComposition = [];
+    //var sum = 0;
+    compHash = makeCompHash(composition,spectra);
+    //for (var el in compHash) {
+    //  sum += (compHash[el] - 0);
+    //}
+    //var chKeys = Object.keys(compHash).sort(numSort);
+    //console.log("composition="+composition+", sum="+sum+", compHash keys=" + chKeys);
+    //for (var e in chKeys) {
+    //  var el = chKeys[e];
+    //  var pcnt = compHash[el]*100/sum;
+    //  var elSymb = elementSymbol(el,spectra);
+    //  newComposition.push(elSymb +":"+pcnt);
+    //}
+    //composition = newComposition.join(';');
+    //console.log("composition="+composition+", sum="+sum+", compHash keys=" + Object.keys(compHash));
+  } else {
+    compHash = makeCompHash(composition,spectra);
+  }
+  //console.log("composition="+composition+", compHash keys=" + Object.keys(compHash));
+  var compArray = composition.split(/;/);
+  //var wlUnits = ['(Å)','(nm)','(µm)'];
+  var els = Object.keys(spectra).sort(numSort);
+  var numSpectra = 0;
+  var numSpectraHash = {};
+  var ns = 0;
+  for (var e in els) {
+    var el = els[e];
+    var elHash = spectra[el];
+    var sp = Object.keys(elHash).sort(numSort);
+    numSpectraHash[el] = {};
+    for (var s in sp) {
+      var sc = sp[s];
+      if ( (spectra[el][sc] == null) || (spectra[el][sc].name == '') ) {
+        //alert("el="+el+", sc="+sc+",ns="+ns+",name="+spectra[el][sc].name+": wanted to skip this spectrum");
+        continue;
+      }
+      ns++;
+      numSpectraHash[el][sc] = ns;
+      //console.log("el="+el+", sc="+sc+",ns="+ns);
+    }
+  }
+  numSpectra = ns;
+  //alert("numSpectra="+numSpectra);
+  //console.log("composition="+composition+", compHash keys=" + Object.keys(compHash)+
+  // "\nspectra keys="+els.toString()+", ns=" +ns+", lines.length="+lines.length);
+  var sahaIons = {};
+  var totalSpName = '';
+  var numElements = 0;
+  //console.log("els="+els.toString());
+  for (var e in els) {
+    var z = els[e];
+    numElements++;
+    var pcnt = compHash[z];
+    var elSymb = elementSymbol(z,spectra);
+    //console.log("z="+z+", elSymb="+elSymb+", pcnt="+pcnt);
+    totalSpName += ((totalSpName ? '+' : '') + elSymb);
+    if (pcnt < 100) {
+      totalSpName += (":" + pcnt +"%");
+    }
+      // Multiply the calculated intensity by the element abundance in the mixture
+    //console.log("z="+z+", elSymb="+elSymb+", pcnt="+pcnt);
+    //var sahaIonHash = saha(temp,eden,cmeV,koeff,z,spectra,levels,gValues,ips,activeSc[z]);
+    //alert('Calling saha()');
+    sahaIons[z] = saha(temp,eden,cmeV,koeff,z,spectra,levels,gValues,ips);
+  }
+  //console.log("totalSpName="+totalSpName);
+  if (numElements > 1) {
+    totalSpName = "mixture " + totalSpName;
+  }
+  var outDoppler = {};
+  var numLines = lines.length;
+  var dataDopplerGC = [];
+  var dataSticksGC = [];
+  var dataSticksValuesGC = {};
+  var numStickLines = 0;
+  var intScale = 1;
+
+  for (i in lines) {
+    wl = lines[i][0];
+    gA = lines[i][1];
+    uppE = lines[i][2];
+    z = lines[i][3];
+    sc = lines[i][4];
+    lowE = lines[i][5];
+    var wid = wl/resolution;
+    if ( (wl < minWL - 6*wid - 0.5*dl) || (wl > maxWL + 6*wid + 0.5*dl) ) {
+      continue;
+    }
+    var pcnt = compHash[z];
+    var sahaAbundance = sahaIons[z][sc][0];
+    var output = gA*Math.exp(-uppE/(cmeV*temp))*sahaAbundance*pcnt*0.01/sahaIons[z][sc][1];
+    if (IscaleType == 1) {
+      output *= (uppE - lowE);
+    }
+    if ( typeof(outDoppler[z]) == "undefined" ) {
+      outDoppler[z] = {};
+    }
+    if ( typeof(outDoppler[z][sc]) == "undefined" ) {
+      outDoppler[z][sc] = {};
+    }
+    if ( typeof(outDoppler[z][sc][wl]) == "undefined" ) {
+      outDoppler[z][sc][wl] = 0;
+    }
+    outDoppler[z][sc][wl] += output;
+
+    if (output != 0) {
+      if ( typeof(dataSticksValuesGC[wl]) == "undefined") {
+        dataSticksValuesGC[wl] = {};
+      }
+      if ( typeof(dataSticksValuesGC[wl][z]) == "undefined") {
+        dataSticksValuesGC[wl][z] = {};
+      }
+      // There may be repeating values of el and sc since some wavelengths
+      // may correspond to repeating (unresolved) lines.
+      if ( typeof(dataSticksValuesGC[wl][z][sc]) == "undefined") {
+        dataSticksValuesGC[wl][z][sc] = 0;
+        numStickLines++;
+      }
+      dataSticksValuesGC[wl][z][sc] += output;
+    }
+  }
+  var odKeys = Object.keys(outDoppler).sort(numSort);
+
+  if ( resolution > 0 ) {
+    var sqpi = Math.sqrt(Math.PI);
+    var minWidth = minWL/resolution;
+    var mesh = minWidth/4;
+    var decPlaces = Math.max(parseInt(-Math.log(mesh)/Math.log(10)) + 1, 0);
+    var nPoints = Math.ceil((12*maxWL/resolution + dl)/mesh); // max number of points per line profile
+    // Check memory usage
+    var maxWLint = parseInt(maxWL) + '';
+    var memMax = memAvail();
+    //console.log("Available memory=" + memMax + " bytes");
+    var maxWLint = parseInt(maxWL) + '';
+    var nw = lines.length; // total number of wavelength grid points
+    var lineDens = Math.min((maxWL - minWL)/(mesh*nPoints*nw),1);
+    var numCol = numSpectra;
+    if ( expSpectrum != null ) {
+      nw += expSpectrum.length;
+      numCol += 2;
+    }
+    if ( numSpectra > 1 ) {
+      numCol++;
+    }
+    var memPerDatum = 8;
+    var dupFactor = 80;
+    var projectedNumData = nPoints * nw * lineDens * numCol;
+    var projectedUsage = projectedNumData * memPerDatum * dupFactor;
+    //console.log("Projected memory usage=" + projectedUsage + " bytes, lineDens=" + lineDens);
+    //console.log("Projected number of data points=" + projectedNumData);
+    var warningSpan = document.getElementById("max_res_warning");
+    //console.log("Available memory=" + memMax + " bytes");
+    if ( memMax < projectedUsage ) {
+      //var nPmax = Math.ceil(memMax/(nw * lineDens * numCol * memPerDatum * dupFactor/lineDens));
+      //var newresolution = parseInt(12*maxWL/Math.max(nPmax*minWidth*0.25 - dl,1));
+      var newresolution = Math.max(parseInt(resolution*memMax/projectedUsage),100);
+      //console.log("New resolution=" + newresolution);
+      //console.log("nPmax=" + nPmax + ", dl=" + dl + ", denom=" + (nPmax*minWidth*0.25 - dl));
+      resolution = newresolution;
+      if ( warningSpan != null) {
+        var warning = 'Warning: for this selection of lines and this browser, the maximum resolution ' +
+        "for showing the Doppler-broadened spectrum is " + resolution + ". The graphs shown are for this resolution. " +
+        "To show graphs for higher resolution, reduce your selection of " +
+        "lines by restricting the wavelength range or selection of elements in the composition " +
+        "or try a different browser.<br />\n";
+        warningSpan.innerHTML = warning;
+      }
+      var resBox = document.getElementById("resolution");
+      if ( resBox != null ) {
+        resBox.value = resolution;
+      }
+    } else {
+      if ( warningSpan != null) {
+        warningSpan.innerHTML = "";
+      }
+    }
+    var maxWLint = parseInt(maxWL) + '';
+    var maxNumLen = maxWLint.length + decPlaces;
+    if ( maxNumLen > 15 ) {
+      decPlaces = 15 - maxNumLen;
+    }
+    //console.log("mesh=" + mesh + ", nPoints=" + nPoints + ", decPlaces=" + decPlaces );
+    var dataDopplerValuesGC = {};
+    var numSpZ = 0;
+    var iSpZ = 0;
+    var nSpZhash = [];
+    //console.log("odKeys=" + odKeys.toString() + "\noutDoppler.keys=" + Object.keys(outDoppler).toString() );
+    for ( var e in odKeys ) {
+      var el = odKeys[e];
+      var odElKeys = Object.keys(outDoppler[el]).sort(numSort);
+      //console.log("odElKeys=" + odElKeys.toString());
+      if ( typeof(nSpZhash[el]) == "undefined") {
+        nSpZhash[el] = [];
+      }
+      for ( var s in odElKeys ) {
+        var sc = odElKeys[s];
+        var outDopplerSp = {};
+        numSpZ++;
+        //iSpZ = numSpectraHash[el][sc];
+        nSpZhash[el][sc] = numSpZ;
+        var pcnt = compHash[el];
+        var sahaAbundance = sahaIons[el][sc][0];
+        //console.log("sc=" + sc + ", pcnt=" + pcnt + ", sahaAbundance=" + sahaAbundance);
+        var odElScKeys = Object.keys(outDoppler[el][sc]).sort(numSort);
+        //console.log("odElScKeys=" + odElScKeys.toString());
+        for (var w in odElScKeys ) {
+          var wl = odElScKeys[w] - 0;
+          var int = outDoppler[el][sc][wl];
+          var width = wl/resolution;
+          var width2 = width*width;
+          var minCalc = wl - 6*width - 0.5*dl;
+          var maxCalc = wl + 6*width + 0.5*dl;
+          nPoints = parseInt((maxCalc-minCalc)/mesh) + 1;
+          var currWL;
+          //var iMin = parseInt(minCalc - minWL) - 1;
+          //if ( iMin < 0 ) {
+          //  iMin = 0;
+          //}
+          var iMin = Math.max(parseInt((minCalc - minWL)/mesh) - 1,0);
+          wl = wl.toFixed(decPlaces);
+          var iMax = iMin + nPoints;
+          //console.log("iMin=" + iMin + ", iMax=" + iMax + ", wl=" + wl + ", minCalc=" + minCalc + ", maxCalc=" + maxCalc);
+          for (i = iMin; i <= iMax; i++) {
+            currWL = (minWL + i*mesh).toFixed(decPlaces);
+            if ( (currWL - minCalc < 0) || (currWL - minWL < 0) ) {
+              continue;
+            }
+            if ((currWL - maxCalc > 0) || (currWL - maxWL > 0)) {
+              break;
+            }
+            var dw = wl - currWL;
+            var currInt = int/width/sqpi*Math.exp(-dw*dw/width2);
+            //console.log("i=" + i + ", dw=" + dw + ", wl=" + wl + ", currWL=" + currWL + ", currInt=" + currInt);
+            if ( typeof(outDopplerSp[currWL]) == "undefined" ) {
+              outDopplerSp[currWL] = 0;
+            }
+            outDopplerSp[currWL] +=  (currInt-0);
+              // Add the total intensity as the first entry to the total doppler spectrum
+            if ( typeof(dataDopplerValuesGC[currWL]) == "undefined" ) {
+              dataDopplerValuesGC[currWL] = [[0,0]];
+            }
+            dataDopplerValuesGC[currWL][0][1] += (currInt-0);
+          }
+        }
+        var odsKeys = Object.keys(outDopplerSp).sort(numSort);
+        //console.log("odsKeys=" + odsKeys.toString());
+        for (var w in odsKeys ) {
+          var wl = odsKeys[w];
+          var newEntry = [numSpZ, outDopplerSp[wl]];  //.toExponential(3)
+          //var newEntry = [iSpZ, outDopplerSp[wl]];  //.toExponential(3)
+          if ( typeof(dataDopplerValuesGC[wl]) == "undefined" ) {
+            dataDopplerValuesGC[wl] = [];
+          }
+          dataDopplerValuesGC[wl].push(newEntry);
+        }
+      }
+    }
+    //numSpZ = numSpectra;
+    var maxCalcIntens = 0;
+    for ( var wl in dataDopplerValuesGC ) {
+      var intens = dataDopplerValuesGC[wl][0][1];
+      if ( intens > maxCalcIntens ) {
+        maxCalcIntens = intens;
+      }
+    }
+    // Scale all calculated intensities to experimental scale
+    intScale = (maxExpIntens ? maxExpIntens/maxCalcIntens : 1);
+    //console.log("maxExpIntens="+maxExpIntens+" maxCalcIntens="+maxCalcIntens + " intScale="+intScale);
+    var totDopArray = [];
+    i = 0;
+    var tdsKeys = Object.keys(dataDopplerValuesGC).sort(numSort);
+    //console.log("dataDopplerValuesGC keys="+tdsKeys.toString);
+    for ( var w in tdsKeys ) {
+      var wl = tdsKeys[w];
+      totDopArray.push([wl,dataDopplerValuesGC[wl][0,0]]);
+      //console.log("totalDopplerSp last entry="+totDopArray[i].toString());
+      i++;
+    }
+    wlGrid = mergeGrids(expSpectrum,totDopArray,minWL,maxWL,0);
+    //console.log("dataDopplerValuesGC length="+Object.keys(dataDopplerValuesGC).length + "\ngrid length=" +wlGrid.length + "\nminWL=" + minWL + ", maxWL=" + maxWL);
+    i = 0;
+    var lenPrev = -1;
+    for (var w in wlGrid) {
+      i++;
+      var wl = wlGrid[w];
+      dataDopplerGC[i] = [wl];
+      var entries = dataDopplerValuesGC[wl];
+      var expInt = null;
+      var kSpZ = 0;
+      var jFirst = 0;
+      var nSpZ = null;
+      var intens = null;
+      var numPre = 0;
+      var numPost = 0;
+      if ( expSpectrum != null ) {
+        var iexp = expSpectrumHash[wl];
+        if ( typeof(iexp) != "undefined" ) {
+          expInt = expSpectrum[iexp][1] - 0;
+          //console.log("i="+i+ ", iexp="+iexp+" wl="+wl + " expInt="+expInt);
+          //if ( expInt > 0 ) {
+          //  expInt = expInt.toExponential(3);
+          //}
+        }
+        dataDopplerGC[i].push(expInt);
+      }
+      var udE = 0;
+      if ( typeof(entries) == "undefined" ) {
+        entries = [];
+        dataDopplerGC[i].push(null);
+        udE = 1;
+      }
+      var residual = null;
+      if ( numSpectra == 1 ) {
+        kSpZ = 1;
+        jFirst = 1;
+      }
+      for ( var j = 0; j < entries.length; j++ ) {
+        nSpZ = entries[j][0];
+        intens = entries[j][1]*intScale;
+        if ( j >= jFirst ) {
+          for (var k = 1; k <= nSpZ - kSpZ - 1; k++) {
+            dataDopplerGC[i].push(null);
+            numPre++;
+          }
+          //console.log("nSpZ="+nSpZ+" intens="+intens + " wl="+wl);
+          dataDopplerGC[i].push(intens); //.toExponential(3)
+        }
+        kSpZ = nSpZ;
+      }
+      for (var k = 1; k <= numSpZ - kSpZ; k++) {
+        dataDopplerGC[i].push(null);
+        numPost++;
+      }
+      if ( expSpectrum != null ) {
+        dataDopplerGC[i].push(residual);
+      }
+      if ( (lenPrev >= 0) && (dataDopplerGC[i].length != lenPrev) ) {
+        alert("Doppler i=" + i+ ", num cols=" + dataDopplerGC[i].length + ", lenPrev=" + lenPrev +
+          ", numSpZ=" + numSpZ + ", kSpZ="+ kSpZ + ", last intens=" + intens + ", jFirst=" + jFirst + ", udE=" +udE +
+          ", numPre=" + numPre + ", numPost=" + numPost);
+        return [[],[],'Error in Doppler calculaiton',''];
+      }
+      lenPrev = dataDopplerGC[i].length;
+    }
+    var firstCol = 1;
+    //console.log("num cols=" + dataDopplerGC[1].length + ", firstCol=" + firstCol);
+    var res = interpolate(dataDopplerGC,firstCol,(expSpectrum != null));
+    var resSpan = document.getElementById("residual");
+    if ( (resSpan != null) && (expSpectrum != null) ) {
+      res = (typeof(res) == "number") ? res.toExponential(3) : res;
+      resSpan.innerHTML = "<br />Residual: " + res;
+    }
+  }
+
+  // Form the stick data string for js
+  var dsvKeys = Object.keys(dataSticksValuesGC).sort(numSort);
+  i = 0;
+  //lenPrev = -1;
+  if ( expSpectrum != null ) {
+    lenPrev -= 2;
+  }
+  if ( numSpectra != 1 ) {
+    lenPrev--;
+  }
+  for (var w in dsvKeys) {
+    i++;
+    var wl = dsvKeys[w] - 0;
+    dataSticksGC[i] = [wl];
+    var dsvWKeys = Object.keys(dataSticksValuesGC[wl]).sort(numSort);
+    var kSpZ = 0;
+    var intens = 0;
+    //console.log("intScale=" + intScale);
+    var el = null;
+    var sc = null;
+    var nSpZ = null;
+    var nSpZlast = null;
+    for ( var ii in dsvWKeys ) {
+      el = dsvWKeys[ii];
+      var dsvWElKeys = Object.keys(dataSticksValuesGC[wl][el]).sort(numSort);
+      intens = 0;
+      for ( var j in dsvWElKeys ) {
+        sc = dsvWElKeys[j];
+      // There may be repeating values of el and sc since some wavelengths
+      // may correspond to repeating (unresolved) lines.
+        //nSpZ = numSpectraHash[el][sc];
+        nSpZ = nSpZhash[el][sc];
+        nSpZlast = nSpZ;
+        for ( var k = 1; k <= nSpZ - kSpZ - 1; k++ ) {
+          dataSticksGC[i].push(null);
+        }
+        intens = dataSticksValuesGC[wl][el][sc]*intScale;
+        dataSticksGC[i].push(intens);
+        kSpZ = nSpZ;
+      }
+    }
+    for ( var k = 1; k <= numSpZ - kSpZ; k++ ) {
+      dataSticksGC[i].push(null);
+    }
+    if ( (lenPrev >= 0) && (dataSticksGC[i].length != lenPrev) ) {
+      alert("Sticks i=" + i+ ", num cols=" + dataSticksGC[i].length + ", lenPrev=" + lenPrev +
+        ", numSpZ=" + numSpZ + ", kSpZ="+ kSpZ + ", last intens=" + intens + ", jFirst=" + jFirst);
+      console.log("Prev data=" + dataSticksGC[i-1].toString());
+      console.log("Cur data=" + dataSticksGC[i].toString());
+      return [[],[],'','Error in sticks calculaiton'];
+    }
+    lenPrev = dataSticksGC[i].length;
+  }
+
+  var yaxisLabel = "Line Intensity (a.u.)";
+  var graphTitle = "Saha/LTE Spectrum for " + totalSpName + "\nT = " + temp + " eV";
+  var graphLinesTitleHTML = "Saha/LTE Spectrum for " + totalSpName + "<br>T<sub>e</sub> = " + temp + " eV";
+  var graphSticksTitleHTML = "Saha/LTE Spectrum for " + totalSpName + "<br>T<sub>e</sub> = " + temp + " eV";
+  var eden2 = eden.toExponential(1);
+  var edenTitle =  (eden ? ", N = " + eden2 + " cm-3" : "");
+  var edenTitleHTML =  (eden ? ", N<sub>e</sub> = " + eden2 + " cm<sup>-3</sup>" : "");
+//CHheck use of numStickLines
+  var graphSubtitle =  ". Total of " + numStickLines + " lines" +
+    (numSpectra > 1 ? ";   Ion abundances are given in parentheses" : ".");
+  var graphLinesTitle = graphTitle + edenTitle + ", Resolution = " + resolution + graphSubtitle;
+  graphLinesTitleHTML = graphLinesTitleHTML + edenTitleHTML + ", Resolution = " + resolution + graphSubtitle;
+  graphSticksTitleHTML = graphSticksTitleHTML + edenTitleHTML + graphSubtitle;
+  var graphSticksTitle = graphTitle + graphSubtitle;
+
+
+  var dataColumns = [{label:xaxisLabel,type:'number'}];
+  if ( expSpectrum != null ) {
+    dataColumns.push({label:'Exp(user)',type:'number'});
+  }
+  if ( numSpectra > 1 ) {
+    dataColumns.push({label:'Sum(calc)',type:'number'});
+  }
+  dataDopplerGC[0] = dataColumns;
+  dataSticksGC[0] = [dataColumns[0]];
+  //console.log("numSpectra=" + numSpectra + "\ncolumn defs len=" + dataColumns.length );
+
+  //console.log("odKeys=" + odKeys.toString());
+  //console.log("outDoppler.keys=" + Object.keys(outDoppler).toString() );
+  for ( var e in odKeys ) {
+    var el = odKeys[e];
+    var odElKeys = Object.keys(outDoppler[el]).sort(numSort);
+    //console.log("odElKeys=" + odElKeys.toString());
+    for ( var s in odElKeys ) {
+      var sc = odElKeys[s];
+      var pcnt = compHash[el];
+      var abundance = sahaIons[el][sc][0]*pcnt*0.01;
+      //console.log("spectra keys=" + Object.keys(spectra).toString() );
+      //console.log("spectra[el] keys=" + Object.keys(spectra[el]).toString() );
+      //console.log("spectra[el][sc] keys=" + Object.keys(spectra[el][sc]).toString() );
+      var spName = spectra[el][sc].name;
+      var spLabel = spName + (numSpectra > 1 ? " (" + abundance.toExponential(1) + ")" : "");
+      //console.log("el="+el+ ", sc=" + sc + ", pcnt="+pcnt + ", abundance="+abundance + ", spName=" + spName + ", spLabel=" +spLabel);
+      var newColumnDef = {label:spLabel,type:'number'};
+      dataDopplerGC[0].push(newColumnDef);
+      dataSticksGC[0].push(newColumnDef);
+    }
+  }
+  if ( expSpectrum != null ) {
+    var newColumnDef = {label:'Residual',type:'number'};
+    dataDopplerGC[0].push(newColumnDef);
+  }
+  //console.log("column defs len=" + dataDopplerGC[0].length );
+  //for ( i in dataDopplerGC ) {
+    //console.log("i=" + i + ", length=" + dataDopplerGC[i].length);
+  //}
+  //console.log("column defs len=" + dataSticksGC[0].length );
+  //for ( i in dataSticksGC ) {
+    //console.log("i=" + i + ", length=" + dataSticksGC[i].length+", first=" + dataSticksGC[i][0] + ", last=" + dataSticksGC[i][dataSticksGC[i].length-1]);
+  //}
+
+// Later in draw () the desired title will be set to be the active title
+var newtitle = document.getElementById("titleoverlayCurvedLine");
+if ( newtitle != null ) {
+  newtitle.innerHTML = "<h4>" + graphLinesTitleHTML + "</h4>";
+  }
+var newStickstitle = document.getElementById("titleoverlaySticks");
+if ( newStickstitle != null ) {
+   newStickstitle.innerHTML = "<h4>" + graphSticksTitleHTML + "</h4>";
+ }
+
+  return [dataDopplerGC,dataSticksGC,graphLinesTitle,graphSticksTitle];
+}
+function checkSubmit(e) {
+  var tempBox = document.getElementById("temp");
+  if ( tempBox.value <= 0 ) {
+    alert("Electron temperature must be greater than zero.");
+    tempBox.focus();
+    return false;;
+  }
+  var edenBox = document.getElementById("eden");
+  if ( edenBox.value <= 0 ) {
+    alert("Electron density must be greater than zero.");
+    edenBox.focus();
+    return false;;
+  }
+  var percBoxes = document.getElementsByName("perc");
+  var numElem = percBoxes.length;
+  var sum = 0;
+  var validSum = 0;
+  var firstInvalid = -1;
+  var newComp = "";
+  for ( var i = 0; i < numElem; i++) {
+    var elName = document.getElementById("elem" + (i+1)).innerHTML;
+    newComp += (newComp ? ";" : "") + elName + ":" + percBoxes[i].value;
+    sum += (percBoxes[i].value - 0);
+    if ( ((sum > 100) || (percBoxes[i].value - 0 < 0) || (sum < 100 && i == numElem - 1)) && (firstInvalid < 0) ) {
+      firstInvalid = i;
+    } else {
+      validSum = sum;
+    }
+  }
+  if ( sum != 100 ) {
+    alert("Sum of percentages must be equal to 100. Current value: " + sum);
+    if ( firstInvalid < 0 ) {
+      firstInvalid = numElem - 1;
+    }
+    var newPerc = numElem == 1 ? 100 : (100 - validSum)/(numElem - firstInvalid);
+    if ( newPerc < 0 ) {
+      newPerc = "";
+    }
+    //console.log("numElem=" + numElem +", validSum="+validSum+", firstInvalid="+firstInvalid+", newPerc="+newPerc);
+    for ( var i = firstInvalid; i < numElem; i++ ) {
+      percBoxes[i].value = ( (newPerc == "") && (i == 0) ) ? "100" : newPerc;
+    }
+    percBoxes[firstInvalid].focus();
+    return false;
+  }
+  composition = newComp;
+  temp = tempBox.value - 0;
+  eden = edenBox.value - 0;
+  var resBox = document.getElementById("resolution");
+  if ( resBox != null ) {
+    resolution = resBox.value - 0;
+    if ( resolution < 100 ) {
+      //var chk = document.getElementById("draw_sticks_box");
+      //chk.checked = true;
+      //stickPlot = true;
+      alert("Resolution must be >=100. \nTo show a stick plot, use the check box below the graph.");
+      resBox.focus();
+      return false;
+    }
+  }
+
+  drawUserData();
+  return false;
+}  // checkSubmit
+function setSelect(data,hiddenCols) {
+  var sel=document.getElementById("select_columns");
+  sel.size = data.getNumberOfColumns() - 1;
+//  sel.size = 4;  // Hard code size=""  for "select_columns" select box with id="select_columns" to 4
+  sel.innerHTML = "";
+  var numSelected = 0;
+  for (var i=1;i<=sel.size;i++) {
+    var option = document.createElement("option");
+    option.value = i;
+    option.text = data.getColumnLabel(i).split(/[(]/)[0];
+    var selected = true;
+    numSelected++;
+    for ( var j in hiddenCols ) {
+      if ( option.text == hiddenCols[j] ) {
+        selected = false;
+        numSelected--;
+        break;
+      }
+    }
+    option.selected = selected;
+    sel.appendChild(option);
+  }
+  if ( numSelected == 0 ) {
+    sel.options[0].selected = true;
+  }
+}
+function memAvail() {
+  // Old Edge is a problem at present 
+  // Internet Explorer 6-11
+  var isIE = /*@cc_on!@*/false || !!document.documentMode;
+  // Edge 20+
+  var isEdge = !isIE && !!window.StyleMedia;
+  if ( isEdge ) {
+    return 30000000;
+  }
+  var test8 = '        ';
+  var test1k = '' + test8;
+  var test1M = '';
+  var test1G = '';
+  var memUsed = null;
+  for ( var i = 1; i<=7; i++ ) {
+    test1k += test1k;
+    memUsed = test1k.length;
+  }
+  test1M += test1k;
+  memUsed += test1M.length;
+  for ( var i = 1; i<=10; i++ ) {
+    test1M += test1M;
+  }
+  memUsed = test1k.length + test1M.length;
+  test1G += test1M;
+  memUsed += test1G.length;
+  for ( var i = 1; i<=10; i++ ) {
+    try {
+      test1G += test1G;
+      memUsed += test1G.length;
+    } catch(e) {
+      memUsed = memUsed;
+    }
+  }
+  var maxI = parseInt(test1G.length/1000000);
+  for ( var i = 1; i<=maxI; i++ ) {
+    try {
+      test1G += test1M;
+    } catch(e) {}
+  }
+  for ( var i = 1; i<=1000; i++ ) {
+    try {
+      test1G += test1k;
+    } catch(e) {}
+  }
+  for ( var i = 1; i<=100; i++ ) {
+    try {
+      test1G += test10;
+    } catch(e) {return test1G.length;}
+  }
+  return test1G.length;
+}

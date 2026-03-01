@@ -1,0 +1,316 @@
+body {
+   background-color: white
+}
+
+.chartWithOverlay {
+   position: relative;
+   width: 1000px;
+}
+.overlayzoom {
+   position: absolute;
+   top: 545px;   /* chartArea top 90px */
+   left: 666px; /* chartArea left 466px; */
+   border: 2px solid #0071bc;
+   border-radius: 5px;
+   background: #dce4ef;
+   font-family: "Source Sans Pro", "Helvetica Neue", "Helvetica", "Roboto", "Arial", sans-serif;
+   font-size: 12px;
+   letter-spacing: .15em;
+/* TODO letter-spacing: 1px;  */
+   margin: 0px;
+   margin-top:2px; margin-left:2px
+}
+
+
+.image-btn-overlay {
+   position: absolute;
+   top: 570px;   /* chartArea top  */
+   left: 10px; /* chartArea left */
+   border: 2px solid #0071bc;
+   border-radius: 5px;
+   background: #dce4ef;
+   font-family: "Source Sans Pro", "Helvetica Neue", "Helvetica", "Roboto", "Arial", sans-serif;
+/*   font-size: 12px;  */
+  /* letter-spacing: .15em;  */
+   margin: 0px;
+   margin-top:2px; margin-left:2px
+}
+.libs-image-help {
+   position: absolute;
+   top: 570px;   /* chartArea top  */
+   left: 123px; /* chartArea left */
+   border: 6px solid white;
+   background: rgb(196,222,237);
+   font-family: "Source Sans Pro", "Helvetica Neue", "Helvetica", "Roboto", "Arial", sans-serif;
+   font-size: 12px;
+   margin-top:2px; margin-left:2px
+}
+
+.libs-data-source {
+   position: absolute;
+   top: 544px;   /* chartArea top  */
+   left: 10px; /* chartArea left */
+   border: 2px solid #0071bc;
+   border-radius: 5px;
+   background: #dce4ef;
+/*   font-family:'Arial Black';  */
+   font-family: "Source Sans Pro", "Helvetica Neue", "Helvetica", "Roboto", "Arial", sans-serif;
+   font-size: 12px;
+/*   letter-spacing: .15em;  */
+/*   margin: 0px; */
+   margin-top:2px; margin-left:2px
+}
+.view-data-overlay {
+   position: absolute;
+   top: 540px;   /* chartArea top  */
+   left: 123px; /* chartArea left */
+   border: 2px solid #0071bc;
+   border-radius: 5px;
+   background: #dce4ef;
+/*   font-family:'Arial Black';  */
+   font-family: "Source Sans Pro", "Helvetica Neue", "Helvetica", "Roboto", "Arial", sans-serif;
+   font-size: 12px;
+/*   letter-spacing: .15em;  */
+/*   margin: 0px; */
+   margin-top:2px; margin-left:2px
+}
+.view-data-overlay-csv {
+   position: absolute;
+   top: 540px;   /* chartArea top  */
+   left: 183px; /* chartArea left */
+   border: 2px solid #0071bc;
+   border-radius: 5px;
+   background: #dce4ef;
+/*   font-family:'Arial Black';  */
+   font-family: "Source Sans Pro", "Helvetica Neue", "Helvetica", "Roboto", "Arial", sans-serif;
+   font-size: 12px;
+/*   letter-spacing: .15em;  */
+/*   margin: 0px; */
+   margin-top:2px; margin-left:2px
+}
+.view-data-overlay-html {
+   position: absolute;
+   top: 540px;   /* chartArea top  */
+   left: 235px; /* chartArea left */
+   border: 2px solid #0071bc;
+   border-radius: 5px;
+   background: #dce4ef;
+/*   font-family:'Arial Black';  */
+   font-family: "Source Sans Pro", "Helvetica Neue", "Helvetica", "Roboto", "Arial", sans-serif;
+   font-size: 12px;
+/*   letter-spacing: .15em;  */
+/*   margin: 0px; */
+   margin-top:2px; margin-left:2px
+}
+.libs-data-source-help {
+   position: absolute;
+   top: 540px;   /* chartArea top  */
+   left: 297px; /* chartArea left */
+   border: 6px solid white;
+   background: rgb(196,222,237);
+   font-family: "Source Sans Pro", "Helvetica Neue", "Helvetica", "Roboto", "Arial", sans-serif;
+   font-size: 12px;
+   margin-top:2px; margin-left:2px
+}
+
+.titleoverlayActive {
+   position: absolute;
+   top: 20px;   /* chartArea top  */
+   left: 190px; /* chartArea left */
+   background: white;
+/*   font-family:'Arial Black';  */
+   width: 850px;
+   height: 80px;
+   font-family: "Source Sans Pro", "Helvetica Neue", "Helvetica", "Roboto", "Arial", sans-serif;
+   font-size: 16px;
+   opacity: 1.0;
+   z-index: 1;
+/*   letter-spacing: .15em;  */
+/*   margin: 0px; */
+}
+
+.titleoverlayCurvedLine {
+   display: none;
+/*
+   position: absolute;
+   top: 100px;
+   left: 190px;  */
+   background: white;
+/*   font-family:'Arial Black';  */
+   width: 800px;
+   height: 75px;
+   font-family: "Source Sans Pro", "Helvetica Neue", "Helvetica", "Roboto", "Arial", sans-serif;
+   font-size: 16px;
+/*   letter-spacing: .15em;  */
+/*   margin: 0px; */
+   aria-hidden: true;
+   visibility: hidden;
+   opacity: 0;
+   display: none;
+   z-index: -1;
+}
+
+.titleoverlaySticks {
+   display: none;
+/*
+   position: absolute;
+   top: 300px;
+   left: 490px;
+*/
+   background: white;
+/*   font-family:'Arial Black';  */
+   width: 800px;
+   height: 75px;
+   font-family: "Source Sans Pro", "Helvetica Neue", "Helvetica", "Roboto", "Arial", sans-serif;
+   font-size: 16px;
+/*   letter-spacing: .15em;  */
+/*   margin: 0px; */
+   aria-hidden: true;
+   visibility: hidden;
+   opacity: 0;
+   display: none;
+   z-index: -1;
+}
+
+/*  for overlay: font-family:'Arial Black'; font-size: 12px; letter-spacing: .15em; margin-top:2px; margin-left:2px */
+.fbwrap {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border: 2px solid #dce4ef;
+}
+
+.formswrap {
+  display: flex;
+  flex-flow: column;
+  justify-content: flex-start;
+}
+
+.libsgraph {
+ height: 600px;
+ border: 2px solid #dce4ef;
+}
+
+.FBform1 {
+  border: 2px solid #0071bc;
+  border-radius: 5px;
+  margin-bottom: 5px;
+  padding: 3px;
+  order: 2;
+}
+
+.FBform2 {
+  border: 2px solid #0071bc;
+  border-radius: 5px;
+  padding: 3px;
+  order: 1;
+}
+
+.FBform3 {
+  border: 2px solid #0071bc;
+  border-radius: 5px;
+  padding: 3px;
+  order: 3;
+}
+
+.graphnote {
+  padding: 3px;
+  margin-bottom: 5px;
+  border: 2px solid #0071bc;
+  border-radius: 5px;
+  background: #dce4ef;
+}
+
+@media screen and (min-width: 1422px) {
+  .FBform1, .FBform2, .FBform3, .graphnote {
+      line-height: 1.5;
+  }
+  .FBform1 {
+      margin-bottom: 3px;
+  }
+  .formswrap {
+ /*    padding-top: 65px;
+     padding-bottom: 50px; */
+  }
+
+}
+
+@media screen and (max-width: 1421px) {
+  .FBform1, .FBform2, .FBform3, .graphnote {
+      line-height: 1.4;
+      padding: 3px;
+      margin-left: 20px;
+  }
+}
+   .access-asd  {
+        border-radius: 3px 3px 3px 3px;
+        box-sizing: content-box;
+        background: #205493;
+        font-weight: 300;
+        color: white;
+        padding: 0.35em 0.75em;
+        border: none;
+        /* Don't seem to have an effect font-size: 1em;
+        font-size: 100%; TODO  */
+        font-size: 12px;
+   /*     line-height: 75%; */
+        text-decoration: none;
+        cursor: pointer;
+        margin-top: 2em;
+    }
+    .access-asd:hover  {
+        background: #0071bc;
+        }
+   .file_btn  {
+        border-radius: 3px 3px 3px 3px;
+        box-sizing: content-box;
+        background: #205493;
+        font-weight: 300;
+        color: white;
+        padding: 0.35em 0.75em;
+        border: none;
+        font-size: 1em;
+        line-height: 75%;
+        text-decoration: none;
+        cursor: pointer;
+        margin-top: 2em;
+    }
+    .file_btn:hover  {
+        background: #0071bc;
+        }
+
+   .select_file_btn, .recalculate-btn, .display-as-image-btn, .view-data-source-btn  {
+        border-radius: 3px 3px 3px 3px;
+        box-sizing: content-box;
+        background: #205493;
+        font-weight: 300;
+        color: white;
+        padding: 0.35em 0.75em;
+        border: none;
+/*TODO        font-size: 1em;
+        line-height: 75%; */
+        font-size: 14px;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+.display-as-image-btn {   /* This aligns the right side of the Dispaly as Image button with the right edge of the View  Data Source button */
+ padding-right: 13px;
+}
+    .select_file_btn, .recalculate-btn:hover, .recalculate-btn:focus, .display-as-image-btn:hover,  .view-data-source-btn:hover  {
+        background: #0071bc;
+     }
+
+.libs_td1 {
+ text-align: right;
+ font-family: monospace;
+ white-space:nowrap;
+ text-indent: 4px;
+}
+.libs_td2 {
+ text-align: left;
+ font-family: monospace;
+ white-space:nowrap;
+}
