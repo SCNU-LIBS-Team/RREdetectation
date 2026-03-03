@@ -495,7 +495,7 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
         if element_name == target and plot:
             plt.figure(figsize=(8,4))
 
-            print(len(E_iterative))
+           # print(len(E_iterative))
         # 全部理论谱线（浅蓝）
             all_theo_intensity = element_intensity / np.sum(element_intensity)
             for wl, inten_norm in zip(element_wl, all_theo_intensity):
@@ -628,14 +628,15 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
 elements,elements_list=elements_database_pt2(folder_path2,T)
 signal_path= r'D:\LIBS\ElementDetectation\11.10\SpecSimuDatabase' #待测光谱路径
 signal_path2= r'D:\LIBS\ElementDetectation\11.10\Rareearth\Spectrum' #待测光谱路径
-I_file_list = glob.glob(os.path.join(signal_path2, "*.csv"))
+signal_path3= r'D:\LIBS\ElementDetectation\11.10\RREs' #待测光谱路径
+I_file_list = glob.glob(os.path.join(signal_path3, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
-target_files=['All']
+target_files=['Average'] 
 for I_element_name in I_elements_list:
 
     if I_element_name not in target_files:
         continue 
-    data=pd.read_csv(os.path.join(signal_path2, I_element_name + ".csv"),header=0,skipinitialspace=True)#待测光谱路径
+    data=pd.read_csv(os.path.join(signal_path3, I_element_name + ".csv"),header=0,skipinitialspace=True)#待测光谱路径
     data = data.fillna(0).to_numpy()
     data = np.nan_to_num(data, nan=0.0)
     x = data[:, 0]
@@ -646,7 +647,7 @@ for I_element_name in I_elements_list:
                                neighbor=4, min_length=3, coeffi_threshold=1000, window=5)#峰值校正
 
     particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements, peak_wl, peak_int,x,intensity_sum,
-                                                                                                scope=0.20,plot=True,target='TbII')
+                                                                                                scope=0.20,plot=True,target='CeII')
     print("\n---" ,I_element_name, "---") 
     # # # 粒子
     # print("--- 粒子层面 ---\n")
