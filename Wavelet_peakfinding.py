@@ -11,7 +11,7 @@ import pywt
 
 
 
-data=pd.read_csv(r'D:\LIBS\ElementDetectation\11.10\SpecSimuDatabase\Cu100_10000K_Pf.csv',header=0,skipinitialspace=True)
+data=pd.read_csv(r'D:\LIBS\ElementDetectation\11.10\RREs\Average_10000K.csv',header=0,skipinitialspace=True)
 data = data.fillna(0).to_numpy()
 data = np.nan_to_num(data, nan=0.0)
 
@@ -205,17 +205,17 @@ def wavelet_peak_detection(signal, wl, wavelet='mexh', scales=np.arange(1, 11),
     true_peaks_wl=np.array(true_peaks_wl)
     return true_peaks_idx, true_peaks_wl, true_peaks_int
 
-#调用
-ridges_found=find_peaks_ridge(signal,coefficients,neighbor=3,min_length=3,coeffi_threshold=100) #小波脊线寻峰
-#后续对接
-#理想输出peak_ridgefound：峰值位置，峰值大小
+# #调用
+# ridges_found=find_peaks_ridge(signal,coefficients,neighbor=3,min_length=3,coeffi_threshold=100) #小波脊线寻峰
+# #后续对接
+# #理想输出peak_ridgefound：峰值位置，峰值大小
 # peak_ridgefound=[]
 # for ridge in ridges_found:
 #     min_scale_pos=min(ridge,key=lambda x:x[0])
 #     scale_idx,pos_idx=min_scale_pos
 #     if np.isfinite(pos_idx) and int(pos_idx) not in peak_ridgefound:  # 去重
 #         peak_ridgefound.append(int(pos_idx))
-# print(peak_ridgefound)
+# # print(peak_ridgefound)
 
 
 # true_peak_idx, true_peak_wl, true_peak_int = peak_correction(ridges_found, x, signal, window=5) 

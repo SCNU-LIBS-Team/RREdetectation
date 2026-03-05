@@ -64,7 +64,7 @@ def color_text(text, color):
 
 #-----预备-----
 #参数设置
-T=10000 
+T=10000
 kB=8.617330350e-5 #eV/K
 #-----数据导入-----
 folder_path = r'D:\LIBS\ElementDetectation\11.10\Elements_database' #元素库路径
@@ -626,12 +626,12 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
  
 #-----主程序-----
 elements,elements_list=elements_database_pt2(folder_path2,T)
-signal_path= r'D:\LIBS\ElementDetectation\11.10\SpecSimuDatabase' #待测光谱路径
+signal_path1= r'D:\LIBS\ElementDetectation\11.10\SpecSimuDatabase' #待测光谱路径
 signal_path2= r'D:\LIBS\ElementDetectation\11.10\Rareearth\Spectrum' #待测光谱路径
 signal_path3= r'D:\LIBS\ElementDetectation\11.10\RREs' #待测光谱路径
 I_file_list = glob.glob(os.path.join(signal_path3, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
-target_files=['Average'] 
+target_files=['03134_95'] #待测光谱文件名列表（不带扩展名）
 for I_element_name in I_elements_list:
 
     if I_element_name not in target_files:
@@ -644,10 +644,10 @@ for I_element_name in I_elements_list:
     signal=data[:,1]
     intensity_ionized=data[:,3]
     true_peak_idx, peak_wl, peak_int = wavelet_peak_detection(signal,x,wavelet='mexh', scales=np.arange(1, 11), 
-                               neighbor=4, min_length=3, coeffi_threshold=1000, window=5)#峰值校正
+                               neighbor=4, min_length=3, coeffi_threshold=700, window=5)#峰值校正
 
     particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements, peak_wl, peak_int,x,intensity_sum,
-                                                                                                scope=0.20,plot=True,target='CeII')
+                                                                                                scope=0.2,plot=False,target='CeII')
     print("\n---" ,I_element_name, "---") 
     # # # 粒子
     # print("--- 粒子层面 ---\n")
