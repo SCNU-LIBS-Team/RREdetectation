@@ -11,7 +11,7 @@ import pywt
 
 
 
-data=pd.read_csv(r'D:\LIBS\ElementDetectation\11.10\RREs\Average_10000K.csv',header=0,skipinitialspace=True)
+data=pd.read_csv(r'D:\LIBS\RREdetectation\RREs\03116_95.csv',header=0,skipinitialspace=True)
 data = data.fillna(0).to_numpy()
 data = np.nan_to_num(data, nan=0.0)
 
@@ -26,7 +26,7 @@ intensity_ion=data[:,3]
 wavelet = 'mexh'  # 小波函数
 scales = np.arange(1, 11)  # 尺度范围 (1=窄峰, 大=宽峰)
 coefficients, frequencies = pywt.cwt(signal, scales, wavelet)
-# coefficients.shape = (len(scales), len(signal))
+coefficients.shape = (len(scales), len(signal))
 
 
 #寻峰策略2：脊线寻峰

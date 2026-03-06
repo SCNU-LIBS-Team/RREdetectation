@@ -142,11 +142,11 @@ def elements_database_pt2(folder_path, T):
 # a,b=elements_database_pt2(folder_path2,10000)
 
 
-data=pd.read_csv(r'D:\LIBS\ElementDetectation\11.10\Rareearth\Spectrum\All.csv',header=0,skipinitialspace=True)
-data = data.fillna(0).to_numpy()
-data = np.nan_to_num(data, nan=0.0)
-x = data[:, 0]
-signal=data[:,1]
+# data=pd.read_csv(r'D:\LIBS\ElementDetectation\11.10\Rareearth\Spectrum\All.csv',header=0,skipinitialspace=True)
+# data = data.fillna(0).to_numpy()
+# data = np.nan_to_num(data, nan=0.0)
+# x = data[:, 0]
+# signal=data[:,1]
 
 
 #debug

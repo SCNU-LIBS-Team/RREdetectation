@@ -67,8 +67,8 @@ def color_text(text, color):
 T=10000
 kB=8.617330350e-5 #eV/K
 #-----数据导入-----
-folder_path = r'D:\LIBS\ElementDetectation\11.10\Elements_database' #元素库路径
-folder_path2 =r'D:\LIBS\ElementDetectation\11.10\Rareearth' #稀土元素光谱路径
+folder_path = r'D:\LIBS\RREdetectation\Elements_database' #元素库路径
+folder_path2 =r'D:\LIBS\RREdetectation\Rareearth' #稀土元素光谱路径
 
 #----必备函数定义----
 #玻尔兹曼图拟合 返回斜率，截距，温度，y
@@ -626,9 +626,9 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
  
 #-----主程序-----
 elements,elements_list=elements_database_pt2(folder_path2,T)
-signal_path1= r'D:\LIBS\ElementDetectation\11.10\SpecSimuDatabase' #待测光谱路径
-signal_path2= r'D:\LIBS\ElementDetectation\11.10\Rareearth\Spectrum' #待测光谱路径
-signal_path3= r'D:\LIBS\ElementDetectation\11.10\RREs' #待测光谱路径
+signal_path1= r'D:\LIBS\RREdetectation\SpecSimuDatabase' #待测光谱路径
+signal_path2= r'D:\LIBS\RREdetectation\Rareearth\Spectrum' #待测光谱路径
+signal_path3= r'D:\LIBS\RREdetectation\RREs' #待测光谱路径
 I_file_list = glob.glob(os.path.join(signal_path3, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 target_files=['03134_95'] #待测光谱文件名列表（不带扩展名）
