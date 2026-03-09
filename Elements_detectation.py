@@ -631,7 +631,7 @@ signal_path2= r'D:\LIBS\RREdetectation\Rareearth\Spectrum' #待测光谱路径
 signal_path3= r'D:\LIBS\RREdetectation\RREs' #待测光谱路径
 I_file_list = glob.glob(os.path.join(signal_path3, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
-target_files=['03134_95'] #待测光谱文件名列表（不带扩展名）
+target_files=['03130_95'] #待测光谱文件名列表（不带扩展名）
 for I_element_name in I_elements_list:
 
     if I_element_name not in target_files:
