@@ -631,7 +631,7 @@ signal_path2= r'D:\LIBS\RREdetectation\Rareearth\Spectrum' #待测光谱路径
 signal_path3= r'D:\LIBS\RREdetectation\RREs' #待测光谱路径
 I_file_list = glob.glob(os.path.join(signal_path3, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
-target_files=['07129_95'] #待测光谱文件名列表（不带扩展名）
+target_files=['07162_95'] #待测光谱文件名列表（不带扩展名）
 for I_element_name in I_elements_list:
 
     if I_element_name not in target_files:
@@ -647,7 +647,7 @@ for I_element_name in I_elements_list:
                                neighbor=4, min_length=3, coeffi_threshold=700, window=5)#峰值校正
 
     particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements, peak_wl, peak_int,x,intensity_sum,
-                                                                                                scope=0.2,plot=False,target='CeII')
+                                                                                                scope=0.2,plot=True,target='ErII')
     print("\n---" ,I_element_name, "---") 
     # # # 粒子
     # print("--- 粒子层面 ---\n")
