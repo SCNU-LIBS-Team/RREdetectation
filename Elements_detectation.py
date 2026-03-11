@@ -179,7 +179,7 @@ def Boltzmann_plot(matched_i, matched_wl, element_A, element_E, element_g, eleme
 #参数说明:matched_theo匹配到的理论谱线  matched_exp匹配到的实验谱线  element_A元素的A  element_E元素的E  element_g元素的g  element_wl元素的波长列表  element_name元素名称
 #用途说明：检测匹配点并且绘制玻尔兹曼图
     # ====== ② 玻尔兹曼图计算与绘制 ======
-    if len(matched_wl) >= 2:  # 至少3个点才能线性拟合
+    if len(matched_wl) >= 2:  # 至少2个点才能线性拟合
         print(f"\n--- {element_name} 玻尔兹曼图 ---")
         
         # 提取匹配到的谱线参数（与 matched_exp 对应的理论参数）
@@ -631,11 +631,24 @@ signal_path2= r'D:\LIBS\RREdetectation\Rareearth\Spectrum' #待测光谱路径
 signal_path3= r'D:\LIBS\RREdetectation\RREs' #待测光谱路径
 I_file_list = glob.glob(os.path.join(signal_path3, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
-target_files=['07819_95'] #待测光谱文件名列表（不带扩展名）
-for I_element_name in I_elements_list:
+target_files=['03116_95'] #待测光谱文件名列表（不带扩展名）
 
-    if I_element_name not in target_files:
-        continue 
+target_element='Y'
+specifybotton = True  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素
+plotbotton=True #是否绘图展示Boltzmann图
+plottarget='PrII' #Boltzmann图绘制目标元素
+
+# 绘图模式开启时强制关闭 specify，仅输出目标图像但全量跑文件
+if plotbotton:
+    specifybotton = False
+
+# 根据模式选择要处理的文件
+if specifybotton:
+    files_to_process = I_elements_list
+else:
+    files_to_process = [name for name in I_elements_list if name in target_files]
+
+for I_element_name in files_to_process:
     data=pd.read_csv(os.path.join(signal_path3, I_element_name + ".csv"),header=0,skipinitialspace=True)#待测光谱路径
     data = data.fillna(0).to_numpy()
     data = np.nan_to_num(data, nan=0.0)
@@ -647,7 +660,8 @@ for I_element_name in I_elements_list:
                                neighbor=4, min_length=3, coeffi_threshold=700, window=5)#峰值校正
 
     particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements, peak_wl, peak_int,x,intensity_sum,
-                                                                                                scope=0.2,plot=True,target='ErII')
+                                                                                                scope=0.2,plot=plotbotton,target=plottarget)
+    
     print("\n---" ,I_element_name, "---") 
     # # # 粒子
     # print("--- 粒子层面 ---\n")
@@ -656,15 +670,30 @@ for I_element_name in I_elements_list:
 
     # 元素+置信度
     print("--- 元素层面（距离 + 置信度） ---")
-    for elem in sorted(elements_result.keys(), key=lambda x: elements_result[x]):
-        dist = elements_result.get(elem, np.nan)
-        conf = elements_confidence.get(elem, 0)
-        T= elements_T.get(elem, 0)
-        R2= elements_R2.get(elem, 0)
-        temp_text = color_text(f"温度={T:<8.4f}", BLUE)
-        r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
-        conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
-        print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
+    sorted_elems = sorted(elements_result.keys(), key=lambda x: elements_result[x])
+    if specifybotton:
+        for elem in sorted_elems:
+            if elem != target_element:
+                continue
+            dist = elements_result.get(elem, np.nan)
+            conf = elements_confidence.get(elem, 0)
+            T = elements_T.get(elem, 0)
+            R2 = elements_R2.get(elem, 0)
+            temp_text = color_text(f"温度={T:<8.4f}", BLUE)
+            r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
+            conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
+            print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
+            break
+    else:
+        for elem in sorted_elems:
+            dist = elements_result.get(elem, np.nan)
+            conf = elements_confidence.get(elem, 0)
+            T = elements_T.get(elem, 0)
+            R2 = elements_R2.get(elem, 0)
+            temp_text = color_text(f"温度={T:<8.4f}", BLUE)
+            r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
+            conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
+            print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
 
 
 
