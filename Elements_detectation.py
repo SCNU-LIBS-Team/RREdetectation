@@ -626,30 +626,35 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
  
 #-----主程序-----
 elements,elements_list=elements_database_pt2(folder_path2,T)
-signal_path1= r'D:\LIBS\RREdetectation\SpecSimuDatabase' #待测光谱路径
-signal_path2= r'D:\LIBS\RREdetectation\Rareearth\Spectrum' #待测光谱路径
-signal_path3= r'D:\LIBS\RREdetectation\RREs' #待测光谱路径
-I_file_list = glob.glob(os.path.join(signal_path3, "*.csv"))
+signal_path1= r'D:\LIBS\RREdetectation\SpecSimuDatabase' #普通元素光谱数据库   a.t%
+signal_path2= r'D:\LIBS\RREdetectation\Rareearth\Spectrum' #稀土元素光谱100%   a.t%
+signal_path3= r'D:\LIBS\RREdetectation\RREs' #岩石基体95%+稀土元素光谱5%   a.t%
+signal_path4= r'D:\LIBS\RREdetectation\RREs\last3' #Sm、Tb、Gd最后三种的高接纳度测试
+I_file_list = glob.glob(os.path.join(signal_path4, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
-target_files=['07129_95'] #待测光谱文件名列表（不带扩展名）
+target_files=['07121_98'] #待测光谱文件名列表（不带扩展名）
 
 target_element='Pr'
-specifybotton = True  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素
+specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素
 plotbotton=True #是否绘图展示Boltzmann图
-plottarget='PrII' #Boltzmann图绘制目标元素
+plottarget='YbII' #Boltzmann图绘制目标元素
+checkallbutton=False #是否检测文件内的全部光谱
 
-# 绘图模式开启时强制关闭 specify，仅输出目标图像但全量跑文件
+# 绘图模式开启时强制关闭 specify、checkall，仅输出目标图像但全量跑文件
 if plotbotton:
     specifybotton = False
+    checkallbutton = False
 
 # 根据模式选择要处理的文件
 if specifybotton:
+    files_to_process = I_elements_list
+elif checkallbutton:
     files_to_process = I_elements_list
 else:
     files_to_process = [name for name in I_elements_list if name in target_files]
 
 for I_element_name in files_to_process:
-    data=pd.read_csv(os.path.join(signal_path3, I_element_name + ".csv"),header=0,skipinitialspace=True)#待测光谱路径
+    data=pd.read_csv(os.path.join(signal_path4, I_element_name + ".csv"),header=0,skipinitialspace=True)#待测光谱路径
     data = data.fillna(0).to_numpy()
     data = np.nan_to_num(data, nan=0.0)
     x = data[:, 0]

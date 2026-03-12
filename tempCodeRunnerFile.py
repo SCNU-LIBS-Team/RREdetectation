@@ -1,1 +1,0 @@
-even_rows = data[1::2]
