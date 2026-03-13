@@ -82,14 +82,30 @@ for element_name in elements_list:
 #遍历稀土元素，更改谱线库中对应元素的谱线文件
 for elements_name in elements_list:
     element_conflicts = [c for c in conflicts if c["rareearth"] == elements_name]
+    folder_path = r'D:\LIBS\RREdetectation\Rareearth'
+    file_list = glob.glob(os.path.join(folder_path, "*II.csv")) 
+    df=pd.read_csv(os.path.join(folder_path, elements_name + ".csv"), header=1, encoding="gbk")
     if element_conflicts:
         conf_df = pd.DataFrame(element_conflicts)
         cols = ["peak_wl", "ref_wl", "delta", "pure_elem"]
-        print(f"{elements_name} 冲突谱线:")  
-        print(conf_df[cols]) 
-        # conf_df.to_csv(f"{elements_name}_conflicts.csv", index=False, encoding="utf-8-sig")
-        break
 
+        # 准备波长列：第1列转换为 nm（*0.1），并保证存在写入列（末尾新增）
+        df_wl = pd.to_numeric(df.iloc[:, 1], errors="coerce") * 0.1
+        if df.shape[1] <= 9:
+            df.insert(loc=df.shape[1], column="conflict_elem", value=np.nan)
+        target_col = df.columns[-1]  # 新增列
+
+        # 将冲突峰值对应的基体元素写回谱线表
+        for _, row in conf_df.iterrows():
+            peak_wl = float(row["ref_wl"])
+            pure_elem = row["pure_elem"]
+            # 按波长精确匹配，无需容差
+            exact_match = df_wl == peak_wl
+            if exact_match.any():
+                df.loc[exact_match, target_col] = pure_elem
+        print(df)
+        break
+   
 
 
 # ---- 输出 Tm 的全部谱线及其冲突谱线 ----
