@@ -83,26 +83,31 @@ for element_name in elements_list:
 for elements_name in elements_list:
     element_conflicts = [c for c in conflicts if c["rareearth"] == elements_name]
     folder_path = r'D:\LIBS\RREdetectation\Rareearth'
-    file_list = glob.glob(os.path.join(folder_path, "*II.csv")) 
     df=pd.read_csv(os.path.join(folder_path, elements_name + ".csv"), header=1, encoding="gbk")
+
+
     if element_conflicts:
         conf_df = pd.DataFrame(element_conflicts)
         cols = ["peak_wl", "ref_wl", "delta", "pure_elem"]
-
+        # print(conf_df["ref_wl"])
+        # print(conf_df["pure_elem"])
         # 准备波长列：第1列转换为 nm（*0.1），并保证存在写入列（末尾新增）
         df_wl = pd.to_numeric(df.iloc[:, 1], errors="coerce") * 0.1
         if df.shape[1] <= 9:
-            df.insert(loc=df.shape[1], column="conflict_elem", value=np.nan)
-        target_col = df.columns[-1]  # 新增列
+            df.insert(loc=df.shape[1], column="conflict_elem", value=np.nan) #新建列
+        target_col = df.columns[-1]  # 最后一列列名
+
 
         # 将冲突峰值对应的基体元素写回谱线表
         for _, row in conf_df.iterrows():
             peak_wl = float(row["ref_wl"])
             pure_elem = row["pure_elem"]
+            # print(peak_wl, pure_elem)
             # 按波长精确匹配，无需容差
-            exact_match = df_wl == peak_wl
-            if exact_match.any():
-                df.loc[exact_match, target_col] = pure_elem
+            tol=5e-2
+            match_mask = np.isclose(df_wl, peak_wl, atol=tol, equal_nan=False)
+            if match_mask.any():
+                df.loc[match_mask, target_col] = pure_elem
         print(df)
         break
    
