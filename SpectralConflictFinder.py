@@ -13,6 +13,7 @@ from Wavelet_peakfinding import find_peaks_ridge,wavelet_peak_detection
 THRESHOLD = 0.2  # nm distance allowed between catalog line and detected peak
 
 folder_path = r'D:\LIBS\RREdetectation\Rareearth' #元素谱线库的路径
+output_folder_path = r'D:\LIBS\RREdetectation\Rareearth_conflicts'  # 标记冲突后另存的目录
 folder_path2=r'D:\LIBS\RREdetectation\PureMainElems' #冲突谱线的输出路径
 file_list = glob.glob(os.path.join(folder_path, "*II.csv")) # 只处理离子态谱线文�?
 file_list2 = glob.glob(os.path.join(folder_path2, "*.csv")) # 只处理离子态谱线文档
@@ -46,8 +47,8 @@ for element_name in elements_list:
 
 
     #遍历岩石基体元素
-    for PureElem_name in PureElem_list:
-        PureElem_path = os.path.join(folder_path2, PureElem_name + ".csv")
+    for PureElem_name in PureElem_base:
+        PureElem_path = os.path.join(folder_path2, PureElem_name + "100.csv")
         df2 = pd.read_csv(PureElem_path, header=0, encoding="gbk")
         wl_Pure=df2.iloc[:,0]
         wl_Pure = pd.to_numeric(wl_Pure, errors="coerce")
@@ -108,8 +109,11 @@ for elements_name in elements_list:
             match_mask = np.isclose(df_wl, peak_wl, atol=tol, equal_nan=False)
             if match_mask.any():
                 df.loc[match_mask, target_col] = pure_elem
-        print(df)
-        break
+
+    # 无论是否有冲突，均写回到新目录，避免覆盖原文件
+    os.makedirs(output_folder_path, exist_ok=True)
+    df.to_csv(os.path.join(output_folder_path, elements_name + ".csv"), index=False, encoding="gbk")
+
    
 
 
