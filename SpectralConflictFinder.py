@@ -1,6 +1,6 @@
 ﻿#本文件用于验证谱线选择Branch
 #SpectalConflictFinder.py 顾名思义，就是用来找稀土元素离子线与岩石基体元素之间的冲突的
-
+#Already done
 import numpy as np
 import pandas as pd
 import glob
@@ -13,8 +13,8 @@ from Wavelet_peakfinding import find_peaks_ridge,wavelet_peak_detection
 THRESHOLD = 0.2  # nm distance allowed between catalog line and detected peak
 
 folder_path = r'D:\LIBS\RREdetectation\Rareearth' #元素谱线库的路径
-output_folder_path = r'D:\LIBS\RREdetectation\Rareearth_conflicts'  # 标记冲突后另存的目录
 folder_path2=r'D:\LIBS\RREdetectation\PureMainElems' #冲突谱线的输出路径
+
 file_list = glob.glob(os.path.join(folder_path, "*II.csv")) # 只处理离子态谱线文�?
 file_list2 = glob.glob(os.path.join(folder_path2, "*.csv")) # 只处理离子态谱线文档
 elements_list = [os.path.splitext(os.path.basename(f))[0] for f in file_list]
@@ -110,28 +110,12 @@ for elements_name in elements_list:
             if match_mask.any():
                 df.loc[match_mask, target_col] = pure_elem
 
-    # 无论是否有冲突，均写回到新目录，避免覆盖原文件
-    os.makedirs(output_folder_path, exist_ok=True)
-    df.to_csv(os.path.join(output_folder_path, elements_name + ".csv"), index=False, encoding="gbk")
-
+    # 无论是否有冲突，直接覆盖原目录中的文件
+    df.to_csv(os.path.join(folder_path, elements_name + ".csv"), index=False, encoding="gbk")
+    # #在新的文件夹中保存
+    # os.makedirs(output_path, exist_ok=True)
+    #output_path = r'D:\LIBS\RREdetectation\Rareeath_conflicts' #冲突谱线的输出路径
+    # df.to_csv(os.path.join(output_path, elements_name + ".csv"), index=False, encoding="gbk")
    
 
 
-# ---- 输出 Tm 的全部谱线及其冲突谱线 ----
-# tm_key = next((k for k in elements if k.lower().startswith("tm")), None)
-# if tm_key:
-#     tm_lines = np.sort(elements[tm_key])
-#     print(f"{tm_key} 共 {tm_lines.size} 条参考谱线（nm）:")  # noqa: T201
-#     print(tm_lines)  # noqa: T201
-
-#     tm_conflicts = [c for c in conflicts if c["rareearth"] == tm_key]
-#     if tm_conflicts:
-#         tm_conf_df = pd.DataFrame(tm_conflicts)
-#         cols = ["peak_wl", "ref_wl", "delta", "pure_elem"]
-#         print(f"{tm_key} 冲突谱线:")  # noqa: T201
-#         print(tm_conf_df[cols])  # noqa: T201
-#         tm_conf_df.to_csv("Tm_conflicts.csv", index=False, encoding="utf-8-sig")
-#     else:
-#         print(f"{tm_key} 未发现距离<{THRESHOLD}nm 的冲突峰")  # noqa: T201
-# else:
-#     print("未在元素库中找到 Tm 的谱线文件")  # noqa: T201
