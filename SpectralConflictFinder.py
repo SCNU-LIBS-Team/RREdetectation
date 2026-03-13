@@ -13,6 +13,7 @@ from Wavelet_peakfinding import find_peaks_ridge,wavelet_peak_detection
 THRESHOLD = 0.2  # nm distance allowed between catalog line and detected peak
 
 folder_path = r'D:\LIBS\RREdetectation\Rareearth' #元素谱线库的路径
+output_folder_path = r'D:\LIBS\RREdetectation\Rareearth_conflicts'  # 标记冲突后另存的目录
 folder_path2=r'D:\LIBS\RREdetectation\PureMainElems' #冲突谱线的输出路径
 file_list = glob.glob(os.path.join(folder_path, "*II.csv")) # 只处理离子态谱线文�?
 file_list2 = glob.glob(os.path.join(folder_path2, "*.csv")) # 只处理离子态谱线文档
@@ -46,8 +47,8 @@ for element_name in elements_list:
 
 
     #遍历岩石基体元素
-    for PureElem_name in PureElem_list:
-        PureElem_path = os.path.join(folder_path2, PureElem_name + ".csv")
+    for PureElem_name in PureElem_base:
+        PureElem_path = os.path.join(folder_path2, PureElem_name + "100.csv")
         df2 = pd.read_csv(PureElem_path, header=0, encoding="gbk")
         wl_Pure=df2.iloc[:,0]
         wl_Pure = pd.to_numeric(wl_Pure, errors="coerce")
@@ -82,14 +83,38 @@ for element_name in elements_list:
 #遍历稀土元素，更改谱线库中对应元素的谱线文件
 for elements_name in elements_list:
     element_conflicts = [c for c in conflicts if c["rareearth"] == elements_name]
+    folder_path = r'D:\LIBS\RREdetectation\Rareearth'
+    df=pd.read_csv(os.path.join(folder_path, elements_name + ".csv"), header=1, encoding="gbk")
+
+
     if element_conflicts:
         conf_df = pd.DataFrame(element_conflicts)
         cols = ["peak_wl", "ref_wl", "delta", "pure_elem"]
-        print(f"{elements_name} 冲突谱线:")  
-        print(conf_df[cols]) 
-        # conf_df.to_csv(f"{elements_name}_conflicts.csv", index=False, encoding="utf-8-sig")
-        break
+        # print(conf_df["ref_wl"])
+        # print(conf_df["pure_elem"])
+        # 准备波长列：第1列转换为 nm（*0.1），并保证存在写入列（末尾新增）
+        df_wl = pd.to_numeric(df.iloc[:, 1], errors="coerce") * 0.1
+        if df.shape[1] <= 9:
+            df.insert(loc=df.shape[1], column="conflict_elem", value=np.nan) #新建列
+        target_col = df.columns[-1]  # 最后一列列名
 
+
+        # 将冲突峰值对应的基体元素写回谱线表
+        for _, row in conf_df.iterrows():
+            peak_wl = float(row["ref_wl"])
+            pure_elem = row["pure_elem"]
+            # print(peak_wl, pure_elem)
+            # 按波长精确匹配，无需容差
+            tol=5e-2
+            match_mask = np.isclose(df_wl, peak_wl, atol=tol, equal_nan=False)
+            if match_mask.any():
+                df.loc[match_mask, target_col] = pure_elem
+
+    # 无论是否有冲突，均写回到新目录，避免覆盖原文件
+    os.makedirs(output_folder_path, exist_ok=True)
+    df.to_csv(os.path.join(output_folder_path, elements_name + ".csv"), index=False, encoding="gbk")
+
+   
 
 
 # ---- 输出 Tm 的全部谱线及其冲突谱线 ----
