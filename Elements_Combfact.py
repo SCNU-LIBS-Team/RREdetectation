@@ -137,6 +137,85 @@ def elements_database_pt2(folder_path, T):
 
     return elements, elements_list
 
+#目前的想法是main_elements是一个列表，里面包含了岩石基体元素
+def elements_database_lineswitch(folder_path, T,main_elements):
+    file_list = glob.glob(os.path.join(folder_path, "*.csv"))
+    elements_list = [os.path.splitext(os.path.basename(f))[0] for f in file_list]
+    elements = {}
+    for element_name in elements_list: 
+        file_path = os.path.join(folder_path, element_name + ".csv")
+
+        # 读取 CSV
+        df = pd.read_csv(file_path, header=1, encoding="gbk")
+
+        # 只取偶数行
+        df = df.iloc[1::2].copy()
+
+
+        wl = df.iloc[:, 1]
+        A  = df.iloc[:, 2]
+        E  = df.iloc[:, 3]
+        g  = df.iloc[:, 7]
+        if df.shape[1] > 9:
+            enable_flag = df.iloc[:, 8]
+            pure_element_flag = df.iloc[:, 9]
+            main_elements_normalized = {str(m).strip().upper() for m in main_elements} #基体元素全集
+            normalized_pure_element = pure_element_flag.astype(str).str.strip().str.upper()
+            enable_mask = (
+                enable_flag.isna()
+                | enable_flag.astype(str).str.strip().str.upper().isin(["", "Y"])
+                | ~normalized_pure_element.isin(main_elements_normalized)
+            )
+        else:
+            enable_mask = pd.Series(True, index=df.index)
+
+
+        wl = pd.to_numeric(wl, errors="coerce")
+        A  = pd.to_numeric(A,  errors="coerce")
+        E  = pd.to_numeric(E,  errors="coerce")
+        g  = pd.to_numeric(g,  errors="coerce")
+
+
+        wl = wl * 0.1                # Å → nm
+        E  = E  * 1.2398e-4          # cm⁻¹ → eV（按你原公式）
+        valid_mask = (
+            enable_mask &
+            np.isfinite(wl) &
+            np.isfinite(A) & (A > 0) &
+            np.isfinite(E) &
+            np.isfinite(g)
+        )
+
+        wl = wl[valid_mask]
+        A  = A[valid_mask]
+        E  = E[valid_mask]
+        g  = g[valid_mask]
+
+        # ===============================
+        # ⑤ 波段过滤
+        # ===============================
+        band_mask = (wl >= 200) & (wl <= 900)
+
+        wl = wl[band_mask]
+        A  = A[band_mask]
+        E  = E[band_mask]
+        g  = g[band_mask]
+
+        # ===============================
+        # ⑥ 转 numpy（现在 100% 安全）
+        # ===============================
+        wl = wl.to_numpy(dtype=float)
+        A  = A.to_numpy(dtype=float)
+        E  = E.to_numpy(dtype=float)
+        g  = g.to_numpy(dtype=float)
+
+        # 相对强度
+        relative_intensity = rel_intensity(wl, A, E, g, T)
+
+        matrix = np.column_stack((wl, relative_intensity, A, E, g))
+        elements[element_name] = {"data": matrix}
+
+    return elements, elements_list
 
 # folder_path2 =r'D:\LIBS\ElementDetectation\11.10\Rareearth' #稀土元素光谱路径
 # a,b=elements_database_pt2(folder_path2,10000)

@@ -66,79 +66,90 @@ def color_text(text, color):
 #参数设置
 T=10000
 kB=8.617330350e-5 #eV/K
-#-----数据导入-----
-folder_path = r'D:\LIBS\RREdetectation\Elements_database' #元素库路径
-folder_path2 =r'D:\LIBS\RREdetectation\Rareearth' #稀土元素光谱路径
+
 
 #----必备函数定义----
 #玻尔兹曼图拟合 返回斜率，截距，温度，y
 def Boltzmann_fit(I, wl, A, g, E):
+    # Filter invalid / non-positive values to avoid log and fit failures
+    mask = (
+        np.isfinite(I) & np.isfinite(wl) & np.isfinite(A) & np.isfinite(g) & np.isfinite(E) &
+        (I > 0) & (wl > 0) & (A > 0) & (g > 0)
+    )
+    I = I[mask]
+    wl = wl[mask]
+    A = A[mask]
+    g = g[mask]
+    E = E[mask]
+
+    if len(E) < 2:
+        return 0, 0, 0, 0, np.array([])
+
     y = np.log(I*wl / (g * A))
-    
-    # 线性拟合
-    coefficients = np.polyfit(E, y, 1)  # slope斜率 intercept截距
-    slope, intercept = coefficients
-    T = -1 / (slope * kB)  # 温度计算
-    
-    # 计算 R²
+
+    try:
+        slope, intercept = np.polyfit(E, y, 1)  # slope/intercept
+    except np.linalg.LinAlgError:
+        return 0, 0, 0, 0, y
+
+    T = -1 / (slope * kB)
+
     y_fit = slope * E + intercept
-    ss_res = np.sum((y - y_fit) ** 2)  # 残差平方和
-    ss_tot = np.sum((y - np.mean(y)) ** 2)  # 总平方和
-    R2 = 1 - (ss_res / ss_tot)
-    
+    ss_res = np.sum((y - y_fit) ** 2)
+    ss_tot = np.sum((y - np.mean(y)) ** 2)
+    R2 = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0
+
     return slope, intercept, T, R2, y
 
 def Boltzmann_fit_iterative(I, wl, A, g, E,R2_threshold=1e-1,R2_start_threshold=0.97,max_iter=5,verbose=False):
-    """
-    迭代 Boltzmann 拟合（删除偏差最大点）
-    同步删除所有变量：I, wl, A, g, E
-    """
-
-    # 转 numpy
+    """Iterative Boltzmann fit with outlier removal."""
     I = np.array(I, float)
     wl = np.array(wl, float)
     A = np.array(A, float)
     g = np.array(g, float)
     E = np.array(E, float)
 
-    N = len(E)
-    idx = np.arange(N)
+    mask = (
+        np.isfinite(I) & np.isfinite(wl) & np.isfinite(A) & np.isfinite(g) & np.isfinite(E) &
+        (I > 0) & (wl > 0) & (A > 0) & (g > 0)
+    )
+    I, wl, A, g, E = I[mask], wl[mask], A[mask], g[mask], E[mask]
 
-    # ---- 初次拟合 ----
+    if len(E) < 2:
+        return 0, 0, 0, 0, np.array([]), E, wl, I, A, g
+
+    def _fit_once(Ev, yv):
+        try:
+            return np.polyfit(Ev, yv, 1)
+        except np.linalg.LinAlgError:
+            return None
+
     y = np.log(I * wl / (g * A))
-
-    slope, intercept = np.polyfit(E, y, 1)
+    fit = _fit_once(E, y)
+    if fit is None:
+        return 0, 0, 0, 0, y, E, wl, I, A, g
+    slope, intercept = fit
     y_pred = slope * E + intercept
 
     ss_res = np.sum((y - y_pred)**2)
     ss_tot = np.sum((y - np.mean(y))**2)
-    R2_init = 1 - ss_res / ss_tot
+    R2_init = 1 - ss_res / ss_tot if ss_tot != 0 else 0
 
     if verbose:
-        print(f"[Init] R²={R2_init:.5f}")
+        print(f"[Init] R2={R2_init:.5f}")
 
-    # ---- 若初始 R² 已够好 → 不迭代 ----
     if R2_init >= R2_start_threshold:
         T = -1/(slope*kB)
-        return slope, intercept, T, R2_init, \
-               y, E, wl, I, A, g
+        return slope, intercept, T, R2_init, y, E, wl, I, A, g
 
-    # ---- 迭代删除最差点 ----
     R2_prev = R2_init
 
     for it in range(max_iter):
-
         y = np.log(I * wl / (g * A))
         y_pred = slope * E + intercept
         residuals = y - y_pred
-
-        # 找到偏差最大的点
         worst = np.argmax(np.abs(residuals))
 
-        if verbose:
-            print(f"[Iter {it+1}] remove index {worst}, resid={residuals[worst]:.5f}")
-
-        # 同步删除所有变量
         I = np.delete(I, worst)
         wl = np.delete(wl, worst)
         A = np.delete(A, worst)
@@ -148,31 +159,28 @@ def Boltzmann_fit_iterative(I, wl, A, g, E,R2_threshold=1e-1,R2_start_threshold=
         if len(E) < 2:
             break
 
-        # 重新拟合
         y = np.log(I * wl / (g * A))
-        slope, intercept = np.polyfit(E, y, 1)
+        fit = _fit_once(E, y)
+        if fit is None:
+            break
+        slope, intercept = fit
         y_pred = slope * E + intercept
 
         ss_res = np.sum((y - y_pred)**2)
         ss_tot = np.sum((y - np.mean(y))**2)
-        R2_new = 1 - ss_res / ss_tot
+        R2_new = 1 - ss_res / ss_tot if ss_tot != 0 else 0
 
         delta_R2 = abs(R2_new - R2_prev)
-
         if verbose:
-            print(f"    R²={R2_new:.5f}, ΔR²={delta_R2:.6f}")
+            print(f"    R2={R2_new:.5f}, dR2={delta_R2:.6f}")
 
         if delta_R2 < R2_threshold:
             break
 
         R2_prev = R2_new
 
-    # ---- 最终温度 ----
-    T = -1/(slope*kB)
-
-    # 返回所有删点后的数据
-    return slope, intercept, T, R2_prev, \
-           np.log(I * wl / (g * A)), E, wl, I, A, g
+    T = -1/(slope*kB) if slope != 0 else 0
+    return slope, intercept, T, R2_prev, np.log(I * wl / (g * A)), E, wl, I, A, g
 
 def Boltzmann_plot(matched_i, matched_wl, element_A, element_E, element_g, element_wl,element_name):
 
@@ -624,21 +632,35 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
     return match_results,final_results,final_T,final_R2,elements_confidence
 
  
+
+ #-----数据导入-----
+
+#数据库导入
+folder_path = r'D:\LIBS\RREdetectation\Elements_database' #元素库路径
+folder_path2 =r'D:\LIBS\RREdetectation\Rareearth' #稀土元素光谱路径
+
 #-----主程序-----
-elements,elements_list=elements_database_pt2(folder_path2,T)
+elements_main,elements_main_list=elements_database_pt2(folder_path,T) #通过调节path/path2可以达成基础元素还是稀土元素mode
+elements_rareearth,elements_rareearth_list=elements_database_pt2(folder_path2,T) #后续会调整为line_switch
+
 signal_path1= r'D:\LIBS\RREdetectation\SpecSimuDatabase' #普通元素光谱数据库   a.t%
 signal_path2= r'D:\LIBS\RREdetectation\Rareearth\Spectrum' #稀土元素光谱100%   a.t%
 signal_path3= r'D:\LIBS\RREdetectation\RREs' #岩石基体95%+稀土元素光谱5%   a.t%
 signal_path4= r'D:\LIBS\RREdetectation\RREs\last3' #Sm、Tb、Gd最后三种的高接纳度测试
-I_file_list = glob.glob(os.path.join(signal_path4, "*.csv"))
-I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
-target_files=['07121_98'] #待测光谱文件名列表（不带扩展名）
 
+target_path=signal_path3
+
+I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
+I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
+
+target_files=['03116_95'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr'
-specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素
+specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
+checkallbutton=False #是否检测文件内的全部光谱 （全文件）
 plotbotton=True #是否绘图展示Boltzmann图
-plottarget='YbII' #Boltzmann图绘制目标元素
-checkallbutton=False #是否检测文件内的全部光谱
+plottarget='LuII' #Boltzmann图绘制目标元素
+
+
 
 # 绘图模式开启时强制关闭 specify、checkall，仅输出目标图像但全量跑文件
 if plotbotton:
@@ -654,7 +676,10 @@ else:
     files_to_process = [name for name in I_elements_list if name in target_files]
 
 for I_element_name in files_to_process:
-    data=pd.read_csv(os.path.join(signal_path4, I_element_name + ".csv"),header=0,skipinitialspace=True)#待测光谱路径
+    #先对基体元素进行分析
+
+
+    data=pd.read_csv(os.path.join(target_path, I_element_name + ".csv"),header=0,skipinitialspace=True)#待测光谱路径
     data = data.fillna(0).to_numpy()
     data = np.nan_to_num(data, nan=0.0)
     x = data[:, 0]
@@ -663,19 +688,22 @@ for I_element_name in files_to_process:
     intensity_ionized=data[:,3]
     true_peak_idx, peak_wl, peak_int = wavelet_peak_detection(signal,x,wavelet='mexh', scales=np.arange(1, 11), 
                                neighbor=4, min_length=3, coeffi_threshold=700, window=5)#峰值校正
+    #particle_main,elements_main,elements_T_main,elements_R2_main,elements_confidence_main=compute_element_confidence_shape(elements_main, peak_wl, peak_int,x,intensity_sum,
+     #                                                                                           scope=0.2,plot=plotbotton,target=plottarget)
+    
 
-    particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements, peak_wl, peak_int,x,intensity_sum,
+    particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements_rareearth, peak_wl, peak_int,x,intensity_sum,
                                                                                                 scope=0.2,plot=plotbotton,target=plottarget)
     
-    print("\n---" ,I_element_name, "---") 
-    # # # 粒子
-    # print("--- 粒子层面 ---\n")
-    # for elem, distance in sorted(particle_result.items(), key=lambda x: x[1]):
-    #     print(f"{elem}: 距离 = {distance:.4f}")
+    
+    # print(elements_result,type(elements_result))
+    # print(elements_confidence,type(elements_confidence))
 
+    print("\n---" ,I_element_name, "---") 
     # 元素+置信度
     print("--- 元素层面（距离 + 置信度） ---")
     sorted_elems = sorted(elements_result.keys(), key=lambda x: elements_result[x])
+    #输出显示部分
     if specifybotton:
         for elem in sorted_elems:
             if elem != target_element:
