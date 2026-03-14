@@ -111,11 +111,11 @@ for elements_name in elements_list:
                 df.loc[match_mask, target_col] = pure_elem
 
     # 无论是否有冲突，直接覆盖原目录中的文件
-    df.to_csv(os.path.join(folder_path, elements_name + ".csv"), index=False, encoding="gbk")
-    # #在新的文件夹中保存
-    # os.makedirs(output_path, exist_ok=True)
-    #output_path = r'D:\LIBS\RREdetectation\Rareeath_conflicts' #冲突谱线的输出路径
-    # df.to_csv(os.path.join(output_path, elements_name + ".csv"), index=False, encoding="gbk")
+    # df.to_csv(os.path.join(folder_path, elements_name + ".csv"), index=False, encoding="gbk")
+    #在新的文件夹中保存
+    os.makedirs(output_path, exist_ok=True)
+    output_path = r'D:\LIBS\RREdetectation\Rareearth_pt2' #冲突谱线的输出路径
+    df.to_csv(os.path.join(output_path, elements_name + ".csv"), index=False, encoding="gbk")
    
 
 

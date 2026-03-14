@@ -78,8 +78,11 @@ def elements_database_pt2(folder_path, T):
             enable_mask = enable_flag.isna() | (
                 enable_flag.astype(str).str.strip().str.upper().isin(["", "Y"])
             )
+         
+  
         else:
-            enable_mask = pd.Series(True, index=df.index)
+            enable_mask = pd.Series(True, index=df.index) #problem
+            
 
         # ===============================
         # ② 强制转数值（核心）
@@ -138,7 +141,7 @@ def elements_database_pt2(folder_path, T):
     return elements, elements_list
 
 #目前的想法是main_elements是一个列表，里面包含了岩石基体元素
-def elements_database_lineswitch(folder_path, T,main_elements):
+def elements_database_lineswitch(folder_path, T, main_elements, LineSwitchMode=False):
     file_list = glob.glob(os.path.join(folder_path, "*.csv"))
     elements_list = [os.path.splitext(os.path.basename(f))[0] for f in file_list]
     elements = {}
@@ -146,26 +149,30 @@ def elements_database_lineswitch(folder_path, T,main_elements):
         file_path = os.path.join(folder_path, element_name + ".csv")
 
         # 读取 CSV
-        df = pd.read_csv(file_path, header=1, encoding="gbk")
+        df = pd.read_csv(file_path, header=0, encoding="gbk")
 
         # 只取偶数行
         df = df.iloc[1::2].copy()
-
-
         wl = df.iloc[:, 1]
         A  = df.iloc[:, 2]
         E  = df.iloc[:, 3]
         g  = df.iloc[:, 7]
+        
         if df.shape[1] > 9:
             enable_flag = df.iloc[:, 8]
             pure_element_flag = df.iloc[:, 9]
             main_elements_normalized = {str(m).strip().upper() for m in main_elements} #基体元素全集
             normalized_pure_element = pure_element_flag.astype(str).str.strip().str.upper()
-            enable_mask = (
+            base_mask = (
                 enable_flag.isna()
                 | enable_flag.astype(str).str.strip().str.upper().isin(["", "Y"])
-                | ~normalized_pure_element.isin(main_elements_normalized)
             )
+            has_pure_flag = pure_element_flag.notna() & normalized_pure_element.ne("")
+            non_matrix_pure = ~normalized_pure_element.isin(main_elements_normalized)
+            if LineSwitchMode:
+                enable_mask = base_mask | (has_pure_flag & non_matrix_pure)
+            else:
+                enable_mask = base_mask
         else:
             enable_mask = pd.Series(True, index=df.index)
 
