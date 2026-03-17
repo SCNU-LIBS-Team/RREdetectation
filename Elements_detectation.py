@@ -229,54 +229,7 @@ def Boltzmann_plot(matched_i, matched_wl, element_A, element_E, element_g, eleme
     else:
         print(f"{element_name} 匹配峰数不足，无法绘制玻尔兹曼图。")
 
-# #匹配峰策略
-# def used_match_spectral_lines(elements,scope):
-#         #遍历每一个粒子
-#     for element_name, element_data in elements.items():
-#         element_matrix = element_data["data"]
-#         element_wl = element_matrix[:, 0]
-#         element_intensity = element_matrix[:, 1]
 
-#         #强度（计算O_distance 用）
-#         theo_vec = [] 
-#         exp_vec = []
-#         # 匹配成功的谱线（波长+强度）(绘图用)
-#         matched_theo = []  # 保存匹配成功的理论谱线
-#         matched_exp = []   # 保存匹配成功的实验谱线
-#         # 初始化实验峰匹配标记
-#         matched_flag = np.zeros(len(peak_wl), dtype=bool)
-
-#         for sim_wl, sim_int in zip(element_wl, element_intensity):
-#             # 找到最接近的实验峰
-#             available_idx = np.where(~matched_flag)[0]
-#             if len(available_idx) == 0:
-#                 theo_vec.append(0)
-#                 exp_vec.append(0)
-#                 continue
-
-
-#             nearest_idx = available_idx[np.argmin(np.abs(peak_wl[available_idx] - sim_wl))]
-#             diff = abs(peak_wl[nearest_idx] - sim_wl)
-
-#             if diff <= scope:
-#                 # 匹配成功
-#                 theo_vec.append(sim_int)
-#                 exp_vec.append(peak_int[nearest_idx])
-#                 matched_theo.append((sim_wl, sim_int))
-#                 matched_exp.append((peak_wl[nearest_idx], peak_int[nearest_idx]))
-#                 matched_flag[nearest_idx] = True
-#             else:
-#                 # 匹配失败：理论有谱线，实验没有 → 实验强度记为0 （匹配失败策略待完善）
-#                 theo_vec.append(0)#（可以设置为0或者是平均值什么的）
-#                 exp_vec.append(0)
-
-#         theo_vec = np.array(theo_vec)
-#         exp_vec = np.array(exp_vec)
-#         N_total = len(element_wl)
-#         N_matched = len(matched_exp)
-#         match_ratio = N_matched / N_total if N_total > 0 else 0 # 匹配率
-
-#     return theo_vec, exp_vec, matched_theo, matched_exp
         
 #匈牙利算法线匹配策略
 def match_spectral_lines(theo_wl, theo_int, exp_wl, exp_int, scope):
@@ -653,16 +606,16 @@ signal_path2= r'D:\LIBS\RREdetectation\Rareearth\Spectrum' #稀土元素光谱10
 signal_path3= r'D:\LIBS\RREdetectation\RREs' #岩石基体95%+稀土元素光谱5%   a.t%
 signal_path4= r'D:\LIBS\RREdetectation\RREs\last3' #Sm、Tb、Gd最后三种的高接纳度测试
 
-target_path=signal_path3
+target_path=signal_path4
 
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 
-target_files=['03116_95'] #待测光谱文件名列表（不带扩展名）
+target_files=['07162_98'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr'
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=False #是否检测文件内的全部光谱 （全文件）
-plotbotton=True #是否绘图展示Boltzmann图
+checkallbutton=False#是否检测文件内的全部光谱 （全文件）
+plotbotton=False #是否绘图展示Boltzmann图
 plottarget='LaII' #Boltzmann图绘制目标元素
 
 
@@ -698,21 +651,23 @@ for I_element_name in files_to_process:
     
 
     elements_rockmain = []
-    print(elements_confidence_main,type(elements_confidence_main))
+    # print(elements_confidence_main,type(elements_confidence_main))
     for elem, conf in elements_confidence_main.items():
         if conf>0.85:
             elements_rockmain.append(elem)
-    print(elements_rockmain)
+    # print(elements_rockmain)
  
 
     #elements_database_line_switch header=1
-    elements_rareearth,elements_rareearth_list=elements_database_lineswitch(folder_path2,T,elements_rockmain,LineSwitchMode=False) #后续会调整为line_switch
+    elements_rareearth,elements_rareearth_list=elements_database_lineswitch(folder_path2,T,elements_rockmain,LineSwitchMode=False) 
     particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements_rareearth, peak_wl, peak_int,x,intensity_sum,
                                                                                                 scope=0.2,plot=plotbotton,target=plottarget)
     
     
     # print(elements_result,type(elements_result))
     # print(elements_confidence,type(elements_confidence))
+
+
 
     print("\n---" ,I_element_name, "---") 
     # 元素+置信度
