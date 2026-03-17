@@ -10,7 +10,7 @@ import pywt
 import matplotlib.pyplot as plt
 from Wavelet_peakfinding import find_peaks_ridge,wavelet_peak_detection
 
-THRESHOLD = 0.2  # nm distance allowed between catalog line and detected peak
+THRESHOLD = 0.15  # nm distance allowed between catalog line and detected peak
 
 folder_path = r'D:\LIBS\RREdetectation\Rareearth' #元素谱线库的路径
 folder_path2=r'D:\LIBS\RREdetectation\PureMainElems' #冲突谱线的输出路径
@@ -97,6 +97,8 @@ for elements_name in elements_list:
         if df.shape[1] <= 9:
             df.insert(loc=df.shape[1], column="conflict_elem", value=np.nan) #新建列
         target_col = df.columns[-1]  # 最后一列列名
+        # 确保目标列可以写入字符串，否则 pandas 会提示类型不兼容
+        df[target_col] = df[target_col].astype(object)
 
 
         # 将冲突峰值对应的基体元素写回谱线表
@@ -113,8 +115,8 @@ for elements_name in elements_list:
     # 无论是否有冲突，直接覆盖原目录中的文件
     # df.to_csv(os.path.join(folder_path, elements_name + ".csv"), index=False, encoding="gbk")
     #在新的文件夹中保存
+    output_path = r'D:\LIBS\RREdetectation\Rareearth_pt3' #冲突谱线的输出路径
     os.makedirs(output_path, exist_ok=True)
-    output_path = r'D:\LIBS\RREdetectation\Rareearth_pt2' #冲突谱线的输出路径
     df.to_csv(os.path.join(output_path, elements_name + ".csv"), index=False, encoding="gbk")
    
 
