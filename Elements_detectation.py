@@ -182,7 +182,7 @@ def Boltzmann_fit_iterative(I, wl, A, g, E,R2_threshold=1e-1,R2_start_threshold=
     T = -1/(slope*kB) if slope != 0 else 0
     return slope, intercept, T, R2_prev, np.log(I * wl / (g * A)), E, wl, I, A, g
 
-def Boltzmann_plot(matched_i, matched_wl, element_A, element_E, element_g, element_wl,element_name):
+def Boltzmann_plot(matched_i, matched_wl, element_A, element_E, element_g, element_wl,element_name,mode='normal'):
 
 #参数说明:matched_theo匹配到的理论谱线  matched_exp匹配到的实验谱线  element_A元素的A  element_E元素的E  element_g元素的g  element_wl元素的波长列表  element_name元素名称
 #用途说明：检测匹配点并且绘制玻尔兹曼图
@@ -204,27 +204,37 @@ def Boltzmann_plot(matched_i, matched_wl, element_A, element_E, element_g, eleme
         A_sel = np.array(A_sel, dtype=float)
         g_sel = np.array(g_sel, dtype=float)
         E_sel = np.array(E_sel, dtype=float)
-
+        if mode=='normal':
         # 玻尔兹曼拟合
-        slope, intercept, T_fit,R2, y_full = Boltzmann_fit(matched_I, matched_wl,A_sel, g_sel, E_sel)
-        # slope, intercept, T_fit,R2, y_full, y_used = Boltzmann_fit_iterative(matched_I, matched_wl,A_sel, g_sel, E_sel,R2_start_threshold=0.97,max_iter=5,verbose=False)
-        # print(f"拟合温度 T = {T_fit:.2f} K, 斜率 = {slope:.3f}")
-        
+            slope, intercept, T_fit,R2, y_full = Boltzmann_fit(matched_I, matched_wl,A_sel, g_sel, E_sel)
+            # slope, intercept, T_fit,R2, y_full, y_used = Boltzmann_fit_iterative(matched_I, matched_wl,A_sel, g_sel, E_sel,R2_start_threshold=0.97,max_iter=5,verbose=False)
+            # print(f"拟合温度 T = {T_fit:.2f} K, 斜率 = {slope:.3f}")
+            plt.figure(figsize=(6,4))
+            plt.scatter(E_sel, y_full, c='r', label='Used Points')
+            plt.plot(E_sel, slope * E_sel + intercept, 'b--',label=f'Fit T={T_fit:.1f} K, R2={R2:.3f}')
+            plt.xlabel('E (eV)')
+            plt.ylabel('ln(I / (g·A))')
+            plt.title(f'{element_name} Boltzmann Plot')
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+            # plt.minorticks_on()
+            plt.tick_params(axis='both', which='both', direction='in',top=True, right=True)
+        if mode=='iterative':
         #绘图
-        slope, intercept, T_fit, R2, y_used, E_used, wl_used, I_used, A_used, g_used = \
-            Boltzmann_fit_iterative(matched_I, matched_wl, A_sel, g_sel, E_sel,
-                                    R2_start_threshold=0.1, max_iter=1, verbose=False)
+            slope, intercept, T_fit, R2, y_used, E_used, wl_used, I_used, A_used, g_used = \
+                Boltzmann_fit_iterative(matched_I, matched_wl, A_sel, g_sel, E_sel,
+                                        R2_start_threshold=0.1, max_iter=1, verbose=False)
 
-        plt.figure(figsize=(6,4))
-        plt.scatter(E_used, y_used, c='r', label='Used Points')
-        plt.plot(E_used, slope * E_used + intercept, 'b--',label=f'Fit T={T_fit:.1f} K, R2={R2:.3f}')
-        plt.xlabel('E (eV)')
-        plt.ylabel('ln(I / (g·A))')
-        plt.title(f'{element_name} Boltzmann Plot')
-        plt.legend()
-        plt.grid(True, alpha=0.3)
-        # plt.minorticks_on()
-        plt.tick_params(axis='both', which='both', direction='in',top=True, right=True)
+            plt.figure(figsize=(6,4))
+            plt.scatter(E_used, y_used, c='r', label='Used Points')
+            plt.plot(E_used, slope * E_used + intercept, 'b--',label=f'Fit T={T_fit:.1f} K, R2={R2:.3f}')
+            plt.xlabel('E (eV)')
+            plt.ylabel('ln(I / (g·A))')
+            plt.title(f'{element_name} Boltzmann Plot')
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+            # plt.minorticks_on()
+            plt.tick_params(axis='both', which='both', direction='in',top=True, right=True)
         
     else:
         print(f"{element_name} 匹配峰数不足，无法绘制玻尔兹曼图。")
@@ -445,6 +455,7 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
             slope,intecept,T_fit_iterative,R2_itertative,y,E_iterative,wl_iterative,I_iterative,A_iterative,g_iterative=Boltzmann_fit_iterative(matched_I, matched_wl, element_A[matched_idx], element_g[matched_idx], element_E[matched_idx],R2_start_threshold=0.97, max_iter=3, verbose=False)
             
             Boltzmann_T[element_name] = T_fit
+           
             Boltzmann_R2[element_name] = R2
             Boltzmann_linecounts[element_name]= len(matched_theo)
 
@@ -516,9 +527,9 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
             # plt.minorticks_on()
             plt.tick_params(axis='both', which='both', direction='in',top=True, right=True)
 
-            Boltzmann_plot(matched_exp, matched_theo, element_A, element_E, element_g, element_wl,element_name)
+            Boltzmann_plot(matched_exp, matched_theo, element_A, element_E, element_g, element_wl,element_name,mode='normal')
             iterative_combined = np.column_stack((wl_iterative, I_iterative))
-            Boltzmann_plot(iterative_combined, iterative_combined, A_iterative, E_iterative, g_iterative, wl_iterative,element_name+"_iterative")
+            Boltzmann_plot(iterative_combined, iterative_combined, A_iterative, E_iterative, g_iterative, wl_iterative,element_name+"_iterative", mode='iterative')
             plt.show()
 
         match_results[element_name] = O_distance
@@ -571,11 +582,15 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
             final_R2[base_elem] = selected_R2
 
         else: #如果element_T同时为空
+            # if base_elem=='Si': #特殊元素判据
+            #     print(f"{base_elem}没有有效温度，无法计算置信度。")
             final_T[base_elem] = 0
             final_R2[base_elem] = 0
           
 #反归一化置信度输出
     for elem, distances in final_results.items():
+        if elem=='Ca': #特殊元素判据
+            print(f"{elem}的距离为{distances}，R2为{final_R2[elem]}，T为{final_T[elem]}")
         if distances<10000 and final_R2[elem]>0:
             #elements_confidence[elem]=1/(1+distances) #倒数映射
             elements_confidence[elem]=np.exp(-1.5*distances/final_R2[elem]) #指数映射
@@ -583,7 +598,8 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
                 elements_confidence[elem]=0
         else:
             elements_confidence[elem]=0
-
+            # if elem=='Ca': #特殊元素判据
+            #    print('1')
     return match_results,final_results,final_T,final_R2,elements_confidence
 
  
@@ -612,12 +628,12 @@ target_path=signal_path5
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 
-target_files=['070159_95'] #待测光谱文件名列表（不带扩展名）
+target_files=['070036_95'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr'
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=False#是否检测文件内的全部光谱 （全文件）
-plotbotton=False#是否绘图展示Boltzmann图
-plottarget='LaII' #Boltzmann图绘制目标元素
+plotbotton=True#是否绘图展示Boltzmann图
+plottarget='TiII' #Boltzmann图绘制目标元素
 
 
 
@@ -650,11 +666,10 @@ for I_element_name in files_to_process:
     particle_main,elements_main,elements_T_main,elements_R2_main,elements_confidence_main=compute_element_confidence_shape(elements_main, peak_wl, peak_int,x,intensity_sum,
                                                                                           scope=0.2,plot=plotbotton,target=plottarget)
     
-
+    print(elements_confidence_main)
     elements_rockmain = []
-    # print(elements_confidence_main,type(elements_confidence_main))
     for elem, conf in elements_confidence_main.items():
-        if conf>0.85:
+        if conf>0.7: #置信度阈值
             elements_rockmain.append(elem)
     print(elements_rockmain)
  
