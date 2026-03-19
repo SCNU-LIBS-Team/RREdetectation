@@ -27,6 +27,7 @@ def _has_matrix_pure_elements(cell_value, main_elements_normalized):
     tokens = _split_pure_elements(cell_value)
     if not tokens:
         return False
+    return any(token in main_elements_normalized for token in tokens)
 
 def U_Calculate(g,A,E,T):
     U=np.zeros(len(g))

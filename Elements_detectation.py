@@ -5,6 +5,7 @@ import glob
 import os
 import pywt
 import matplotlib.pyplot as plt
+import warnings
 from collections import defaultdict
 from Wavelet_peakfinding import find_peaks_ridge,peak_correction,wavelet_peak_detection #寻峰
 from Elements_Combfact import elements_database, elements_database_pt2,elements_database_lineswitch#元素库制作
@@ -67,6 +68,35 @@ def color_text(text, color):
 T=10000
 kB=8.617330350e-5 #eV/K
 
+def _safe_linear_polyfit(Ev, yv):
+    Ev = np.asarray(Ev, dtype=float)
+    yv = np.asarray(yv, dtype=float)
+
+    if Ev.size < 2 or yv.size < 2 or Ev.size != yv.size:
+        return None
+    if not (np.isfinite(Ev).all() and np.isfinite(yv).all()):
+        return None
+    if np.unique(Ev).size < 2:
+        return None
+
+    spread = np.ptp(Ev)
+    scale = max(1.0, float(np.max(np.abs(Ev))))
+    if spread <= np.finfo(float).eps * scale:
+        return None
+
+    try:
+        with warnings.catch_warnings():
+            if hasattr(np, "RankWarning"):
+                warnings.simplefilter("error", np.RankWarning)
+            warnings.filterwarnings(
+                "error",
+                message="invalid value encountered in divide",
+                category=RuntimeWarning,
+            )
+            return np.polyfit(Ev, yv, 1)
+    except (np.linalg.LinAlgError, RuntimeWarning):
+        return None
+
 
 #----必备函数定义----
 #玻尔兹曼图拟合 返回斜率，截距，温度，y
@@ -87,12 +117,12 @@ def Boltzmann_fit(I, wl, A, g, E):
 
     y = np.log(I*wl / (g * A))
 
-    try:
-        slope, intercept = np.polyfit(E, y, 1)  # slope/intercept
-    except np.linalg.LinAlgError:
+    fit = _safe_linear_polyfit(E, y)
+    if fit is None:
         return 0, 0, 0, 0, y
+    slope, intercept = fit
 
-    T = -1 / (slope * kB)
+    T = -1 / (slope * kB) if slope != 0 else 0
 
     y_fit = slope * E + intercept
     ss_res = np.sum((y - y_fit) ** 2)
@@ -119,10 +149,7 @@ def Boltzmann_fit_iterative(I, wl, A, g, E,R2_threshold=1e-1,R2_start_threshold=
         return 0, 0, 0, 0, np.array([]), E, wl, I, A, g
 
     def _fit_once(Ev, yv):
-        try:
-            return np.polyfit(Ev, yv, 1)
-        except np.linalg.LinAlgError:
-            return None
+        return _safe_linear_polyfit(Ev, yv)
 
     y = np.log(I * wl / (g * A))
     fit = _fit_once(E, y)
@@ -139,7 +166,7 @@ def Boltzmann_fit_iterative(I, wl, A, g, E,R2_threshold=1e-1,R2_start_threshold=
         print(f"[Init] R2={R2_init:.5f}")
 
     if R2_init >= R2_start_threshold:
-        T = -1/(slope*kB)
+        T = -1/(slope*kB) if slope != 0 else 0
         return slope, intercept, T, R2_init, y, E, wl, I, A, g
 
     R2_prev = R2_init
@@ -589,8 +616,8 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
           
 #反归一化置信度输出
     for elem, distances in final_results.items():
-        if elem=='Ca': #特殊元素判据
-            print(f"{elem}的距离为{distances}，R2为{final_R2[elem]}，T为{final_T[elem]}")
+        # if elem=='Ca': #特殊元素判据
+        #     print(f"{elem}的距离为{distances}，R2为{final_R2[elem]}，T为{final_T[elem]}")
         if distances<10000 and final_R2[elem]>0:
             #elements_confidence[elem]=1/(1+distances) #倒数映射
             elements_confidence[elem]=np.exp(-1.5*distances/final_R2[elem]) #指数映射
@@ -628,12 +655,13 @@ target_path=signal_path5
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 
-target_files=['07840_95'] #待测光谱文件名列表（不带扩展名）
+target_files=['070171_95'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr'
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=False#是否检测文件内的全部光谱 （全文件）
-plotbotton=True#是否绘图展示Boltzmann图
-plottarget='TiII' #Boltzmann图绘制目标元素
+plotbotton=False#是否绘图展示Boltzmann图
+LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
+plottarget='CaII' #Boltzmann图绘制目标元素
 
 
 
@@ -675,7 +703,7 @@ for I_element_name in files_to_process:
  
 
     #elements_database_line_switch header=1
-    elements_rareearth,elements_rareearth_list=elements_database_lineswitch(folder_path2,T,elements_rockmain,LineSwitchMode=False) 
+    elements_rareearth,elements_rareearth_list=elements_database_lineswitch(folder_path2,T,elements_rockmain,LineSwitchMode) 
     particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements_rareearth, peak_wl, peak_int,x,intensity_sum,
                                                                                                 scope=0.2,plot=plotbotton,target=plottarget)
     
