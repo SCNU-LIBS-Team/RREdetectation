@@ -628,11 +628,11 @@ target_path=signal_path5
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 
-target_files=['070036_95'] #待测光谱文件名列表（不带扩展名）
+target_files=['070171_95'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr'
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=False#是否检测文件内的全部光谱 （全文件）
-plotbotton=True#是否绘图展示Boltzmann图
+plotbotton=False#是否绘图展示Boltzmann图
 plottarget='TiII' #Boltzmann图绘制目标元素
 
 
