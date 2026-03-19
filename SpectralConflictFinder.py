@@ -58,22 +58,19 @@ for element_name in elements_list:
                                neighbor=4, min_length=3, coeffi_threshold=700, window=5)#峰值校正
         
 
-        # 找到所有距离任意参考谱线小于 THRESHOLD 的峰值
+        # 找到所有距离任意参考谱线小于 THRESHOLD 的峰值组合（不是只取最近一条）
         if peak_wl.size and wl.size:
             diff = np.abs(peak_wl[:, None] - wl[None, :])
-            min_diff = diff.min(axis=1)
-            close_mask = min_diff < THRESHOLD
-            if close_mask.any():
-                nearest_ref_idx = diff.argmin(axis=1)
-                for i in np.where(close_mask)[0]:
-                    conflicts.append({
-                        "rareearth": element_name,
-                        "pure_elem": PureElem_name,
-                        "ref_wl": wl[nearest_ref_idx[i]],
-                        "peak_wl": peak_wl[i],
-                        "delta": float(min_diff[i]),
-                    })
-                # print(f"{PureElem_name} 与 {element_name} 存在 {close_mask.sum()} 条距离<{THRESHOLD}nm 的冲突峰")  
+            peak_idx, ref_idx = np.where(diff < THRESHOLD)
+            for i, j in zip(peak_idx, ref_idx):
+                conflicts.append({
+                    "rareearth": element_name,
+                    "pure_elem": PureElem_name,
+                    "ref_wl": wl[j],
+                    "peak_wl": peak_wl[i],
+                    "delta": float(diff[i, j]),
+                })
+                # print(f"{PureElem_name} 与 {element_name} 存在 {len(peak_idx)} 条距离<{THRESHOLD}nm 的冲突峰")  
 
 # for c in conflicts:
 #     print(c)
