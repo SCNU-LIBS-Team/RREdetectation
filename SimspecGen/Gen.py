@@ -6,10 +6,11 @@ import os
 
 
 contents=pd.read_csv(r"D:\LIBS\RREdetectation\SimspecGen\saved\contents.csv")
-elements_main=['Si', 'Al', 'Fe','Ca','K','Na','Mg','Cr','Cu','Mn','Zn','Ti','Ni','Mo','C','Li','Pb']
-elements_rareearth=['Lu','La','Y','Pr','Sm','Eu','Tb','Ho','Er','Tm','Yb']
-elements=elements_main + elements_rareearth
+
 for i in range(0, len(contents)):
+    elements_main=['Si', 'Al', 'Fe','Ca','K','Na','Mg','Cr','Cu','Mn','Zn','Ti','Ni','Mo','C','Li','Pb']
+    elements_rareearth=['Lu','La','Y','Pr','Sm','Eu','Tb','Ho','Er','Tm','Yb']
+    elements=elements_main + elements_rareearth
     file_name=contents.iloc[i, 0]
     file_name = str(contents.iloc[i, 0]).removeprefix("GBW")
     percentages_main=contents.iloc[i, 1:].tolist()
@@ -33,9 +34,9 @@ for i in range(0, len(contents)):
         upper_w=900,
         max_ion_charge=2,
         webscraping='dynamic',
-        headless=False,
-        keep_browser_open=True,
-        detach_browser=True
+        headless=True,
+        keep_browser_open=False,
+        detach_browser=False
     )
     save_dir = r"D:\LIBS\RREdetectation\SimspecGen\saved"
     libs.save_to_csv(os.path.join(save_dir, file_name + "_95.csv"))
