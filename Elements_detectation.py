@@ -649,19 +649,19 @@ signal_path2= r'D:\LIBS\RREdetectation\Rareearth\Spectrum' #稀土元素光谱10
 signal_path3= r'D:\LIBS\RREdetectation\RREs' #岩石基体95%+稀土元素光谱5%   a.t%
 signal_path4= r'D:\LIBS\RREdetectation\RREs\last3' #Sm、Tb、Gd最后三种的高接纳度测试
 signal_path5= r'D:\LIBS\RREdetectation\Rockbasespectral' #八大岩石基体元素检测
-
-target_path=signal_path5
+signal_path6= r'D:\LIBS\RREdetectation\Rockbasespectral_11' #八大岩石基体元素检测最后三种的高接纳度测试
+target_path=signal_path6
 
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 
-target_files=['070171_95'] #待测光谱文件名列表（不带扩展名）
+target_files=['07103_95'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr'
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=False#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
-plottarget='CaII' #Boltzmann图绘制目标元素
+plottarget='GdI' #Boltzmann图绘制目标元素
 
 
 
@@ -686,7 +686,7 @@ for I_element_name in files_to_process:
     x = data[:, 0]
     intensity_sum=data[:,1]
     signal=data[:,1]
-    intensity_ionized=data[:,3]
+    # intensity_ionized=data[:,3]
     true_peak_idx, peak_wl, peak_int = wavelet_peak_detection(signal,x,wavelet='mexh', scales=np.arange(1, 11), 
                                neighbor=4, min_length=3, coeffi_threshold=700, window=5)#峰值校正
     
@@ -694,7 +694,7 @@ for I_element_name in files_to_process:
     particle_main,elements_main,elements_T_main,elements_R2_main,elements_confidence_main=compute_element_confidence_shape(elements_main, peak_wl, peak_int,x,intensity_sum,
                                                                                           scope=0.2,plot=plotbotton,target=plottarget)
     
-    print(elements_confidence_main)
+    # print(elements_confidence_main)
     elements_rockmain = []
     for elem, conf in elements_confidence_main.items():
         if conf>0.7: #置信度阈值

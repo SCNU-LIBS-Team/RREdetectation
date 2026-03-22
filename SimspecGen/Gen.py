@@ -41,6 +41,7 @@ for i in range(0, len(contents)):
     save_dir = r"D:\LIBS\RREdetectation\SimspecGen\saved"
     libs.save_to_csv(os.path.join(save_dir, file_name + "_95.csv"))
     print( f'{file_name}_95.csv',"saved successfully.")
+    delay = 5  # 设置延迟时间，单位为秒
 
 # print(len(percentages))
 
