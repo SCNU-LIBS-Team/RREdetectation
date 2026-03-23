@@ -11,6 +11,7 @@ from Wavelet_peakfinding import find_peaks_ridge,peak_correction,wavelet_peak_de
 from Elements_Combfact import elements_database, elements_database_pt2,elements_database_lineswitch#元素库制作
 from scipy.optimize import linear_sum_assignment
 
+
 # terminal color helpers
 RESET = "\033[0m"
 BLUE = "\033[34m"
@@ -635,7 +636,7 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
 
 #数据库导入
 folder_path = r'D:\LIBS\RREdetectation\Elements_database' #元素库路径
-folder_path2 =r'D:\LIBS\RREdetectation\Rareearth_pt3' #稀土元素光谱路径 Lineswitch Mode（threshold=0.15nm）
+folder_path2 =r'D:\LIBS\RREdetectation\Rareearth_pt3' #稀土元素光谱路径 Lineswitch Mode（threshold=0.15nm）(pt2:0.2nm)
 
 #attention:elements_database_pt2 header=1 
 
@@ -650,18 +651,21 @@ signal_path3= r'D:\LIBS\RREdetectation\RREs' #岩石基体95%+稀土元素光谱
 signal_path4= r'D:\LIBS\RREdetectation\RREs\last3' #Sm、Tb、Gd最后三种的高接纳度测试
 signal_path5= r'D:\LIBS\RREdetectation\Rockbasespectral' #八大岩石基体元素检测
 signal_path6= r'D:\LIBS\RREdetectation\Rockbasespectral_11' #八大岩石基体元素检测最后三种的高接纳度测试
-target_path=signal_path6
+signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素光谱数据库最后三种的高接纳度测试
+target_path=signal_path7
 
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 
-target_files=['07103_95'] #待测光谱文件名列表（不带扩展名）
+target_files=['07111_95'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr'
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=False#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
-plottarget='GdI' #Boltzmann图绘制目标元素
+plottarget='DyII' #Boltzmann图绘制目标元素
+
+
 
 
 
