@@ -26,10 +26,10 @@ for i in range(0, len(contents)):
 
     libs = SimulatedLIBS(
         Te=0.86,
-        Ne=10**17,
+        Ne=10**16,
         elements=elements,
         percentages=percentages,
-        resolution=5000,
+        resolution=3000,
         low_w=200,
         upper_w=900,
         max_ion_charge=2,
