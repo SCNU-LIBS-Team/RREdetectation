@@ -173,6 +173,8 @@ def elements_database_lineswitch(folder_path, T, main_elements, LineSwitchMode=F
                 enable_flag.isna()
                 | enable_flag.astype(str).str.strip().str.upper().isin(["", "Y"])
             )
+
+
             has_pure_flag = pure_element_flag.notna() & normalized_pure_element.ne("")
             has_matrix_pure = pure_element_flag.apply(
                 lambda x: _has_matrix_pure_elements(x, main_elements_normalized)
@@ -185,8 +187,13 @@ def elements_database_lineswitch(folder_path, T, main_elements, LineSwitchMode=F
                 enable_mask = (base_mask | (has_pure_flag & non_matrix_pure)) & (~has_matrix_pure)
             else:
                 enable_mask = base_mask
-        else:
+        elif df.shape[1] == 9:
+            enable_flag = df.iloc[:, 8]
+            enable_mask=enable_flag.isna() | enable_flag.astype(str).str.strip().str.upper().isin(["", "Y"])
+
+        else: #此处注意！！！很可能错 也可用于debug
             enable_mask = pd.Series(True, index=df.index)
+            # print("Warning: No enable flag column found in {}, all lines will be considered enabled.".format(element_name))
 
 
         wl = pd.to_numeric(wl, errors="coerce")
