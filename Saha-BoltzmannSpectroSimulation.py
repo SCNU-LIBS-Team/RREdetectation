@@ -32,6 +32,17 @@ def Boltzmann_fit(I,wl, A, g, E):
     T = -1/(slope * kB)  # 温度计算
     return coefficients, slope, intercept, T, y
 
+
+def Saha_Boltzmann_fit(I_ion, I_atom, wl_ion, wl_atom, A_ion, A_atom, g_ion, g_atom, E_ion, E_atom, chi):
+    y = np.log((I_ion * wl_atom) / (I_atom * wl_ion) * (g_atom * A_atom) / (g_ion * A_ion))
+
+    # 线性拟合
+    coefficients = np.polyfit(E_ion - E_atom + chi, y, 1)
+    slope, intercept = coefficients
+    T = -1/(slope * kB)  # 温度计算
+    return coefficients, slope, intercept, T, y
+
+
 data=pd.read_csv(r'E:\工作文件\课题组激光诱导击穿光谱学习\LIBS-ElementRecogonise\10.22\Elements_database\CrI.csv',header=1,encoding="gbk")
 df=data.to_numpy()
 even_rows = df[1::2]
