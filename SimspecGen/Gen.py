@@ -27,8 +27,8 @@ def generate_spectra(mode,file_name):
                 percentages[-1] = 100.0 - sum(percentages[:-1])
 
             libs = SimulatedLIBS(
-                Te=0.86,
-                Ne=10**16,
+                Te=0.75,
+                Ne=10**17,
                 elements=elements,
                 percentages=percentages,
                 resolution=3000,
@@ -67,8 +67,8 @@ def generate_spectra(mode,file_name):
             percentages[-1] = 100.0 - sum(percentages[:-1])
 
         libs = SimulatedLIBS(
-            Te=0.86,
-            Ne=10**16,
+            Te=1.2,
+            Ne=10**17,
             elements=elements,
             percentages=percentages,
             resolution=3000,
@@ -82,4 +82,4 @@ def generate_spectra(mode,file_name):
         )
         delay = 5  # 设置延迟时间，单位为秒
 
-generate_spectra(mode='debug',file_name="07107")
+generate_spectra(mode='generate',file_name="07107")
