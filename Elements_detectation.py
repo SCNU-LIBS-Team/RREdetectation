@@ -66,7 +66,7 @@ def color_text(text, color):
 
 #-----预备-----
 #参数设置
-T=8700
+
 kB=8.617330350e-5 #eV/K
 
 def _safe_linear_polyfit(Ev, yv):
@@ -267,8 +267,6 @@ def Boltzmann_plot(matched_i, matched_wl, element_A, element_E, element_g, eleme
     else:
         print(f"{element_name} 匹配峰数不足，无法绘制玻尔兹曼图。")
 
-
-        
 #匈牙利算法线匹配策略
 def match_spectral_lines(theo_wl, theo_int, exp_wl, exp_int, scope):
 
@@ -638,13 +636,8 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
 folder_path = r'D:\LIBS\RREdetectation\Elements_database' #元素库路径
 folder_path2 =r'D:\LIBS\RREdetectation\Rareearth_pt3' #稀土元素光谱路径 Lineswitch Mode（threshold=0.15nm）(pt2:0.2nm)
 
+T_initial=8000
 #attention:elements_database_pt2 header=1 
-
-#-----主程序-----
-elements_main,elements_main_list=elements_database_pt2(folder_path,T) #通过调节path/path2可以达成基础元素还是稀土元素mode
-
-
-#print(elements_main)
 signal_path1= r'D:\LIBS\RREdetectation\SpecSimuDatabase' #普通元素光谱数据库   a.t%
 signal_path2= r'D:\LIBS\RREdetectation\Rareearth\Spectrum' #稀土元素光谱100%   a.t%
 signal_path3= r'D:\LIBS\RREdetectation\RREs' #岩石基体95%+稀土元素光谱5%   a.t%
@@ -683,7 +676,11 @@ elif checkallbutton:
 else:
     files_to_process = [name for name in I_elements_list if name in target_files]
 
+if not files_to_process:
+    print(f"未找到待处理文件，target_files={target_files}")
+
 for I_element_name in files_to_process:
+    db_temperature = T_initial
  
     data=pd.read_csv(os.path.join(target_path, I_element_name + ".csv"),header=0,skipinitialspace=True)#待测光谱路径
     data = data.fillna(0).to_numpy()
@@ -691,21 +688,20 @@ for I_element_name in files_to_process:
     x = data[:, 0]
     intensity_sum=data[:,1]
     signal=data[:,1]
-    # intensity_ionized=data[:,3]
     true_peak_idx, peak_wl, peak_int = wavelet_peak_detection(signal,x,wavelet='mexh', scales=np.arange(1, 11), 
                                neighbor=4, min_length=3, coeffi_threshold=700, window=5)#峰值校正
     
-    #基体元素检测
+    #基体元素检测 
+    elements_main,elements_main_list=elements_database_pt2(folder_path,db_temperature) 
     particle_main,elements_main,elements_T_main,elements_R2_main,elements_confidence_main=compute_element_confidence_shape(elements_main, peak_wl, peak_int,x,intensity_sum,
                                                                                           scope=0.2,plot=plotbotton,target=plottarget)
-    print(elements_main)
     # sorted_elems_main = sorted(elements_main.keys(), key=lambda x: elements_main[x])
     # for elem in sorted_elems_main:
     #     dist = elements_main.get(elem, np.nan)
     #     conf = elements_confidence_main.get(elem, 0)
-    #     T = elements_T_main.get(elem, 0)
+    #     elem_T = elements_T_main.get(elem, 0)
     #     R2 = elements_R2_main.get(elem, 0)
-    #     temp_text = color_text(f"温度={T:<8.4f}", BLUE)
+    #     temp_text = color_text(f"温度={elem_T:<8.4f}", BLUE)
     #     r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
     #     conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
     #     print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
@@ -721,7 +717,7 @@ for I_element_name in files_to_process:
  
 
     #elements_database_line_switch header=1
-    elements_rareearth,elements_rareearth_list=elements_database_lineswitch(folder_path2,T,elements_rockmain,LineSwitchMode) 
+    elements_rareearth,elements_rareearth_list=elements_database_lineswitch(folder_path2,db_temperature,elements_rockmain,LineSwitchMode) 
     particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements_rareearth, peak_wl, peak_int,x,intensity_sum,
                                                                                                 scope=0.2,plot=plotbotton,target=plottarget)
     
@@ -731,34 +727,34 @@ for I_element_name in files_to_process:
 
 
 
-    print("\n---" ,I_element_name, "---") 
-    # 元素+置信度
-    print("--- 元素层面（距离 + 置信度） ---")
-    sorted_elems = sorted(elements_result.keys(), key=lambda x: elements_result[x])
-    #输出显示部分
-    if specifybotton:
-        for elem in sorted_elems:
-            if elem != target_element:
-                continue
-            dist = elements_result.get(elem, np.nan)
-            conf = elements_confidence.get(elem, 0)
-            T = elements_T.get(elem, 0)
-            R2 = elements_R2.get(elem, 0)
-            temp_text = color_text(f"温度={T:<8.4f}", BLUE)
-            r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
-            conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
-            print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
-            break
-    else:
-        for elem in sorted_elems:
-            dist = elements_result.get(elem, np.nan)
-            conf = elements_confidence.get(elem, 0)
-            T = elements_T.get(elem, 0)
-            R2 = elements_R2.get(elem, 0)
-            temp_text = color_text(f"温度={T:<8.4f}", BLUE)
-            r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
-            conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
-            print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
+    # print("\n---" ,I_element_name, "---") 
+    # # 元素+置信度
+    # print("--- 元素层面（距离 + 置信度） ---")
+    # sorted_elems = sorted(elements_result.keys(), key=lambda x: elements_result[x])
+    # #输出显示部分
+    # if specifybotton:
+    #     for elem in sorted_elems:
+    #         if elem != target_element:
+    #             continue
+    #         dist = elements_result.get(elem, np.nan)
+    #         conf = elements_confidence.get(elem, 0)
+    #         elem_T = elements_T.get(elem, 0)
+    #         R2 = elements_R2.get(elem, 0)
+    #         temp_text = color_text(f"温度={elem_T:<8.4f}", BLUE)
+    #         r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
+    #         conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
+    #         print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
+    #         break
+    # else:
+    #     for elem in sorted_elems:
+    #         dist = elements_result.get(elem, np.nan)
+    #         conf = elements_confidence.get(elem, 0)
+    #         elem_T = elements_T.get(elem, 0)
+    #         R2 = elements_R2.get(elem, 0)
+    #         temp_text = color_text(f"温度={elem_T:<8.4f}", BLUE)
+    #         r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
+    #         conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
+    #         print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
 
 
 
