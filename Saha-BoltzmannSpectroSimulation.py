@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import glob
 import os
+from lmfit.models import LorentzianModel, VoigtModel
 
 #constant
 kB=8.617330350e-5 #eV/K
@@ -41,6 +42,29 @@ def Saha_Boltzmann_fit(I_ion, I_atom, wl_ion, wl_atom, A_ion, A_atom, g_ion, g_a
     slope, intercept = coefficients
     T = -1/(slope * kB)  # 温度计算
     return coefficients, slope, intercept, T, y
+
+
+def Electron_density (wavelengths, intensities):
+
+
+    def lorentzian_fit_and_plot(wavelengths, intensities):
+        mask = (wavelengths >= 654.5) & (wavelengths < 658.5)
+        filtered_wavelength = wavelengths[mask]
+        filtered_intensity = intensities[mask]
+
+        model = LorentzianModel()
+        params = model.guess(filtered_intensity, x=filtered_wavelength)
+        result = model.fit(filtered_intensity, params, x=filtered_wavelength)
+        fwhm = result.params['fwhm'].value
+        return fwhm
+
+    lorentz_fwhm = lorentzian_fit_and_plot(wavelengths, intensities)
+    #lorentz_fwhm = 2
+    Ne = 8.02e12 * (lorentz_fwhm / 0.00186) ** (3/2)
+    print(f"Ne = {Ne:.2e} cm^-3")
+    #Ne = 5e23
+    return Ne
+
 
 
 data=pd.read_csv(r'E:\工作文件\课题组激光诱导击穿光谱学习\LIBS-ElementRecogonise\10.22\Elements_database\CrI.csv',header=1,encoding="gbk")

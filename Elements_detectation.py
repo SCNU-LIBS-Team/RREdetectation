@@ -66,7 +66,7 @@ def color_text(text, color):
 
 #-----预备-----
 #参数设置
-T=10000
+T=8700
 kB=8.617330350e-5 #eV/K
 
 def _safe_linear_polyfit(Ev, yv):
@@ -652,18 +652,19 @@ signal_path4= r'D:\LIBS\RREdetectation\RREs\last3' #Sm、Tb、Gd最后三种的�
 signal_path5= r'D:\LIBS\RREdetectation\Rockbasespectral' #八大岩石基体元素检测
 signal_path6= r'D:\LIBS\RREdetectation\Rockbasespectral_11' #八大岩石基体元素检测最后三种的高接纳度测试
 signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素光谱数据库最后三种的高接纳度测试
-target_path=signal_path7
+signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
+target_path=signal_path8
 
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 
-target_files=['07111_95'] #待测光谱文件名列表（不带扩展名）
+target_files=['07121_95'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr'
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=False#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
-plottarget='DyII' #Boltzmann图绘制目标元素
+plottarget='YII' #Boltzmann图绘制目标元素
 
 
 
@@ -697,13 +698,26 @@ for I_element_name in files_to_process:
     #基体元素检测
     particle_main,elements_main,elements_T_main,elements_R2_main,elements_confidence_main=compute_element_confidence_shape(elements_main, peak_wl, peak_int,x,intensity_sum,
                                                                                           scope=0.2,plot=plotbotton,target=plottarget)
-    
-    # print(elements_confidence_main)
+    print(elements_main)
+    # sorted_elems_main = sorted(elements_main.keys(), key=lambda x: elements_main[x])
+    # for elem in sorted_elems_main:
+    #     dist = elements_main.get(elem, np.nan)
+    #     conf = elements_confidence_main.get(elem, 0)
+    #     T = elements_T_main.get(elem, 0)
+    #     R2 = elements_R2_main.get(elem, 0)
+    #     temp_text = color_text(f"温度={T:<8.4f}", BLUE)
+    #     r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
+    #     conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
+    #     print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
+ 
+
     elements_rockmain = []
     for elem, conf in elements_confidence_main.items():
         if conf>0.7: #置信度阈值
             elements_rockmain.append(elem)
-    print(elements_rockmain)
+    # print(elements_rockmain)
+    # print(elements_confidence_main)
+    # print(elements_T_main)
  
 
     #elements_database_line_switch header=1
