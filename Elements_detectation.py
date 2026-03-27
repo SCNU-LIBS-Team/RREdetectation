@@ -481,7 +481,6 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
             slope,intecept,T_fit_iterative,R2_itertative,y,E_iterative,wl_iterative,I_iterative,A_iterative,g_iterative=Boltzmann_fit_iterative(matched_I, matched_wl, element_A[matched_idx], element_g[matched_idx], element_E[matched_idx],R2_start_threshold=0.97, max_iter=3, verbose=False)
             
             Boltzmann_T[element_name] = T_fit
-           
             Boltzmann_R2[element_name] = R2
             Boltzmann_linecounts[element_name]= len(matched_theo)
 
@@ -636,7 +635,7 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
 folder_path = r'D:\LIBS\RREdetectation\Elements_database' #元素库路径
 folder_path2 =r'D:\LIBS\RREdetectation\Rareearth_pt3' #稀土元素光谱路径 Lineswitch Mode（threshold=0.15nm）(pt2:0.2nm)
 
-T_initial=8000
+T_initial=10000
 #attention:elements_database_pt2 header=1 
 signal_path1= r'D:\LIBS\RREdetectation\SpecSimuDatabase' #普通元素光谱数据库   a.t%
 signal_path2= r'D:\LIBS\RREdetectation\Rareearth\Spectrum' #稀土元素光谱100%   a.t%
@@ -657,8 +656,7 @@ specifybotton = False  # True: 遍历全部文件，仅输出目标元素；Fals
 checkallbutton=False#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
-plottarget='YII' #Boltzmann图绘制目标元素
-
+plottarget='MgI'
 
 
 
