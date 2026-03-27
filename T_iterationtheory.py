@@ -65,7 +65,7 @@ def color_text(text, color):
 
 
 folder_path = r'D:\LIBS\RREdetectation\Elements_database' 
-data_folder = r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV'
+data_folder = r'D:\LIBS\RREdetectation\Rockbasespectral_11'
 
 run_mode = 'traverse'  # 'single' or 'traverse'
 target_files = ['03134_95']  # 待测光谱文件名列表（不带扩展名）
