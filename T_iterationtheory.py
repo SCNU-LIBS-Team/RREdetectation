@@ -149,6 +149,7 @@ def T_iteration_single(signal, x, T_initial, max_iterations=10, tolerance=1e-3, 
             peak_int,
             x,
             signal,
+            signal,
             scope=0.3,
         )
 
