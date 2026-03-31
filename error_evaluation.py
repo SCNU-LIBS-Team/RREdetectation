@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 kB=8.617330350e-5 #eV/K
 
-file_path = r'D:\LIBS\RREdetectation\Elements_database\SiI.csv'
+file_path = r'D:\LIBS\RREdetectation\Elements_database\FeI.csv'
 
 df = pd.read_csv(file_path, header=1, encoding="gbk")
 
@@ -94,9 +94,8 @@ def derivative_P_T(i,T):
     p=rel_intensity(wl,A,E,g,T_true)/sum(rel_intensity(wl,A,E,g,T_true))
     global_derivative=-p[i]**2/kB/T**2
     discrete_derivative=(-E[i]-sum((-E*p)))
-    derivative=global_derivative*discrete_derivative
+    derivative=-global_derivative*discrete_derivative
     return derivative
-
 
 def derivative_curve_value(T):
     """独立于 derivative_P_T 的可绘图导数指标：mean(|dp/dT|)。"""
@@ -104,9 +103,8 @@ def derivative_curve_value(T):
         return 0.0
     p = rel_intensity(wl, A, E, g, T)
     E_mean = np.sum(-E * p)
-    dp_dT = p * (E - E_mean) / (kB * T**2)
+    dp_dT = -p * (-E - E_mean) / (kB * T**2)
     return float(np.mean(np.abs(dp_dT)))
-
 
 def plot_derivative_vs_T(k,t_min=500, t_max=20000, num=2000, save_path='derivative_vs_T.png'):
     """绘制导数指标随温度 T 的变化曲线。"""
@@ -134,4 +132,5 @@ def plot_derivative_vs_T(k,t_min=500, t_max=20000, num=2000, save_path='derivati
 # print(E[1])
 # print(derivative_P_T(1, 10000))
 
-plot_derivative_vs_T(7,t_min=1000, t_max=20000, num=2000)
+# plot_derivative_vs_T(12,t_min=1000, t_max=20000, num=2000)
+plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500)

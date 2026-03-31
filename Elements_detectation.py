@@ -13,7 +13,7 @@ from scipy.optimize import linear_sum_assignment
 
 
 
-# terminal color helpers
+#终端颜色设置
 RESET = "\033[0m"
 BLUE = "\033[34m"
 GREEN = "\033[32m"
@@ -101,7 +101,7 @@ def _safe_linear_polyfit(Ev, yv):
 
 
 #----必备函数定义----
-#玻尔兹曼图拟合 返回斜率，截距，温度，y
+###玻尔兹曼图拟合
 def Boltzmann_fit(I, wl, A, g, E):
     # Filter invalid / non-positive values to avoid log and fit failures
     mask = (
@@ -268,7 +268,7 @@ def Boltzmann_plot(matched_i, matched_wl, element_A, element_E, element_g, eleme
     else:
         print(f"{element_name} 匹配峰数不足，无法绘制玻尔兹曼图。")
 
-#匈牙利算法线匹配策略
+###匈牙利算法线匹配策略
 def match_spectral_lines(theo_wl, theo_int, exp_wl, exp_int, scope):
 
     T = len(theo_wl)
@@ -377,7 +377,7 @@ def match_spectral_lines_weighted(theo_wl, theo_int, exp_wl, exp_int, scope=0.2,
     
     return np.array(theo_vec), np.array(exp_vec), matched_theo, matched_exp
 
-#施工中的判断策略
+#施工中的置信度判断策略
 def confidence_score(base_elem,element_distance,element_T,element_R2,element_linecounts,final_T,final_R2,final_lc,final_distance,elements_confidence):
     """
     使用说明:base_elem:元素名称列表 element_distance: 元素距离列表 element_T: 元素温度列表 element_R2: 元素R2列表 
@@ -632,7 +632,7 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
 
  #-----数据导入-----
 
-#光谱文件过滤（防止文件夹内奇怪文件的干扰）
+###光谱文件过滤（防止文件夹内奇怪文件的干扰）
 def load_spectrum_xy(csv_path):
     """读取光谱前两列并转为数值；若无有效数据则返回 (None, None)。"""
     data = pd.read_csv(csv_path, header=0, skipinitialspace=True)
@@ -739,13 +739,13 @@ def T_iteration_single(signal, x, T_initial, max_iterations=10, tolerance=1e-3, 
             # 首轮锁定最概然元素，后续迭代不再改变元素身份
             if fixed_element is None:
                 fixed_element = max(candidate_pool, key=candidate_pool.get)
-                print(
-                    f"第 {iteration + 1} 轮迭代，锁定最概然元素: {fixed_element}，"
-                    f"此时温度为：{float(elements_T_main.get(fixed_element, 0.0))}"
-                )
+                # print(
+                #     f"第 {iteration + 1} 轮迭代，锁定最概然元素: {fixed_element}，"
+                #     f"此时温度为：{float(elements_T_main.get(fixed_element, 0.0))}"
+                # )
 
             if fixed_element not in elements_T_main:
-                print(f"固定元素 {fixed_element} 在当前迭代结果中不存在，停止迭代")
+                # print(f"固定元素 {fixed_element} 在当前迭代结果中不存在，停止迭代")
                 break
 
             top_candidate_element = fixed_element
@@ -757,10 +757,10 @@ def T_iteration_single(signal, x, T_initial, max_iterations=10, tolerance=1e-3, 
         top_candidate_element_T = float(elements_T_main.get(top_candidate_element, 0.0))
         top_candidate_confidence = float(elements_confidence_main.get(top_candidate_element, 0.0))
         top_candidate_R2 = float(elements_R2_main.get(top_candidate_element, 0.0))
-        print(
-            f"最概然元素: {top_candidate_element}，对应温度: {top_candidate_element_T:.4f} K，"
-            f"置信度: {top_candidate_confidence:.4f}，R2: {top_candidate_R2:.4f}"
-        )
+        # print(
+        #     f"最概然元素: {top_candidate_element}，对应温度: {top_candidate_element_T:.4f} K，"
+        #     f"置信度: {top_candidate_confidence:.4f}，R2: {top_candidate_R2:.4f}"
+        # )
 
         current_score = _candidate_score(top_candidate_confidence, top_candidate_R2)
         if current_score > best_score:
@@ -780,13 +780,13 @@ def T_iteration_single(signal, x, T_initial, max_iterations=10, tolerance=1e-3, 
             stable_rounds = 0
 
         if stable_rounds >= 2:
-            print(f"迭代收敛于 T={T:.4f} K，迭代次数={iteration + 1}")
+            # print(f"迭代收敛于 T={T:.4f} K，迭代次数={iteration + 1}")
             break
 
-        print(
-            f"候选集(top-{min(top_k, len(ranked_elements))}): {ranked_elements}，"
-            f"加权目标温度: {target_temperature:.4f} K，更新后温度: {T:.4f} K"
-        )
+        # print(
+        #     f"候选集(top-{min(top_k, len(ranked_elements))}): {ranked_elements}，"
+        #     f"加权目标温度: {target_temperature:.4f} K，更新后温度: {T:.4f} K"
+        # )
 
     return T, top_candidate_element, top_candidate_element_T, top_candidate_confidence, best_score
 #算法外层循环（全局搜索）
@@ -806,7 +806,7 @@ def T_iteration(signal, x, T_initial, max_iterations=10, tolerance=1e-3, candida
     best_score = -np.inf
 
     for idx, t0 in enumerate(initial_points):
-        print(color_text(f"\n[多起点] 第 {idx + 1}/{len(initial_points)} 个初值: T0={float(t0):.2f} K", BLUE))
+        # print(color_text(f"\n[多起点] 第 {idx + 1}/{len(initial_points)} 个初值: T0={float(t0):.2f} K", BLUE))
         result = T_iteration_single(
             signal,
             x,
@@ -827,9 +827,8 @@ def T_iteration(signal, x, T_initial, max_iterations=10, tolerance=1e-3, candida
     if best_result is None:
         return float(T_initial), None, 0.0, 0.0
 
-    print(color_text(f"[多起点] 选择全局最优结果，评分={best_score:.4f}", GREEN))
+    # print(color_text(f"[多起点] 选择全局最优结果，评分={best_score:.4f}", GREEN))
     return best_result[0], best_result[1], best_result[2], best_result[3]
-
 #遍历暴力求解算法
 def Brute_Force_T_iteration(signal, x, t_min=7000.0, t_max=25000.0, t_step=250.0):
     if t_step <= 0:
@@ -902,11 +901,11 @@ def Brute_Force_T_iteration(signal, x, t_min=7000.0, t_max=25000.0, t_step=250.0
     return best_scan_T, best_element, best_element_T, best_confidence
 
 
-#数据库导入
+###数据库导入
 folder_path = r'D:\LIBS\RREdetectation\Elements_database' #元素库路径
 folder_path2 =r'D:\LIBS\RREdetectation\Rareearth_pt3' #稀土元素光谱路径 Lineswitch Mode（threshold=0.15nm）(pt2:0.2nm)
 
-T_initial=10000
+
 #attention:elements_database_pt2 header=1 
 signal_path1= r'D:\LIBS\RREdetectation\SpecSimuDatabase' #普通元素光谱数据库   a.t%
 signal_path2= r'D:\LIBS\RREdetectation\Rareearth\Spectrum' #稀土元素光谱100%   a.t%
@@ -915,135 +914,143 @@ signal_path4= r'D:\LIBS\RREdetectation\RREs\last3' #Sm、Tb、Gd最后三种的�
 signal_path5= r'D:\LIBS\RREdetectation\Rockbasespectral' #八大岩石基体元素检测
 signal_path6= r'D:\LIBS\RREdetectation\Rockbasespectral_11' #八大岩石基体元素检测最后三种的高接纳度测试
 signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素光谱数据库最后三种的高接纳度测试
-signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #低电子温度（低多普勒展宽）测试
-target_path=signal_path8
+signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 
+
+
+###每次运行前均需调整下列参数！！！
+T_initial=10000
+target_path=signal_path6 #光谱路径
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
-
-
-target_files=['07121_95'] #待测光谱文件名列表（不带扩展名）
-target_element='Pr'
+target_files=['07840_95'] #待测光谱文件名列表（不带扩展名）
+target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=True#是否检测文件内的全部光谱 （全文件）
+checkallbutton=False#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
-plottarget='MgI'
+save2csvbotton=True #是否保存稀土元素置信度结果到CSV
+printbotton=True #是否打印元素检测结果
+plottarget='MgI'#指定绘图元素（仅在 plotbotton=True 时生效）
 
+if __name__ == '__main__':
+    # 稀土元素置信度导出设置
+    RAREEARTH_FIXED_ORDER = ['Y', 'Eu', 'Lu', 'Er', 'Ho', 'Yb', 'La', 'Tm','Tb', 'Sm', 'Pr', 'Ce', 'Nd', 'Dy', 'Gd']
+    confidence_csv_path = os.path.join(target_path, 'rareearth_confidence_results.csv')
+    confidence_rows = []
 
+    # 绘图模式开启时强制关闭 specify、checkall，仅输出目标图像但全量跑文件
+    if plotbotton:
+        specifybotton = False
+        checkallbutton = False
+        save2csvbotton = False
 
-
-# 绘图模式开启时强制关闭 specify、checkall，仅输出目标图像但全量跑文件
-if plotbotton:
-    specifybotton = False
-    checkallbutton = False
-
-# 根据模式选择要处理的文件
-if specifybotton:
-    files_to_process = I_elements_list
-elif checkallbutton:
-    files_to_process = I_elements_list
-else:
-    files_to_process = [name for name in I_elements_list if name in target_files]
-
-if not files_to_process:
-    print(f"未找到待处理文件，target_files={target_files}")
-
-for I_element_name in files_to_process:
-    
-    csv_path = os.path.join(target_path, I_element_name + ".csv")
-    x, intensity_sum = load_spectrum_xy(csv_path)
-    if x is None:
-        print(f"跳过非光谱或无效文件: {I_element_name}.csv")
-        continue
-    
-    signal = intensity_sum
-    true_peak_idx, peak_wl, peak_int = wavelet_peak_detection(signal,x,wavelet='mexh', scales=np.arange(1, 11), 
-                               neighbor=4, min_length=3, coeffi_threshold=700, window=5)#峰值校正
-    #温度迭代算法
-    # db_temperature=T_initial
-    T_iteration_result= T_iteration(
-            signal,
-            x,
-            T_initial=T_initial,
-            max_iterations=12,
-            tolerance=1e-5,
-            candidate_mode='alterable',
-            t_min=5000,
-            t_max=20000.0,
-            multistart_count=10,
-            alpha=0.35,
-            top_k=3,
-        )
-    db_temperature=T_iteration_result[0]
-    print(f"迭代得到的电子温度: {db_temperature:.2f} K")
-    #基体元素检测 
-    elements_main,elements_main_list=elements_database_pt2(folder_path,db_temperature) 
-    particle_main,elements_main,elements_T_main,elements_R2_main,elements_confidence_main=compute_element_confidence_shape(elements_main, peak_wl, peak_int,x,intensity_sum,
-                                                                                          scope=0.2,plot=plotbotton,target=plottarget)
-    # sorted_elems_main = sorted(elements_main.keys(), key=lambda x: elements_main[x])
-    # for elem in sorted_elems_main:
-    #     dist = elements_main.get(elem, np.nan)
-    #     conf = elements_confidence_main.get(elem, 0)
-    #     elem_T = elements_T_main.get(elem, 0)
-    #     R2 = elements_R2_main.get(elem, 0)
-    #     temp_text = color_text(f"温度={elem_T:<8.4f}", BLUE)
-    #     r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
-    #     conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
-    #     print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
- 
-
-    elements_rockmain = []
-    for elem, conf in elements_confidence_main.items():
-        if conf>0.7: #置信度阈值
-            elements_rockmain.append(elem)
-    # print(elements_rockmain)
-    # print(elements_confidence_main)
-    # print(elements_T_main)
- 
-
-    #elements_database_line_switch header=1
-    elements_rareearth,elements_rareearth_list=elements_database_lineswitch(folder_path2,db_temperature,elements_rockmain,LineSwitchMode) 
-    particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements_rareearth, peak_wl, peak_int,x,intensity_sum,
-                                                                                                scope=0.2,plot=plotbotton,target=plottarget)
-    
-    
-    # print(elements_result,type(elements_result))
-    # print(elements_confidence,type(elements_confidence))
-
-
-
-    print("\n---" ,I_element_name, "---") 
-    # 元素+置信度
-    print("--- 元素层面（距离 + 置信度） ---")
-    sorted_elems = sorted(elements_result.keys(), key=lambda x: elements_result[x])
-    #输出显示部分
+    # 根据模式选择要处理的文件
     if specifybotton:
-        for elem in sorted_elems:
-            if elem != target_element:
-                continue
-            dist = elements_result.get(elem, np.nan)
-            conf = elements_confidence.get(elem, 0)
-            elem_T = elements_T.get(elem, 0)
-            R2 = elements_R2.get(elem, 0)
-            temp_text = color_text(f"温度={elem_T:<8.4f}", BLUE)
-            r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
-            conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
-            print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
-            break
+        files_to_process = I_elements_list
+    elif checkallbutton:
+        files_to_process = I_elements_list
     else:
-        for elem in sorted_elems:
-            dist = elements_result.get(elem, np.nan)
-            conf = elements_confidence.get(elem, 0)
-            elem_T = elements_T.get(elem, 0)
-            R2 = elements_R2.get(elem, 0)
-            temp_text = color_text(f"温度={elem_T:<8.4f}", BLUE)
-            r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
-            conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
-            print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
+        files_to_process = [name for name in I_elements_list if name in target_files]
+
+    if not files_to_process:
+        print(f"未找到待处理文件，target_files={target_files}")
 
 
+    for I_element_name in files_to_process:
+        
+        csv_path = os.path.join(target_path, I_element_name + ".csv")
+        x, intensity_sum = load_spectrum_xy(csv_path)
+        if x is None:
+            print(f"跳过非光谱或无效文件: {I_element_name}.csv")
+            continue
+        
+        signal = intensity_sum
+        true_peak_idx, peak_wl, peak_int = wavelet_peak_detection(signal,x,wavelet='mexh', scales=np.arange(1, 11), 
+                                neighbor=4, min_length=3, coeffi_threshold=700, window=5)#峰值校正
+        #温度迭代算法
+        # db_temperature=T_initial
+        # T_iteration_result= T_iteration(
+        #         signal,
+        #         x,
+        #         T_initial=T_initial,
+        #         max_iterations=12,
+        #         tolerance=1e-5,
+        #         candidate_mode='alterable',
+        #         t_min=5000,
+        #         t_max=20000.0,
+        #         multistart_count=10,
+        #         alpha=0.35,
+        #         top_k=3,
+        #     )
+        # db_temperature=T_iteration_result[0]
+        db_temperature=10000
+        print(f"迭代得到的电子温度: {db_temperature:.2f} K")
+        #基体元素检测 
+        elements_main,elements_main_list=elements_database_pt2(folder_path,db_temperature) 
+        particle_main,elements_main,elements_T_main,elements_R2_main,elements_confidence_main=compute_element_confidence_shape(elements_main, peak_wl, peak_int,x,intensity_sum,
+                                                                                            scope=0.2,plot=plotbotton,target=plottarget)
+        #     r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
+        #     conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
+        #     print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
+    
+        #基体元素筛选
+        elements_rockmain = []
+        for elem, conf in elements_confidence_main.items():
+            if conf>0.7: #置信度阈值
+                elements_rockmain.append(elem)
+    
+        #elements_database_line_switch header=1
+        elements_rareearth,elements_rareearth_list=elements_database_lineswitch(folder_path2,db_temperature,elements_rockmain,LineSwitchMode) 
+        particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements_rareearth, peak_wl, peak_int,x,intensity_sum,
+                                                                                                    scope=0.2,plot=plotbotton,target=plottarget)
+        
+        # 记录当前光谱的稀土元素置信度（固定列顺序）
+        if save2csvbotton:
+            row = {'spectrum_name': I_element_name}
+            for elem in RAREEARTH_FIXED_ORDER:
+                row[elem] = round(float(elements_confidence.get(elem, 0.0)), 4)
+            confidence_rows.append(row)
 
+        #print结果展示
+        if printbotton:
+            print("\n---" ,I_element_name, "---") 
+            # 元素+置信度
+            print("--- 元素层面（距离 + 置信度） ---")
+            sorted_elems = sorted(elements_result.keys(), key=lambda x: elements_result[x])
+
+            #输出显示部分
+            if specifybotton:
+                for elem in sorted_elems:
+                    if elem != target_element:
+                        continue
+                    dist = elements_result.get(elem, np.nan)
+                    conf = elements_confidence.get(elem, 0)
+                    elem_T = elements_T.get(elem, 0)
+                    R2 = elements_R2.get(elem, 0)
+                    temp_text = color_text(f"温度={elem_T:<8.4f}", BLUE)
+                    r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
+                    conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
+                    print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
+                    break
+            else:
+                for elem in sorted_elems:
+                    dist = elements_result.get(elem, np.nan)
+                    conf = elements_confidence.get(elem, 0)
+                    elem_T = elements_T.get(elem, 0)
+                    R2 = elements_R2.get(elem, 0)
+                    temp_text = color_text(f"温度={elem_T:<8.4f}", BLUE)
+                    r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
+                    conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
+                    print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
+
+
+    # 批量结果导出到CSV：第一列为光谱名，后续为固定顺序稀土元素置信度
+    if confidence_rows:
+        output_columns = ['spectrum_name'] + RAREEARTH_FIXED_ORDER
+        confidence_df = pd.DataFrame(confidence_rows, columns=output_columns)
+        confidence_df.to_csv(confidence_csv_path, index=False, encoding='utf-8-sig', float_format='%.4f')
+        print(color_text(f"\n已导出稀土元素置信度到 CSV: {confidence_csv_path}", GREEN))
 
 
 
