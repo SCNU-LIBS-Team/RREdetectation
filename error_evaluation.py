@@ -134,4 +134,4 @@ def plot_derivative_vs_T(k,t_min=500, t_max=20000, num=2000, save_path='derivati
 # print(E[1])
 # print(derivative_P_T(1, 10000))
 
-plot_derivative_vs_T(7,t_min=3000, t_max=20000, num=2000)
+plot_derivative_vs_T(7,t_min=1000, t_max=20000, num=2000)

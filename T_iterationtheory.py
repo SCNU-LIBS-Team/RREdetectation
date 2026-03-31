@@ -1,3 +1,5 @@
+#该文件不能直接import到主程序中，只是用来debug用
+#debug修改后需要复制到主程序的温度计算部分！！！
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -85,11 +87,12 @@ COMPARE_CSV_PATH = os.path.join(data_folder, "temperature_compare_results.csv")
 
 
 
- 
+
+###温度迭代主要程序 
+#评价体系
 def _candidate_score(confidence, r2):
     # 用置信度和R2偏离惩罚构建评分，减弱局部噪声峰的影响
     return float(confidence) - 0.35 * abs(float(r2) - 1.0)
-
 
 #top-3算法 算出每轮迭代的候选元素及其对应温度和R2，综合评分选出加权目标温度(target_temperature)
 def _pick_target_temperature(candidate_pool, elements_T_main, elements_R2_main, top_k=3):
@@ -112,8 +115,9 @@ def _pick_target_temperature(candidate_pool, elements_T_main, elements_R2_main, 
     weights = weights / max(np.sum(weights), 1e-12)
     return float(np.sum(weights * temperatures)), [e for e, _ in top_items]
 
-
-def T_iteration_single(signal, x, intensity_sum, T_initial, max_iterations=10, tolerance=1e-3, candidate_mode='fix',
+##迭代TOP-K+阻尼计算温度算法
+#算法内层循环
+def T_iteration_single(signal, x, T_initial, max_iterations=10, tolerance=1e-3, candidate_mode='fix',
                        t_min=7000.0, t_max=20000.0, alpha=0.35, top_k=3):
     T = float(np.clip(T_initial, t_min, t_max))
     top_candidate_element = None
@@ -144,7 +148,7 @@ def T_iteration_single(signal, x, intensity_sum, T_initial, max_iterations=10, t
             peak_wl,
             peak_int,
             x,
-            intensity_sum,
+            signal,
             scope=0.3,
         )
 
@@ -221,9 +225,8 @@ def T_iteration_single(signal, x, intensity_sum, T_initial, max_iterations=10, t
         )
 
     return T, top_candidate_element, top_candidate_element_T, top_candidate_confidence, best_score
-
-
-def T_iteration(signal, x, intensity_sum, T_initial, max_iterations=10, tolerance=1e-3, candidate_mode='fix',
+#算法外层循环（全局搜索）
+def T_iteration(signal, x, T_initial, max_iterations=10, tolerance=1e-3, candidate_mode='fix',
                 t_min=7000.0, t_max=25000.0, multistart_count=9, alpha=0.35, top_k=3):
     
     # 支持单初值和多初值；默认会在温度区间内自动多起点
@@ -243,7 +246,6 @@ def T_iteration(signal, x, intensity_sum, T_initial, max_iterations=10, toleranc
         result = T_iteration_single(
             signal,
             x,
-            intensity_sum,
             t0,
             max_iterations=max_iterations,
             tolerance=tolerance,
@@ -264,8 +266,8 @@ def T_iteration(signal, x, intensity_sum, T_initial, max_iterations=10, toleranc
     print(color_text(f"[多起点] 选择全局最优结果，评分={best_score:.4f}", GREEN))
     return best_result[0], best_result[1], best_result[2], best_result[3]
 
-
-def Brute_Force_T_iteration(signal, x, intensity_sum, t_min=7000.0, t_max=25000.0, t_step=250.0):
+#遍历暴力求解算法
+def Brute_Force_T_iteration(signal, x, t_min=7000.0, t_max=25000.0, t_step=250.0):
     if t_step <= 0:
         raise ValueError("t_step 必须大于 0")
     if t_max < t_min:
@@ -298,7 +300,7 @@ def Brute_Force_T_iteration(signal, x, intensity_sum, t_min=7000.0, t_max=25000.
             peak_wl,
             peak_int,
             x,
-            intensity_sum,
+            signal,
             scope=0.3,
         )
 
@@ -337,106 +339,103 @@ def Brute_Force_T_iteration(signal, x, intensity_sum, t_min=7000.0, t_max=25000.
 
 
 
-# 实际运行：同一文件比对 iteration 与 brute_force
-start = time.perf_counter()
+# # 实际运行：同一文件比对 iteration 与 brute_force
+# start = time.perf_counter()
 
-all_csv_files = sorted(glob.glob(os.path.join(data_folder, "*.csv")))
-if not all_csv_files:
-    print(f"未找到CSV文件: {data_folder}")
+# all_csv_files = sorted(glob.glob(os.path.join(data_folder, "*.csv")))
+# if not all_csv_files:
+#     print(f"未找到CSV文件: {data_folder}")
 
-if run_mode == 'single':
-    csv_files = [os.path.join(data_folder, f"{name}.csv") for name in target_files]
-elif run_mode == 'traverse':
-    csv_files = all_csv_files
-else:
-    raise ValueError("run_mode 只能是 'single' 或 'traverse'")
+# if run_mode == 'single':
+#     csv_files = [os.path.join(data_folder, f"{name}.csv") for name in target_files]
+# elif run_mode == 'traverse':
+#     csv_files = all_csv_files
+# else:
+#     raise ValueError("run_mode 只能是 'single' 或 'traverse'")
 
-compare_rows = []
-iteration_total_time = 0.0
-bruteforce_total_time = 0.0
+# compare_rows = []
+# iteration_total_time = 0.0
+# bruteforce_total_time = 0.0
 
-for csv_file in csv_files:
-    file_name = os.path.basename(csv_file)
-    try:
-        if not os.path.exists(csv_file):
-            print(f"\n=== 文件: {file_name} ===")
-            print("文件不存在，跳过")
-            continue
+# for csv_file in csv_files:
+#     file_name = os.path.basename(csv_file)
+#     try:
+#         if not os.path.exists(csv_file):
+#             print(f"\n=== 文件: {file_name} ===")
+#             print("文件不存在，跳过")
+#             continue
 
-        data = pd.read_csv(csv_file, header=0, skipinitialspace=True)
-        data = data.fillna(0).to_numpy()
+#         data = pd.read_csv(csv_file, header=0, skipinitialspace=True)
+#         data = data.fillna(0).to_numpy()
 
-        if data.shape[1] < 2:
-            print(f"\n=== 文件: {file_name} ===")
-            print("列数不足，至少需要两列（波长、强度），跳过")
-            continue
+#         if data.shape[1] < 2:
+#             print(f"\n=== 文件: {file_name} ===")
+#             print("列数不足，至少需要两列（波长、强度），跳过")
+#             continue
 
-        x = data[:, 0]
-        intensity_sum = data[:, 1]
-        signal = data[:, 1]
+#         x = data[:, 0]
+#         signal = data[:, 1]
 
-        print(color_text(f"\n=== 文件: {file_name} | iteration ===", BLUE))
-        t_iter_begin = time.perf_counter()
-        iteration_result = T_iteration(
-            signal,
-            x,
-            intensity_sum,
-            T0,
-            max_iterations=12,
-            tolerance=1e-5,
-            candidate_mode=candidate_mode,
-            t_min=T_MIN,
-            t_max=T_MAX,
-            multistart_count=MULTISTART_COUNT,
-            alpha=DAMPING_ALPHA,
-            top_k=TOP_K,
-        )
-        iteration_elapsed = time.perf_counter() - t_iter_begin
-        iteration_total_time += iteration_elapsed
+#         print(color_text(f"\n=== 文件: {file_name} | iteration ===", BLUE))
+#         t_iter_begin = time.perf_counter()
+#         iteration_result = T_iteration(
+#             signal,
+#             x,
+#             T0,
+#             max_iterations=12,
+#             tolerance=1e-5,
+#             candidate_mode=candidate_mode,
+#             t_min=T_MIN,
+#             t_max=T_MAX,
+#             multistart_count=MULTISTART_COUNT,
+#             alpha=DAMPING_ALPHA,
+#             top_k=TOP_K,
+#         )
+#         iteration_elapsed = time.perf_counter() - t_iter_begin
+#         iteration_total_time += iteration_elapsed
 
-        print(color_text(f"\n=== 文件: {file_name} | brute_force ===", BLUE))
-        t_bf_begin = time.perf_counter()
-        brute_force_result = Brute_Force_T_iteration(
-            signal,
-            x,
-            intensity_sum,
-            t_min=T_MIN,
-            t_max=T_MAX,
-            t_step=BRUTE_FORCE_STEP,
-        )
-        brute_force_elapsed = time.perf_counter() - t_bf_begin
-        bruteforce_total_time += brute_force_elapsed
+#         print(color_text(f"\n=== 文件: {file_name} | brute_force ===", BLUE))
+#         t_bf_begin = time.perf_counter()
+#         brute_force_result = Brute_Force_T_iteration(
+#             signal,
+#             x,
+#             t_min=T_MIN,
+#             t_max=T_MAX,
+#             t_step=BRUTE_FORCE_STEP,
+#         )
+#         brute_force_elapsed = time.perf_counter() - t_bf_begin
+#         bruteforce_total_time += brute_force_elapsed
 
-        print(
-            f"对比结果: iteration_T={iteration_result[0]:.4f} K, "
-            f"brute_force_T={brute_force_result[0]:.4f} K, "
-            f"iteration耗时={iteration_elapsed:.4f} 秒, "
-            f"brute_force耗时={brute_force_elapsed:.4f} 秒"
-        )
+#         print(
+#             f"对比结果: iteration_T={iteration_result[0]:.4f} K, "
+#             f"brute_force_T={brute_force_result[0]:.4f} K, "
+#             f"iteration耗时={iteration_elapsed:.4f} 秒, "
+#             f"brute_force耗时={brute_force_elapsed:.4f} 秒"
+#         )
 
-        compare_rows.append(
-            {
-                "文件名": file_name,
-                "iteration": float(iteration_result[0]),
-                "brute_force": float(brute_force_result[0]),
-            }
-        )
+#         compare_rows.append(
+#             {
+#                 "文件名": file_name,
+#                 "iteration": float(iteration_result[0]),
+#                 "brute_force": float(brute_force_result[0]),
+#             }
+#         )
 
-    except Exception as e:
-        print(f"\n=== 文件: {file_name} ===")
-        print(f"处理失败: {e}")
+#     except Exception as e:
+#         print(f"\n=== 文件: {file_name} ===")
+#         print(f"处理失败: {e}")
 
-compare_rows.append(
-    {
-        "文件名": "算法运算时间(秒)",
-        "iteration": round(iteration_total_time, 6),
-        "brute_force": round(bruteforce_total_time, 6),
-    }
-)
+# compare_rows.append(
+#     {
+#         "文件名": "算法运算时间(秒)",
+#         "iteration": round(iteration_total_time, 6),
+#         "brute_force": round(bruteforce_total_time, 6),
+#     }
+# )
 
-compare_df = pd.DataFrame(compare_rows, columns=["文件名", "iteration", "brute_force"])
-compare_df.to_csv(COMPARE_CSV_PATH, index=False, encoding="utf-8-sig")
-print(color_text(f"\n已输出对比结果: {COMPARE_CSV_PATH}", GREEN))
+# compare_df = pd.DataFrame(compare_rows, columns=["文件名", "iteration", "brute_force"])
+# compare_df.to_csv(COMPARE_CSV_PATH, index=False, encoding="utf-8-sig")
+# print(color_text(f"\n已输出对比结果: {COMPARE_CSV_PATH}", GREEN))
 
-end = time.perf_counter()
-print(f"总耗时: {end - start:.4f} 秒")
+# end = time.perf_counter()
+# print(f"总耗时: {end - start:.4f} 秒")
