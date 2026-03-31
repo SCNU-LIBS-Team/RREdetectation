@@ -113,7 +113,7 @@ def _pick_target_temperature(candidate_pool, elements_T_main, elements_R2_main, 
     return float(np.sum(weights * temperatures)), [e for e, _ in top_items]
 
 
-def T_iteration_single(signal, x, intensity_sum, T_initial, max_iterations=10, tolerance=1e-3, candidate_mode='fix',
+def T_iteration_single(signal, x,T_initial, max_iterations=10, tolerance=1e-3, candidate_mode='fix',
                        t_min=7000.0, t_max=20000.0, alpha=0.35, top_k=3):
     T = float(np.clip(T_initial, t_min, t_max))
     top_candidate_element = None
@@ -144,7 +144,7 @@ def T_iteration_single(signal, x, intensity_sum, T_initial, max_iterations=10, t
             peak_wl,
             peak_int,
             x,
-            intensity_sum,
+            signal,
             scope=0.3,
         )
 
@@ -223,7 +223,7 @@ def T_iteration_single(signal, x, intensity_sum, T_initial, max_iterations=10, t
     return T, top_candidate_element, top_candidate_element_T, top_candidate_confidence, best_score
 
 
-def T_iteration(signal, x, intensity_sum, T_initial, max_iterations=10, tolerance=1e-3, candidate_mode='fix',
+def T_iteration(signal, x, T_initial, max_iterations=10, tolerance=1e-3, candidate_mode='fix',
                 t_min=7000.0, t_max=25000.0, multistart_count=9, alpha=0.35, top_k=3):
     
     # 支持单初值和多初值；默认会在温度区间内自动多起点
@@ -243,7 +243,6 @@ def T_iteration(signal, x, intensity_sum, T_initial, max_iterations=10, toleranc
         result = T_iteration_single(
             signal,
             x,
-            intensity_sum,
             t0,
             max_iterations=max_iterations,
             tolerance=tolerance,
@@ -265,7 +264,7 @@ def T_iteration(signal, x, intensity_sum, T_initial, max_iterations=10, toleranc
     return best_result[0], best_result[1], best_result[2], best_result[3]
 
 
-def Brute_Force_T_iteration(signal, x, intensity_sum, t_min=7000.0, t_max=25000.0, t_step=250.0):
+def Brute_Force_T_iteration(signal, x, t_min=7000.0, t_max=25000.0, t_step=250.0):
     if t_step <= 0:
         raise ValueError("t_step 必须大于 0")
     if t_max < t_min:
@@ -298,7 +297,7 @@ def Brute_Force_T_iteration(signal, x, intensity_sum, t_min=7000.0, t_max=25000.
             peak_wl,
             peak_int,
             x,
-            intensity_sum,
+            signal,
             scope=0.3,
         )
 
@@ -372,7 +371,6 @@ for csv_file in csv_files:
             continue
 
         x = data[:, 0]
-        intensity_sum = data[:, 1]
         signal = data[:, 1]
 
         print(color_text(f"\n=== 文件: {file_name} | iteration ===", BLUE))
@@ -380,7 +378,6 @@ for csv_file in csv_files:
         iteration_result = T_iteration(
             signal,
             x,
-            intensity_sum,
             T0,
             max_iterations=12,
             tolerance=1e-5,
@@ -399,7 +396,6 @@ for csv_file in csv_files:
         brute_force_result = Brute_Force_T_iteration(
             signal,
             x,
-            intensity_sum,
             t_min=T_MIN,
             t_max=T_MAX,
             t_step=BRUTE_FORCE_STEP,
