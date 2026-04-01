@@ -951,13 +951,13 @@ signal_path5= r'D:\LIBS\RREdetectation\Rockbasespectral' #八大岩石基体元�
 signal_path6= r'D:\LIBS\RREdetectation\Rockbasespectral_11' #八大岩石基体元素检测最后三种的高接纳度测试
 signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素光谱数据库最后三种的高接纳度测试
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
-signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_1.50eV' #高电子温度（高多普勒展宽）测试
+signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
 
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
-target_path=signal_path9 #光谱路径
+target_path=signal_path6 #光谱路径
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 target_files=['07840_95'] #待测光谱文件名列表（不带扩展名）
