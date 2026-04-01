@@ -635,7 +635,43 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
 ###光谱文件过滤（防止文件夹内奇怪文件的干扰）
 def load_spectrum_xy(csv_path):
     """读取光谱前两列并转为数值；若无有效数据则返回 (None, None)。"""
-    data = pd.read_csv(csv_path, header=0, skipinitialspace=True)
+    # 兼容不同来源光谱文件编码（UTF-8/GBK/ANSI 等）
+    data = None
+    read_errors = []
+    for enc in ("utf-8", "utf-8-sig", "gbk", "gb18030", "latin1"):
+        try:
+            data = pd.read_csv(
+                csv_path,
+                header=0,
+                skipinitialspace=True,
+                encoding=enc,
+                on_bad_lines='skip',
+            )
+            break
+        except UnicodeDecodeError as e:
+            read_errors.append(f"{enc}: {e}")
+        except pd.errors.ParserError:
+            # 某些文件分隔符/格式异常时回退到 python 引擎自动推断
+            try:
+                data = pd.read_csv(
+                    csv_path,
+                    header=0,
+                    skipinitialspace=True,
+                    encoding=enc,
+                    on_bad_lines='skip',
+                    sep=None,
+                    engine='python',
+                )
+                break
+            except Exception as e:
+                read_errors.append(f"{enc}(python-engine): {e}")
+        except Exception as e:
+            read_errors.append(f"{enc}: {e}")
+
+    if data is None:
+        print(f"读取失败，跳过文件: {os.path.basename(csv_path)}")
+        return None, None
+
     if data.shape[1] < 2:
         return None, None
 
@@ -915,22 +951,24 @@ signal_path5= r'D:\LIBS\RREdetectation\Rockbasespectral' #八大岩石基体元�
 signal_path6= r'D:\LIBS\RREdetectation\Rockbasespectral_11' #八大岩石基体元素检测最后三种的高接纳度测试
 signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素光谱数据库最后三种的高接纳度测试
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
+signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_1.25eV' #高电子温度（高多普勒展宽）测试
 
 
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
-target_path=signal_path6 #光谱路径
+target_path=signal_path9 #光谱路径
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 target_files=['07840_95'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=False#是否检测文件内的全部光谱 （全文件）
+checkallbutton=True#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
 save2csvbotton=True #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
+Titerationbotton=True #是否启用温度迭代算法
 plottarget='MgI'#指定绘图元素（仅在 plotbotton=True 时生效）
 
 if __name__ == '__main__':
@@ -969,22 +1007,24 @@ if __name__ == '__main__':
         true_peak_idx, peak_wl, peak_int = wavelet_peak_detection(signal,x,wavelet='mexh', scales=np.arange(1, 11), 
                                 neighbor=4, min_length=3, coeffi_threshold=700, window=5)#峰值校正
         #温度迭代算法
-        # db_temperature=T_initial
-        # T_iteration_result= T_iteration(
-        #         signal,
-        #         x,
-        #         T_initial=T_initial,
-        #         max_iterations=12,
-        #         tolerance=1e-5,
-        #         candidate_mode='alterable',
-        #         t_min=5000,
-        #         t_max=20000.0,
-        #         multistart_count=10,
-        #         alpha=0.35,
-        #         top_k=3,
-        #     )
-        # db_temperature=T_iteration_result[0]
-        db_temperature=10000
+        if Titerationbotton:
+            db_temperature=T_initial
+            T_iteration_result= T_iteration(
+                    signal,
+                    x,
+                    T_initial=T_initial,
+                    max_iterations=12,
+                    tolerance=1e-5,
+                    candidate_mode='alterable',
+                    t_min=5000,
+                    t_max=20000.0,
+                    multistart_count=10,
+                    alpha=0.35,
+                    top_k=3,
+                )
+            db_temperature=T_iteration_result[0]
+        else:
+            db_temperature=10000
         print(f"迭代得到的电子温度: {db_temperature:.2f} K")
         #基体元素检测 
         elements_main,elements_main_list=elements_database_pt2(folder_path,db_temperature) 
