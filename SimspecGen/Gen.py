@@ -222,5 +222,5 @@ def run_generate_with_auto_restart(retry_wait_seconds=10,mode='generate'):
             time.sleep(retry_wait_seconds)
 
 
-generate_spectra(mode='random',file_name="03116",resolution=3000,Te=1.5,Ne=1e17,low_w=200,upper_w=900)
-# run_generate_with_auto_restart(retry_wait_seconds=10,mode='generate')
+# generate_spectra(mode='random',file_name="03116",resolution=3000,Te=1.5,Ne=1e17,low_w=200,upper_w=900)
+run_generate_with_auto_restart(retry_wait_seconds=10,mode='random')
