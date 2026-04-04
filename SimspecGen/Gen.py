@@ -17,7 +17,8 @@ if FLAG_COLUMN not in contents.columns:
 def get_pending_count():
     return int((contents[FLAG_COLUMN].astype(str).str.strip().str.upper() != 'G').sum())
 
-#参数说明： mode有geneate和debug两种，generate模式会生成contents.csv中所有的光谱文件，debug模式会指定文件并且打开浏览器
+#参数说明： mode有geneate、debug和random三种，generate模式会生成contents.csv中所有的光谱文件，debug模式会指定文件并且打开浏览器
+#random则是会生成随机种类和含量的随机模拟光谱
 def generate_spectra(mode,file_name,resolution=3000,Te=0.5,Ne=1e17,low_w=200,upper_w=900):
     if mode=='generate':
         pending_indices = [i for i in range(len(contents)) if str(contents.at[i, FLAG_COLUMN]).strip().upper() != 'G']
