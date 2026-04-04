@@ -1,3 +1,5 @@
+#该文件是稀土元素检测的核心文件，包含了元素匹配、玻尔兹曼图拟合、置信度计算等关键函数
+
 
 import numpy as np
 import pandas as pd
@@ -9,8 +11,8 @@ import warnings
 from collections import defaultdict
 from Wavelet_peakfinding import find_peaks_ridge,peak_correction,wavelet_peak_detection #寻峰
 from Elements_Combfact import elements_database, elements_database_pt2,elements_database_lineswitch#元素库制作
-from scipy.optimize import linear_sum_assignment
-
+from scipy.optimize import linear_sum_assignment #匈牙利算法
+from RandSpec_PerformanceOP import RandSepc_PerforOP #随机光谱性能评估
 
 
 #终端颜色设置
@@ -952,8 +954,9 @@ signal_path6= r'D:\LIBS\RREdetectation\Rockbasespectral_15' #八大岩石基体�
 signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素光谱数据库最后三种的高接纳度测试
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
-signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum\pt4' #随机光谱测试
 
+signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum\pt1' #随机光谱测试
+RandPerfOPbotton=True #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
@@ -963,6 +966,8 @@ I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list
 # print(I_elements_list)
 target_files=['07840_95'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
+plottarget='MgI'#指定绘图元素（仅在 plotbotton=True 时生效）
+
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=True#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
@@ -970,7 +975,22 @@ LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15
 save2csvbotton=True #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
 Titerationbotton=True #是否启用温度迭代算法
-plottarget='MgI'#指定绘图元素（仅在 plotbotton=True 时生效）
+
+
+# 模式控制逻辑：绘图模式优先级最高，开启后强制关闭其他模式；指定元素模式优先级次之，开启后覆盖文件筛选但不影响绘图设置
+# 绘图模式开启时强制关闭 specify、checkall，仅输出目标图像但全量跑文件
+if plotbotton:
+    specifybotton = False
+    checkallbutton = False
+    save2csvbotton = False
+
+# 根据模式选择要处理的文件
+if specifybotton:
+    files_to_process = I_elements_list
+elif checkallbutton:
+    files_to_process = I_elements_list
+else:
+    files_to_process = [name for name in I_elements_list if name in target_files]
 
 if __name__ == '__main__':
     # 稀土元素置信度导出设置
@@ -978,19 +998,7 @@ if __name__ == '__main__':
     confidence_csv_path = os.path.join(target_path, 'rareearth_confidence_results.csv')
     confidence_rows = []
 
-    # 绘图模式开启时强制关闭 specify、checkall，仅输出目标图像但全量跑文件
-    if plotbotton:
-        specifybotton = False
-        checkallbutton = False
-        save2csvbotton = False
 
-    # 根据模式选择要处理的文件
-    if specifybotton:
-        files_to_process = I_elements_list
-    elif checkallbutton:
-        files_to_process = I_elements_list
-    else:
-        files_to_process = [name for name in I_elements_list if name in target_files]
 
     if not files_to_process:
         print(f"未找到待处理文件，target_files={target_files}")
@@ -1093,5 +1101,8 @@ if __name__ == '__main__':
         confidence_df.to_csv(confidence_csv_path, index=False, encoding='utf-8-sig', float_format='%.4f')
         print(color_text(f"\n已导出稀土元素置信度到 CSV: {confidence_csv_path}", GREEN))
 
+    #随机光谱性能测试，在随机光谱路径处设置(target_path)
+    if RandPerfOPbotton:
+        RandSepc_PerforOP(target_path)
 
 
