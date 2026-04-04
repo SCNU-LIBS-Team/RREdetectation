@@ -123,7 +123,7 @@ def generate_spectra(mode,file_name,resolution=3000,Te=0.5,Ne=1e17,low_w=200,upp
             return
         
         save_dir = r"D:\LIBS\RREdetectation\SimspecGen\saved"
-        RAREEARTH_FIXED_ORDER = ['Y', 'Eu', 'Lu', 'Er', 'Ho', 'Yb', 'La', 'Tm','Tb', 'Sm', 'Pr']
+        RAREEARTH_FIXED_ORDER = ['Y', 'Eu', 'Lu', 'Er', 'Ho', 'Yb', 'La', 'Tm','Tb', 'Sm', 'Pr','Ce','Nd','Dy','Gd']
         confidence_csv_path = os.path.join(save_dir, 'Randomrareearth_contents.csv')
         confidence_columns = ['file_name'] + [f"{elem}_at%" for elem in RAREEARTH_FIXED_ORDER] + ['Te_eV']
 
@@ -197,6 +197,8 @@ def generate_spectra(mode,file_name,resolution=3000,Te=0.5,Ne=1e17,low_w=200,upp
         print(f"本次生成完成，共处理: {completed_now}/{total_pending}")
 
 
+
+#防中断程序
 def run_generate_with_auto_restart(retry_wait_seconds=10,mode='generate'):
     while True:
         pending_before = get_pending_count()
