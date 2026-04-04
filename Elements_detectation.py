@@ -955,18 +955,18 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum\pt1' #随机光谱测试
+signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum\pt7' #随机光谱测试
 RandPerfOPbotton=True #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
-target_path=signal_path10 #光谱路径
+target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['07840_95'] #待测光谱文件名列表（不带扩展名）
+target_files=['07125_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
-plottarget='MgI'#指定绘图元素（仅在 plotbotton=True 时生效）
+plottarget='YbII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=True#是否检测文件内的全部光谱 （全文件）
@@ -997,8 +997,6 @@ if __name__ == '__main__':
     RAREEARTH_FIXED_ORDER = ['Y', 'Eu', 'Lu', 'Er', 'Ho', 'Yb', 'La', 'Tm','Tb', 'Sm', 'Pr', 'Ce', 'Nd', 'Dy', 'Gd']
     confidence_csv_path = os.path.join(target_path, 'rareearth_confidence_results.csv')
     confidence_rows = []
-
-
 
     if not files_to_process:
         print(f"未找到待处理文件，target_files={target_files}")
@@ -1033,7 +1031,7 @@ if __name__ == '__main__':
                 )
             db_temperature=T_iteration_result[0]
         else:
-            db_temperature=10000
+            db_temperature=T_initial
         print(f"迭代得到的电子温度: {db_temperature:.2f} K")
         #基体元素检测 
         elements_main,elements_main_list=elements_database_pt2(folder_path,db_temperature) 

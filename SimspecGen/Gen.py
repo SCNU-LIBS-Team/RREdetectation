@@ -86,7 +86,7 @@ def generate_spectra(mode,file_name,resolution=3000,Te=0.5,Ne=1e17,low_w=200,upp
         matched = contents[contents.iloc[:, 0] == file_name]
         main_columns = [f"{element}_at%" for element in elements_main]
         percentages_main = matched.loc[matched.index[0], main_columns].tolist()
-        percentages_rareearth=[0.4545,0.4545,0.4545,0.4545,0.4545,0.4545,0.4545,0.4545,0.4545,0.4545,0.4545] 
+        percentages_rareearth=[0,0,0.8909533029611895,0,3.126051329172965,0.086459007163259,0,0.8965354107026005,0,0,0,0,0,0,0] 
         percentages=percentages_main + percentages_rareearth  
 
             # Remove elements with zero percentage
@@ -199,7 +199,7 @@ def generate_spectra(mode,file_name,resolution=3000,Te=0.5,Ne=1e17,low_w=200,upp
 
 
 #防中断程序
-def run_generate_with_auto_restart(retry_wait_seconds=10,mode='generate'):
+def run_generate_with_auto_restart(retry_wait_seconds=10,mode='generate',file_name=None):
     while True:
         pending_before = get_pending_count()
         if pending_before == 0:
@@ -208,7 +208,7 @@ def run_generate_with_auto_restart(retry_wait_seconds=10,mode='generate'):
 
         print(f"检测到剩余任务 {pending_before} 条，开始运行生成任务。")
         try:
-            generate_spectra(mode=mode,file_name="03116",resolution=3000,Te=1.5,Ne=1e17,low_w=200,upper_w=900)
+            generate_spectra(mode=mode,file_name=file_name,resolution=3000,Te=1.5,Ne=1e17,low_w=200,upper_w=900)
             pending_after = get_pending_count()
             if pending_after == 0:
                 print("本轮运行后所有任务已完成。")
@@ -224,5 +224,5 @@ def run_generate_with_auto_restart(retry_wait_seconds=10,mode='generate'):
             time.sleep(retry_wait_seconds)
 
 
-# generate_spectra(mode='random',file_name="03116",resolution=3000,Te=1.5,Ne=1e17,low_w=200,upper_w=900)
-run_generate_with_auto_restart(retry_wait_seconds=10,mode='random')
+generate_spectra(mode='debug',file_name="070036",resolution=3000,Te=0.75,Ne=1e17,low_w=200,upper_w=900)
+# run_generate_with_auto_restart(retry_wait_seconds=10,mode='debug',file_name="070099")
