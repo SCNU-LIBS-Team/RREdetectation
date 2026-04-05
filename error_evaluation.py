@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 kB=8.617330350e-5 #eV/K
 
-file_path = r'D:\LIBS\RREdetectation\Elements_database\FeI.csv'
+file_path = r'D:\LIBS\RREdetectation\Elements_database\FeII.csv'
 
 df = pd.read_csv(file_path, header=1, encoding="gbk")
 
@@ -92,22 +92,22 @@ def plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500, 
 # if __name__ == '__main__':
 #     plot_confidence_error_curve(T_true=8000, t_min=5000, t_max=20000)
 
-#导数原始定义
-def derivative_P_T(i,T):
-    p=rel_intensity(wl,A,E,g,T_true)/sum(rel_intensity(wl,A,E,g,T_true))
-    global_derivative=-p[i]**2/kB/T**2
-    discrete_derivative=(-E[i]-sum((-E*p)))
-    derivative=-global_derivative*discrete_derivative
-    return derivative
+# #导数原始定义
+# def derivative_P_T(i,T):
+#     p=rel_intensity(wl,A,E,g,T_true)/sum(rel_intensity(wl,A,E,g,T_true))
+#     global_derivative=-p[i]**2/kB/T**2
+#     discrete_derivative=(-E[i]-sum((-E*p)))
+#     derivative=-global_derivative*discrete_derivative
+#     return derivative
 
-def derivative_curve_value(T):
+def derivative_curve_value(i,T):
     """独立于 derivative_P_T 的可绘图导数指标：mean(|dp/dT|)。"""
     if T <= 0:
         return 0.0
     p = rel_intensity(wl, A, E, g, T)
-    E_mean = np.sum(-E * p)
-    dp_dT = -p * (-E - E_mean) / (kB * T**2)
-    return float(np.mean(np.abs(dp_dT)))
+    E_mean = np.sum(E * p)
+    dp_dT = (E[i] - E_mean) / (kB * T**2)
+    return dp_dT
 
 def plot_derivative_vs_T(k,t_min=500, t_max=20000, num=2000, save_path='derivative_vs_T.png'):
     """绘制导数指标随温度 T 的变化曲线。"""
@@ -115,8 +115,8 @@ def plot_derivative_vs_T(k,t_min=500, t_max=20000, num=2000, save_path='derivati
     y_values = np.zeros(num, dtype=float)
 
     for i, T in enumerate(T_values):
-        # y_values[i] = derivative_curve_value(T)
-        y_values[i] = derivative_P_T(k, T)
+        y_values[i] = derivative_curve_value(k, T)
+        # y_values[i] = derivative_P_T(k, T)
 
     plt.figure(figsize=(9, 5))
     plt.plot(T_values, y_values, color='tab:green', linewidth=2, label='mean(|dp/dT|)')
@@ -138,5 +138,5 @@ def plot_derivative_vs_T(k,t_min=500, t_max=20000, num=2000, save_path='derivati
 # print(E[1])
 # print(derivative_P_T(1, 10000))
 
-plot_derivative_vs_T(16,t_min=1000, t_max=20000, num=2000)
+plot_derivative_vs_T(0,t_min=1000, t_max=20000, num=2000)
 # plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500)

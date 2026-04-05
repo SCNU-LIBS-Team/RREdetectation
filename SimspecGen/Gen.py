@@ -87,7 +87,8 @@ def generate_spectra(mode,file_name,resolution=3000,Te=0.5,Ne=1e17,low_w=200,upp
         matched = contents[contents.iloc[:, 0] == file_name]
         main_columns = [f"{element}_at%" for element in elements_main]
         percentages_main = matched.loc[matched.index[0], main_columns].tolist()
-        percentages_rareearth=[0,0,0.8909533029611895,0,3.126051329172965,0.086459007163259,0,0.8965354107026005,0,0,0,0,0,0,0] 
+        percentages_rareearth=[1.2898124415780765	,0,	0.3717624381546292	,0,	2.4305741592919263	,0.065127303868529,	0,	0	,0,	0.3244384052748539,	0.5182871518319722] 
+        
         percentages=percentages_main + percentages_rareearth  
 
             # Remove elements with zero percentage
@@ -98,13 +99,13 @@ def generate_spectra(mode,file_name,resolution=3000,Te=0.5,Ne=1e17,low_w=200,upp
             percentages[-1] = 100.0 - sum(percentages[:-1])
 
         libs = SimulatedLIBS(
-            Te=1.2,
-            Ne=10**17,
+            Te=Te,
+            Ne=Ne,
             elements=elements,
             percentages=percentages,
-            resolution=3000,
-            low_w=200,
-            upper_w=900,
+            resolution=resolution,
+            low_w=low_w,
+            upper_w=upper_w,
             max_ion_charge=2,
             webscraping='dynamic',
             headless=False,
@@ -225,5 +226,5 @@ def run_generate_with_auto_restart(retry_wait_seconds=10,mode='generate',file_na
             time.sleep(retry_wait_seconds)
 
 
-generate_spectra(mode='debug',file_name="070036",resolution=3000,Te=0.75,Ne=1e17,low_w=200,upper_w=900)
+generate_spectra(mode='debug',file_name="07407",resolution=3000,Te=0.75,Ne=1e17,low_w=200,upper_w=900)
 # run_generate_with_auto_restart(retry_wait_seconds=10,mode='debug',file_name="070099")
