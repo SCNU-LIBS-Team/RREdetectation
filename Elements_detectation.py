@@ -955,11 +955,11 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum\pt20' #随机光谱测试
-RandPerfOPbotton=False #随机光谱性能测试模式
+signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum\pt25' #随机光谱测试
+RandPerfOPbotton=True #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
-T_initial=20000
+T_initial=10000
 target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
@@ -969,12 +969,12 @@ target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
 plottarget='TbII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=False#是否检测文件内的全部光谱 （全文件）
+checkallbutton=True#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
-save2csvbotton=False #是否保存稀土元素置信度结果到CSV
+save2csvbotton=True #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
-Titerationbotton=False #是否启用温度迭代算法
+Titerationbotton=True #是否启用温度迭代算法
 
 
 # 模式控制逻辑：绘图模式优先级最高，开启后强制关闭其他模式；指定元素模式优先级次之，开启后覆盖文件筛选但不影响绘图设置
