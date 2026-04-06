@@ -43,7 +43,7 @@ for col in needed_cols:
     df[col] = pd.to_numeric(df[col], errors='coerce')
 
 # 去除关键列中包含 NaN 或无穷值的行
-df = df.replace([np.inf, -np.inf], np.nan)
+df[needed_cols] = df[needed_cols].mask(~np.isfinite(df[needed_cols]), np.nan)
 df = df.dropna(subset=needed_cols).reset_index(drop=True)
 
 wl = df.iloc[:, 1].to_numpy(dtype=float)
@@ -55,7 +55,7 @@ wl = wl * 0.1
 E  = E  * 1.2398e-4  
 
 
-T_true=10000
+
 def U_Calculate(g,A,E,T):
     if T <= 0:
         U = np.zeros(len(g), dtype=float)
@@ -86,7 +86,7 @@ def rel_intensity(wl,A,E,g,T):
 
 def error_evaluation(T_calculated,T_true):
     error = np.abs(rel_intensity(wl,A,E,g,T_calculated) - rel_intensity(wl,A,E,g,T_true))
-    confidence_error=np.exp(-1.5*np.sum(error**2)/0.85)
+    confidence_error=np.exp(-1.5*np.sum(error**2)/0.6)
     return confidence_error
 
 
@@ -113,8 +113,7 @@ def plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500, 
     plt.savefig(save_path, dpi=300)    
     plt.show()
 
-def plot_p_T_curve(k,T_true=10000, t_min=5000, t_max=20000, num=500):
-    p=rel_intensity(wl,A,E,g,T_true)
+def plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500):
     T_values = np.linspace(t_min, t_max, num)
     p_T_values = np.zeros((len(wl), num))
     for i, T in enumerate(T_values):
@@ -125,14 +124,14 @@ def plot_p_T_curve(k,T_true=10000, t_min=5000, t_max=20000, num=500):
     plt.axvline(T_true, color='tab:red', linestyle='--', linewidth=1.5, label=f'T_true={T_true}')
     plt.xlabel('T')
     plt.ylabel('p')
-    plt.title('p vs T')
+    plt.title('CeII')
     plt.legend()
     plt.tight_layout()
     plt.show()
 
 
 def derivative_curve_value(i,T):
-    """独立于 derivative_P_T 的可绘图导数指标：mean(|dp/dT|)。"""
+    """独立于 derivative_P_T 的可绘图导数指标：mean(|d(lnp)/dT|)。"""
     if T <= 0:
         return 0.0
     p = rel_intensity(wl, A, E, g, T)
@@ -152,7 +151,7 @@ def plot_derivative_vs_T(k,t_min=500, t_max=20000, num=2000, save_path='derivati
         # y_values[i] = derivative_P_T(k, T)
 
     plt.figure(figsize=(9, 5))
-    plt.plot(T_values, y_values, color='tab:green', linewidth=2, label='mean(|dp/dT|)')
+    plt.plot(T_values, y_values, color='tab:green', linewidth=2, label='mean(|d(lnp)/dT|)')
     plt.axvline(T_true, color='tab:red', linestyle='--', linewidth=1.5, label=f'T_true={T_true}')
     plt.xlabel('T')
     plt.ylabel('Derivative Indicator')
@@ -294,16 +293,21 @@ def plot_dU_sum_dT_vs_T_from_df(df_input, t_min=500, t_max=20000, num=2000, save
 # print(E[1])
 # print(derivative_P_T(1, 10000))
 
-# plot_derivative_vs_T(4,t_min=1000, t_max=20000, num=2000)
+# plot_derivative_vs_T(0,t_min=1000, t_max=20000, num=2000)
 
 # plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
 
-# plot_p_T_curve(0,T_true=10000, t_min=5000, t_max=20000, num=500)
+plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
 
+
+
+
+#第二部分理论开发
 #配分函数
-df_raw = read_csv_with_fallback(r'D:\LIBS\RREdetectation\0406_Ce.csv', header=0)
-plot_U_sum_vs_T_from_df(df_raw, t_min=1000, t_max=20000, num=2000)
-plot_dU_sum_dT_vs_T_from_df(df_raw, t_min=1000, t_max=20000, num=2000)
+# df_raw = read_csv_with_fallback(r'D:\LIBS\RREdetectation\0406_Fe.csv', header=0)
+# plot_U_sum_vs_T_from_df(df_raw, t_min=1000, t_max=20000, num=2000)
+# plot_dU_sum_dT_vs_T_from_df(df_raw, t_min=1000, t_max=20000, num=2000)
+
 
 
 
