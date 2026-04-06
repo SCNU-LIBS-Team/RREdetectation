@@ -960,11 +960,12 @@ RandPerfOPbotton=True #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
+T_initial=10000
 target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['070036_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['07125_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
 plottarget='TbII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
@@ -1016,6 +1017,7 @@ if __name__ == '__main__':
         #温度迭代算法
         if Titerationbotton:
             db_temperature=T_initial
+            print(f"正在进行温度迭代算法，初始温度: {db_temperature:.2f} K")
             T_iteration_result= T_iteration(
                     signal,
                     x,
