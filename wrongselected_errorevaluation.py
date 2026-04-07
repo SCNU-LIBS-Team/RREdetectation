@@ -46,7 +46,7 @@ def load_line_data(file_path):
     return wl, A, E, g
 
 #谱线数据读取
-file_path_right = r'D:\LIBS\RREdetectation\Rareearth_pt3\CeII.csv'
+file_path_right = r'D:\LIBS\RREdetectation\Rareearth_pt3\YII.csv'
 file_path_wrong = r'D:\LIBS\RREdetectation\Elements_database\FeII.csv'
 wl_right, A_right, E_right, g_right = load_line_data(file_path_right)
 wl_wrong, A_wrong, E_wrong, g_wrong = load_line_data(file_path_wrong)
@@ -75,8 +75,8 @@ def select_lines_by_count(wl, A, E, g, n_lines=None):
 
 #第三步部分开发不同元素的配分函数比较
 #配分函数数据读取
-df_right=read_csv_with_fallback(r'D:\LIBS\RREdetectation\0406_Tb.csv', header=0)
-df_wrong=read_csv_with_fallback(r'D:\LIBS\RREdetectation\0406_Fe.csv', header=0)
+df_right=read_csv_with_fallback(r'D:\LIBS\RREdetectation\Ucalculation\0406_Y.csv', header=0)
+df_wrong=read_csv_with_fallback(r'D:\LIBS\RREdetectation\Ucalculation\0406_FeI.csv', header=0)
 
 
 #比较部分
@@ -151,5 +151,5 @@ if __name__ == "__main__":
     t_max=20000,
     num=500,
     show_plot=True,
-    n_right=2,
-    n_wrong=1)
+    n_right=3,
+    n_wrong=3)

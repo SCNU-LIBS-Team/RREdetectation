@@ -939,6 +939,58 @@ def Brute_Force_T_iteration(signal, x, t_min=7000.0, t_max=25000.0, t_step=250.0
     return best_scan_T, best_element, best_element_T, best_confidence
 
 
+def scan_target_element_confidence(
+    peak_wl,
+    peak_int,
+    x,
+    intensity_sum,
+    target_elem,
+    t_min=5000.0,
+    t_max=20000.0,
+    t_step=250.0,):
+    """扫描温度区间并返回指定元素置信度曲线。"""
+    if t_step <= 0:
+        raise ValueError("t_step 必须大于 0")
+    if t_max < t_min:
+        raise ValueError("t_max 必须大于等于 t_min")
+
+    temperature_grid = np.arange(float(t_min), float(t_max) + 0.5 * float(t_step), float(t_step))
+    target_confidences = []
+
+    for scan_idx, scan_T in enumerate(temperature_grid, start=1):
+        elements_main, _ = elements_database_pt2(folder_path, float(scan_T))
+        _, _, _, _, elements_confidence_main = compute_element_confidence_shape(
+            elements_main,
+            peak_wl,
+            peak_int,
+            x,
+            intensity_sum,
+            scope=0.2,
+            plot=False,
+        )
+
+        elements_rockmain = [elem for elem, conf in elements_confidence_main.items() if conf > 0.7]
+        elements_rareearth, _ = elements_database_lineswitch(folder_path2, float(scan_T), elements_rockmain, LineSwitchMode)
+        _, _, _, _, elements_confidence = compute_element_confidence_shape(
+            elements_rareearth,
+            peak_wl,
+            peak_int,
+            x,
+            intensity_sum,
+            scope=0.2,
+            plot=False,
+        )
+
+        conf_value = float(elements_confidence.get(target_elem, 0.0))
+        target_confidences.append(conf_value)
+        print(
+            f"[温度扫描 {scan_idx}/{len(temperature_grid)}] T={float(scan_T):.2f} K, "
+            f"{target_elem} 置信度={conf_value:.4f}"
+        )
+
+    return temperature_grid, np.asarray(target_confidences, dtype=float)
+
+
 ###数据库导入
 folder_path = r'D:\LIBS\RREdetectation\Elements_database' #元素库路径
 folder_path2 =r'D:\LIBS\RREdetectation\Rareearth_pt3' #稀土元素光谱路径 Lineswitch Mode（threshold=0.15nm）(pt2:0.2nm)
@@ -955,27 +1007,32 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum\pt25' #随机光谱测试
-RandPerfOPbotton=True #随机光谱性能测试模式
+signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum\pt1' #随机光谱测试
+RandPerfOPbotton=False #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
-T_initial=10000
 T_initial=10000
 target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['07125_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['07840_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
-plottarget='TbII'#指定绘图元素（仅在 plotbotton=True 时生效）
+plottarget='YbII'#指定绘图元素（仅在 plotbotton=True 时生效）
+
+TargetTempScanMode=False #指定元素温度扫描模式（5000-20000 K）
+scan_target_element='Yb' #温度扫描模式下的目标元素
+scan_t_min=5000
+scan_t_max=20000
+scan_t_step=250
 
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=True#是否检测文件内的全部光谱 （全文件）
-plotbotton=False#是否绘图展示Boltzmann图
+checkallbutton=False#是否检测文件内的全部光谱 （全文件）
+plotbotton=True#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
-save2csvbotton=True #是否保存稀土元素置信度结果到CSV
+save2csvbotton=False #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
-Titerationbotton=True #是否启用温度迭代算法
+Titerationbotton=False #是否启用温度迭代算法
 
 
 # 模式控制逻辑：绘图模式优先级最高，开启后强制关闭其他模式；指定元素模式优先级次之，开启后覆盖文件筛选但不影响绘图设置
@@ -984,6 +1041,15 @@ if plotbotton:
     specifybotton = False
     checkallbutton = False
     save2csvbotton = False
+
+# 指定元素温度扫描模式：强制关闭温度迭代，按温度区间扫描并绘制置信度曲线
+if TargetTempScanMode:
+    Titerationbotton = False
+    plotbotton = False
+    checkallbutton = False
+    specifybotton = False
+    save2csvbotton = False
+    RandPerfOPbotton=False
 
 # 根据模式选择要处理的文件
 if specifybotton:
@@ -1014,6 +1080,63 @@ if __name__ == '__main__':
         signal = intensity_sum
         true_peak_idx, peak_wl, peak_int = wavelet_peak_detection(signal,x,wavelet='mexh', scales=np.arange(1, 11), 
                                 neighbor=4, min_length=3, coeffi_threshold=700, window=5)#峰值校正
+
+        if TargetTempScanMode:
+            print(
+                color_text(
+                    f"\n[{I_element_name}] 启动目标元素温度扫描模式: 元素={scan_target_element}, "
+                    f"温度范围={scan_t_min}-{scan_t_max} K, 步长={scan_t_step} K",
+                    BLUE,
+                )
+            )
+            scan_T, scan_conf = scan_target_element_confidence(
+                peak_wl,
+                peak_int,
+                x,
+                intensity_sum,
+                scan_target_element,
+                t_min=scan_t_min,
+                t_max=scan_t_max,
+                t_step=scan_t_step,
+            )
+
+            best_idx = int(np.argmax(scan_conf)) if scan_conf.size > 0 else -1
+            min_idx = int(np.argmin(scan_conf)) if scan_conf.size > 0 else -1
+            if best_idx >= 0:
+                print(
+                    color_text(
+                        f"[{I_element_name}] {scan_target_element} 最大置信度={scan_conf[best_idx]:.4f}, "
+                        f"对应温度={scan_T[best_idx]:.2f} K",
+                        GREEN,
+                    )
+                )
+            if min_idx >= 0:
+                print(
+                    color_text(
+                        f"[{I_element_name}] {scan_target_element} 最小置信度={scan_conf[min_idx]:.4f}, "
+                        f"对应温度={scan_T[min_idx]:.2f} K",
+                        YELLOW,
+                    ))
+                print(
+                                       color_text(
+                        f"[{I_element_name}] {scan_target_element} 置信度差值={scan_conf[best_idx] - scan_conf[min_idx]:.4f}, "
+                            f"温度差值={scan_T[best_idx] - scan_T[min_idx]:.2f} K",
+                        BLUE,
+                    )
+                )
+                
+
+            plt.figure(figsize=(8, 4))
+            plt.plot(scan_T, scan_conf, marker='o', linewidth=1.5)
+            plt.xlabel('Temperature (K)')
+            plt.ylabel('Confidence')
+            plt.title(f'{I_element_name} - {scan_target_element} Confidence vs Temperature')
+            plt.grid(True, alpha=0.3)
+            plt.tick_params(axis='both', which='both', direction='in', top=True, right=True)
+            plt.tight_layout()
+            plt.show()
+            continue
+
         #温度迭代算法
         if Titerationbotton:
             db_temperature=T_initial
