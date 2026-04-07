@@ -297,16 +297,16 @@ def plot_dU_sum_dT_vs_T_from_df(df_input, t_min=500, t_max=20000, num=2000, save
 
 # plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
 
-plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
+# plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
 
 
 
 
 #第二部分理论开发
 #配分函数
-# df_raw = read_csv_with_fallback(r'D:\LIBS\RREdetectation\0406_Fe.csv', header=0)
-# plot_U_sum_vs_T_from_df(df_raw, t_min=1000, t_max=20000, num=2000)
-# plot_dU_sum_dT_vs_T_from_df(df_raw, t_min=1000, t_max=20000, num=2000)
+df_raw = read_csv_with_fallback(r'D:\LIBS\RREdetectation\Ucalculation\0406_Yb.csv', header=0)
+plot_U_sum_vs_T_from_df(df_raw, t_min=1000, t_max=20000, num=2000)
+plot_dU_sum_dT_vs_T_from_df(df_raw, t_min=1000, t_max=20000, num=2000)
 
 
 
