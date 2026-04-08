@@ -938,16 +938,9 @@ def Brute_Force_T_iteration(signal, x, t_min=7000.0, t_max=25000.0, t_step=250.0
     )
     return best_scan_T, best_element, best_element_T, best_confidence
 
+#温度扫描——元素勘误
+def scan_target_element_confidence(peak_wl,peak_int,x,intensity_sum,target_elem,t_min=5000.0,t_max=20000.0,t_step=250.0,):
 
-def scan_target_element_confidence(
-    peak_wl,
-    peak_int,
-    x,
-    intensity_sum,
-    target_elem,
-    t_min=5000.0,
-    t_max=20000.0,
-    t_step=250.0,):
     """扫描温度区间并返回指定元素置信度曲线。"""
     if t_step <= 0:
         raise ValueError("t_step 必须大于 0")
@@ -983,10 +976,7 @@ def scan_target_element_confidence(
 
         conf_value = float(elements_confidence.get(target_elem, 0.0))
         target_confidences.append(conf_value)
-        print(
-            f"[温度扫描 {scan_idx}/{len(temperature_grid)}] T={float(scan_T):.2f} K, "
-            f"{target_elem} 置信度={conf_value:.4f}"
-        )
+
 
     return temperature_grid, np.asarray(target_confidences, dtype=float)
 
@@ -1026,9 +1016,13 @@ scan_t_min=5000
 scan_t_max=20000
 scan_t_step=250
 
+AutoElemTempMarkMode=True #自动扫描有置信度稀土元素并在输出中标注温度敏感性
+auto_mark_conf_min=0.05 #参与扫描的最小置信度阈值
+auto_mark_delta_threshold=0.45 #最大-最小置信度差值超过该阈值则标注
+
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=False#是否检测文件内的全部光谱 （全文件）
-plotbotton=True#是否绘图展示Boltzmann图
+plotbotton=False#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
 save2csvbotton=False #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
@@ -1100,6 +1094,7 @@ if __name__ == '__main__':
                 t_step=scan_t_step,
             )
 
+            #输出显示部分
             best_idx = int(np.argmax(scan_conf)) if scan_conf.size > 0 else -1
             min_idx = int(np.argmin(scan_conf)) if scan_conf.size > 0 else -1
             if best_idx >= 0:
@@ -1177,6 +1172,37 @@ if __name__ == '__main__':
         particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements_rareearth, peak_wl, peak_int,x,intensity_sum,
                                                                                                     scope=0.2,plot=plotbotton,target=plottarget)
         
+        # 对有置信度的元素做温度扫描，若置信度波动超过阈值则在最终输出中标注
+        temp_sensitive_marks = {}
+        if AutoElemTempMarkMode:
+            candidate_scan_elems = [
+                elem for elem, conf in elements_confidence.items()
+                if float(conf) >= auto_mark_conf_min
+            ]
+            for scan_elem in candidate_scan_elems:
+                scan_T_elem, scan_conf_elem = scan_target_element_confidence(
+                    peak_wl,
+                    peak_int,
+                    x,
+                    intensity_sum,
+                    scan_elem,
+                    t_min=scan_t_min,
+                    t_max=scan_t_max,
+                    t_step=scan_t_step,
+                )
+                if scan_conf_elem.size == 0:
+                    continue
+
+                delta_conf = float(np.max(scan_conf_elem) - np.min(scan_conf_elem))
+                if delta_conf >= auto_mark_delta_threshold:
+                    best_idx_elem = int(np.argmax(scan_conf_elem))
+                    min_idx_elem = int(np.argmin(scan_conf_elem))
+                    temp_sensitive_marks[scan_elem] = {
+                        'delta_conf': delta_conf,
+                        'best_t': float(scan_T_elem[best_idx_elem]),
+                        'min_t': float(scan_T_elem[min_idx_elem]),
+                    }
+ 
         # 记录当前光谱的稀土元素置信度（固定列顺序）
         if save2csvbotton:
             row = {'spectrum_name': I_element_name}
@@ -1203,7 +1229,14 @@ if __name__ == '__main__':
                     temp_text = color_text(f"温度={elem_T:<8.4f}", BLUE)
                     r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
                     conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
-                    print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
+                    sensitivity_mark = ""
+                    if elem in temp_sensitive_marks:
+                        mark = temp_sensitive_marks[elem]
+                        sensitivity_mark = color_text(
+                            f" [温度敏感 ΔC={mark['delta_conf']:.3f}, {mark['min_t']:.0f}K->{mark['best_t']:.0f}K]",
+                            YELLOW,
+                        )
+                    print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}{sensitivity_mark}")
                     break
             else:
                 for elem in sorted_elems:
@@ -1214,7 +1247,14 @@ if __name__ == '__main__':
                     temp_text = color_text(f"温度={elem_T:<8.4f}", BLUE)
                     r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
                     conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
-                    print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
+                    sensitivity_mark = ""
+                    if elem in temp_sensitive_marks:
+                        mark = temp_sensitive_marks[elem]
+                        sensitivity_mark = color_text(
+                            f" [温度敏感 ΔC={mark['delta_conf']:.3f}, {mark['min_t']:.0f}K->{mark['best_t']:.0f}K]",
+                            YELLOW,
+                        )
+                    print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}{sensitivity_mark}")
 
 
     # 批量结果导出到CSV：第一列为光谱名，后续为固定顺序稀土元素置信度
