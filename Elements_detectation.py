@@ -1006,12 +1006,12 @@ target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['07840_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['07125_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
 plottarget='YbII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
 TargetTempScanMode=False #指定元素温度扫描模式（5000-20000 K）
-scan_target_element='Yb' #温度扫描模式下的目标元素
+scan_target_element='La' #温度扫描模式下的目标元素
 scan_t_min=5000
 scan_t_max=20000
 scan_t_step=250
@@ -1044,6 +1044,7 @@ if TargetTempScanMode:
     specifybotton = False
     save2csvbotton = False
     RandPerfOPbotton=False
+    AutoelemTempMarkMode=False
 
 # 根据模式选择要处理的文件
 if specifybotton:
