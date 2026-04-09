@@ -86,16 +86,16 @@ def _plot_identification_matrix(matrix, sample_names, element_names):
 
     #表头和标签
     ax.set_xticks(np.arange(len(element_names)))
-    ax.set_xticklabels(element_names, fontsize=12, fontweight="bold")
+    ax.set_xticklabels(element_names, fontsize=15, fontweight="semibold")
     ax.set_yticks(np.arange(len(sample_names)))
     display_sample_labels = [f"{i + 1}" for i in range(len(sample_names))]
-    ax.set_yticklabels(display_sample_labels, fontsize=12, fontweight="bold")
+    ax.set_yticklabels(display_sample_labels, fontsize=15, fontweight="semibold")
     ax.tick_params(axis="both", which="major", length=0)
 
     #标签
-    ax.set_xlabel("Element", fontsize=18, fontweight="bold")
-    ax.set_ylabel("Sample", fontsize=18, fontweight="bold")
-    ax.set_title("Identification Matrix", fontsize=20, fontweight="bold")
+    ax.set_xlabel("Element", fontsize=15, fontweight="semibold")
+    ax.set_ylabel("Sample", fontsize=15, fontweight="semibold")
+    ax.set_title("Identification Matrix", fontsize=20, fontweight="semibold")
 
     # 表格样式：实线单元格边界，圆点位于单元格中心
     ax.set_xlim(-0.5, len(element_names) - 0.5)
@@ -116,7 +116,7 @@ def _plot_identification_matrix(matrix, sample_names, element_names):
         plt.Line2D([0], [0], marker="o", color="w", markerfacecolor="red", markeredgecolor="black", markersize=8, label="False"),
     ]
 
-    ax.legend(handles=handles, loc="upper right", fontsize=10, prop={"weight": "bold", "size": 10})
+    ax.legend(handles=handles, loc="upper right",  prop={"weight": "semibold", "size": 12})
     for spine in ax.spines.values():
         spine.set_linewidth(2.0)
     plt.tight_layout()
@@ -161,18 +161,26 @@ def _plot_element_metrics(gt_aligned, pred_aligned, element_names):
     ax.bar(x + offset, f1_pct, width=width, color="gold", label="F1-score")
 
     ax.set_xticks(x)
-    ax.set_xticklabels(element_names, ha="right", fontsize=11, fontweight="bold")
-    ax.set_xlabel("Element", fontsize=18, fontweight="bold")
-    ax.set_ylabel("Percentage", fontsize=18, fontweight="bold")
-    ax.set_title("Precision / Recall / F1-score", fontsize=20, fontweight="bold")
-    ax.tick_params(axis="both", which="major", length=0)
+    ax.set_xticklabels(element_names, ha="right", fontsize=15, fontweight="semibold")
+    ax.set_xlabel("Element", fontsize=15, fontweight="semibold")
+
+    ax.set_ylabel("Percentage", fontsize=15, fontweight="semibold")
+    ax.set_title("Precision / Recall / F1-score", fontsize=20, fontweight="semibold")
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda val, pos: f"{val:.0f}%"))
+    ax.tick_params(axis="y", labelsize=15)
+    for lab in ax.get_yticklabels():
+        lab.set_fontweight("semibold")
+        lab.set_ha("right")
+    ax.tick_params(axis="both", which="major", top=True,right=True,length=0)
     ax.grid(False)
     ax.set_ylim(0, 110)
+
     for spine in ax.spines.values():
-        spine.set_linewidth(2.0)
+        spine.set_linewidth(1.8)
     for label in ax.get_yticklabels():
-        label.set_fontweight("bold")
-    ax.legend(loc="upper right", fontsize=10, prop={"weight": "bold", "size": 10})
+        label.set_fontweight("semibold")
+
+    ax.legend(loc="upper right",  prop={"weight": "semibold", "size": 12})
 
     plt.tight_layout()
     plt.show()
@@ -245,95 +253,93 @@ def generate_identification_matrix(contents_df, predictions, show_plot=True, sho
     return matrix, sample_names, element_names
 
 
-# #整套模式
-# filepath = r'D:\LIBS\RREdetectation\RandomSpectrum\Pt1'
-# confidence_path=os.path.join(filepath,'rareearth_confidence_results.csv')
-# contents_path=os.path.join(filepath,'Randomrareearth_contents.csv')
-# confidence=pd.read_csv(confidence_path)
-# contents=pd.read_csv(contents_path)
-# identification_matrix, sample_names, element_names = generate_identification_matrix(contents, confidence, show_plot=True, show_metrics_plot=True)
+#整套模式
+filepath = r'D:\LIBS\RREdetectation\T_scanon\Pt10'
+confidence_path=os.path.join(filepath,'rareearth_confidence_results.csv')
+contents_path=os.path.join(filepath,'Randomrareearth_contents.csv')
+confidence=pd.read_csv(confidence_path)
+contents=pd.read_csv(contents_path)
+identification_matrix, sample_names, element_names = generate_identification_matrix(contents, confidence, show_plot=True, show_metrics_plot=True)
 
 
-#对应样本模式
-filepath2=r'D:\LIBS\RREdetectation\RandomSpectrum'
-target_file=['07125']
-target_name = str(target_file[0]).strip()
+# #对应样本模式
+# filepath2=r'D:\LIBS\RREdetectation\RandomSpectrum'
+# target_file=['03116']
+# target_name = str(target_file[0]).strip()
 
 
-def _normalize_sample_name(name):
-    s = str(name).strip().lower()
-    if s.endswith('.csv'):
-        s = s[:-4]
-    return s
+# def _normalize_sample_name(name):
+#     s = str(name).strip().lower()
+#     if s.endswith('.csv'):
+#         s = s[:-4]
+#     return s
 
 
-def _name_match_score(candidate, target):
-    candidate_norm = _normalize_sample_name(candidate)
-    target_norm = _normalize_sample_name(target)
+# def _name_match_score(candidate, target):
+#     candidate_norm = _normalize_sample_name(candidate)
+#     target_norm = _normalize_sample_name(target)
 
-    if candidate_norm == target_norm:
-        return 1.0
-    if candidate_norm.startswith(target_norm) or target_norm.startswith(candidate_norm):
-        return 0.95
+#     if candidate_norm == target_norm:
+#         return 1.0
+#     if candidate_norm.startswith(target_norm) or target_norm.startswith(candidate_norm):
+#         return 0.95
 
-    prefix_len = len(os.path.commonprefix([candidate_norm, target_norm]))
-    prefix_ratio = prefix_len / max(1, min(len(candidate_norm), len(target_norm)))
-    similarity = SequenceMatcher(None, candidate_norm, target_norm).ratio()
-    return max(similarity, prefix_ratio * 0.9)
-
-
-def _select_best_matched_row(df, target, min_score=0.6):
-    if df.empty:
-        return df.copy()
-
-    first_col = df.iloc[:, 0].astype(str)
-    scores = first_col.map(lambda x: _name_match_score(x, target))
-    best_idx = scores.idxmax()
-    best_score = float(scores.loc[best_idx])
-
-    if best_score < min_score:
-        return df.iloc[0:0].copy()
-    return df.loc[[best_idx]].copy()
-
-confidence_rows = []
-contents_rows = []
-
-for i in range(1, 26):
-    pt_folder = f'Pt{i}'
-    confidence_path=os.path.join(filepath2, pt_folder, 'rareearth_confidence_results.csv')
-    contents_path=os.path.join(filepath2, pt_folder, 'Randomrareearth_contents.csv')
-    confidence_origin=pd.read_csv(confidence_path)
-    contents_origin=pd.read_csv(contents_path)
+#     prefix_len = len(os.path.commonprefix([candidate_norm, target_norm]))
+#     prefix_ratio = prefix_len / max(1, min(len(candidate_norm), len(target_norm)))
+#     similarity = SequenceMatcher(None, candidate_norm, target_norm).ratio()
+#     return max(similarity, prefix_ratio * 0.9)
 
 
-    # 只保留与 target_file 最相近的一行（支持前缀/相似匹配）
-    confidence = _select_best_matched_row(confidence_origin, target_name)
-    contents = _select_best_matched_row(contents_origin, target_name)
+# def _select_best_matched_row(df, target, min_score=0.6):
+#     if df.empty:
+#         return df.copy()
+
+#     first_col = df.iloc[:, 0].astype(str)
+#     scores = first_col.map(lambda x: _name_match_score(x, target))
+#     best_idx = scores.idxmax()
+#     best_score = float(scores.loc[best_idx])
+
+#     if best_score < min_score:
+#         return df.iloc[0:0].copy()
+#     return df.loc[[best_idx]].copy()
+
+# confidence_rows = []
+# contents_rows = []
+
+# for i in range(1, 26):
+#     pt_folder = f'Pt{i}'
+#     confidence_path=os.path.join(filepath2, pt_folder, 'rareearth_confidence_results.csv')
+#     contents_path=os.path.join(filepath2, pt_folder, 'Randomrareearth_contents.csv')
+#     confidence_origin=pd.read_csv(confidence_path)
+#     contents_origin=pd.read_csv(contents_path)
+
+
+#     # 只保留与 target_file 最相近的一行（支持前缀/相似匹配）
+#     confidence = _select_best_matched_row(confidence_origin, target_name)
+#     contents = _select_best_matched_row(contents_origin, target_name)
     
 
-    if confidence.empty or contents.empty:
-        print(f"Pt{i}: 未找到目标样本 {target_name}，已跳过")
-        continue
+#     if confidence.empty or contents.empty:
+#         print(f"Pt{i}: 未找到目标样本 {target_name}，已跳过")
+#         continue
 
-    # 为避免不同文件中同名样本被后续聚合，增加 Pt 编号前缀
-    unique_sample_name = f"Pt{i}_{target_name}"
-    confidence.iloc[:, 0] = unique_sample_name
-    contents.iloc[:, 0] = unique_sample_name
+#     # 为避免不同文件中同名样本被后续聚合，增加 Pt 编号前缀
+#     unique_sample_name = f"Pt{i}_{target_name}"
+#     confidence.iloc[:, 0] = unique_sample_name
+#     contents.iloc[:, 0] = unique_sample_name
 
-    confidence_rows.append(confidence)
-    contents_rows.append(contents)
+#     confidence_rows.append(confidence)
+#     contents_rows.append(contents)
 
-if not confidence_rows or not contents_rows:
-    raise ValueError(f"在 Pt1~Pt25 中未找到目标样本 {target_name}")
+# if not confidence_rows or not contents_rows:
+#     raise ValueError(f"在 Pt1~Pt25 中未找到目标样本 {target_name}")
 
-confidence_all = pd.concat(confidence_rows, axis=0, ignore_index=True)
-contents_all = pd.concat(contents_rows, axis=0, ignore_index=True)
-print(confidence_all)
-print(contents_all)
-identification_matrix, sample_names, element_names = generate_identification_matrix(
-    contents_all,
-    confidence_all,
-    show_plot=True,
-    show_metrics_plot=True,
-)
+# confidence_all = pd.concat(confidence_rows, axis=0, ignore_index=True)
+# contents_all = pd.concat(contents_rows, axis=0, ignore_index=True)
+# identification_matrix, sample_names, element_names = generate_identification_matrix(
+#     contents_all,
+#     confidence_all,
+#     show_plot=True,
+#     show_metrics_plot=True,
+# )
     

@@ -997,8 +997,8 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum\pt1' #随机光谱测试
-RandPerfOPbotton=False #随机光谱性能测试模式
+signal_path10= r'D:\LIBS\RREdetectation\T_scanon\Pt10' #随机光谱测试
+RandPerfOPbotton=True #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
@@ -1018,15 +1018,15 @@ scan_t_step=250
 
 AutoElemTempMarkMode=True #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 auto_mark_conf_min=0.05 #参与扫描的最小置信度阈值
-auto_mark_delta_threshold=0.45 #最大-最小置信度差值超过该阈值则标注
+auto_mark_delta_threshold=0.5 #最大-最小置信度差值超过该阈值则标注
 
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=False#是否检测文件内的全部光谱 （全文件）
+checkallbutton=True#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
-save2csvbotton=False #是否保存稀土元素置信度结果到CSV
+save2csvbotton=True #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
-Titerationbotton=False #是否启用温度迭代算法
+Titerationbotton=True #是否启用温度迭代算法
 
 
 # 模式控制逻辑：绘图模式优先级最高，开启后强制关闭其他模式；指定元素模式优先级次之，开启后覆盖文件筛选但不影响绘图设置
@@ -1044,7 +1044,7 @@ if TargetTempScanMode:
     specifybotton = False
     save2csvbotton = False
     RandPerfOPbotton=False
-    AutoelemTempMarkMode=False
+    AutoElemTempMarkMode=False
 
 # 根据模式选择要处理的文件
 if specifybotton:
@@ -1176,6 +1176,7 @@ if __name__ == '__main__':
         # 对有置信度的元素做温度扫描，若置信度波动超过阈值则在最终输出中标注
         temp_sensitive_marks = {}
         if AutoElemTempMarkMode:
+            print(color_text(f"\n[{I_element_name}] 启动自动温度敏感元素标注算法，扫描置信度≥{auto_mark_conf_min}的元素", BLUE))
             candidate_scan_elems = [
                 elem for elem, conf in elements_confidence.items()
                 if float(conf) >= auto_mark_conf_min
@@ -1208,7 +1209,11 @@ if __name__ == '__main__':
         if save2csvbotton:
             row = {'spectrum_name': I_element_name}
             for elem in RAREEARTH_FIXED_ORDER:
-                row[elem] = round(float(elements_confidence.get(elem, 0.0)), 4)
+                conf_value = float(elements_confidence.get(elem, 0.0))
+                # 如果元素被标记为温度敏感，则将其置信度设为0以突出显示（或根据需要调整）
+                if elem in temp_sensitive_marks:
+                    conf_value = 0.0
+                row[elem] = round(conf_value, 4)
             confidence_rows.append(row)
 
         #print结果展示

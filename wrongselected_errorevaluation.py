@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from error_evaluation import read_csv_with_fallback, U_Calculate, plot_U_sum_vs_T_from_df
+from error_evaluation import read_csv_with_fallback, U_Calculate, plot_U_sum_vs_T_from_df,derivative_curve_value,plot_derivative_vs_T
 
 kB=8.617330350e-5 #eV/K
 
@@ -52,8 +52,13 @@ wl_right, A_right, E_right, g_right = load_line_data(file_path_right)
 wl_wrong, A_wrong, E_wrong, g_wrong = load_line_data(file_path_wrong)
 
 
-def select_lines_by_count(wl, A, E, g, n_lines=None):
-    """按数量选择谱线：优先取 A 最大的 n_lines 条；None 表示全取，0 表示不取。"""
+def select_lines_by_count(wl, A, E, g, n_lines=None, mode='order'):
+    """按数量选择谱线。
+
+    mode='order': 取 A 最大的 n_lines 条，并按原顺序返回。
+    mode='random': 随机选取 n_lines 条。
+    None 表示全取，0 表示不取。
+    """
     total = len(wl)
     if n_lines is None:
         return wl, A, E, g
@@ -67,9 +72,17 @@ def select_lines_by_count(wl, A, E, g, n_lines=None):
     if n >= total:
         return wl, A, E, g
 
-    # 选取 A 最大的 n 条线，并按原顺序返回，便于后续对照
-    idx = np.argsort(A)[::-1][:n]
-    idx = np.sort(idx)
+    mode = str(mode).strip().lower()
+    if mode == 'order':
+        # 选取 A 最大的 n 条线，并按原顺序返回，便于后续对照
+        idx = np.argsort(A)[::-1][:n]
+        idx = np.sort(idx)
+    elif mode == 'random':
+        # 随机选取 n 条线，不放回抽样
+        idx = np.random.choice(total, size=n, replace=False)
+    else:
+        raise ValueError("mode 仅支持 'order' 或 'random'。")
+
     return wl[idx], A[idx], E[idx], g[idx]
 
 
@@ -81,10 +94,16 @@ df_wrong=read_csv_with_fallback(r'D:\LIBS\RREdetectation\Ucalculation\0406_FeI.c
 
 #比较部分
 #Attention:density_ratio=number_wrong/number_right
-def plot_wrongselected(density_ratio=10, T_true=10000, t_min=5000, t_max=20000, num=500, show_plot=True, n_right=None, n_wrong=None):
+def plot_wrongselected(density_ratio=10, T_true=10000, t_min=5000, t_max=20000, num=500, show_plot=True,
+                       n_right=None, n_wrong=None, mode_right='order', mode_wrong='random'):
 
-    wl_right_sel, A_right_sel, E_right_sel, g_right_sel = select_lines_by_count(wl_right, A_right, E_right, g_right, n_right)
-    wl_wrong_sel, A_wrong_sel, E_wrong_sel, g_wrong_sel = select_lines_by_count(wl_wrong, A_wrong, E_wrong, g_wrong, n_wrong)
+    wl_right_sel, A_right_sel, E_right_sel, g_right_sel = select_lines_by_count(
+        wl_right, A_right, E_right, g_right, n_right, mode=mode_right)
+    plot_derivative_vs_T(wl_right_sel, A_right_sel, E_right_sel, g_right_sel, 0, T_true, t_min, t_max, num, mode='all')
+
+    wl_wrong_sel, A_wrong_sel, E_wrong_sel, g_wrong_sel = select_lines_by_count(
+        wl_wrong, A_wrong, E_wrong, g_wrong, n_wrong, mode=mode_wrong
+    )
 
     if len(wl_right_sel) == 0: 
         raise ValueError('right 线数量为 0，无法计算 p_T_values。请将 n_right 设为 None 或正整数。')
@@ -126,19 +145,31 @@ def plot_wrongselected(density_ratio=10, T_true=10000, t_min=5000, t_max=20000, 
             p_T_values[:, i] = (U_right * A_right_sel) / denominator
         # print(U_sum_values_right[i]/U_sum_values_wrong[i])
     if show_plot:
-        plt.figure(figsize=(9, 5))
+        plt.figure(figsize=(7, 5))
         for i in range(len(wl_right_sel)):
-            plt.plot(T_values, p_T_values[i, :], label=f'wl={wl_right_sel[i]:.1f}nm')
-        plt.xlabel('T')
-        plt.ylabel('p')
-        plt.title('wrongselected')
-        plt.minorticks_on()
-        plt.tick_params(axis='both', which='major', direction='in', top=True, right=True)
-        plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True)
+            plt.plot(T_values, p_T_values[i, :], label=f'wl={wl_right_sel[i]:.1f}nm', linewidth=2.2)
+        plt.xlabel('Temperature(K)', fontsize=15, fontweight="semibold")
+        plt.ylabel('Percentage', fontsize=15, fontweight="semibold")
+        ax = plt.gca()
+        for label in ax.get_xticklabels():
+            label.set_fontweight("semibold")
+        for label in ax.get_yticklabels():
+            label.set_fontweight("semibold")
+        # plt.title('Wrong Selected', fontsize=20, fontweight="semibold")
+        # plt.minorticks_on()
+        for spine in ax.spines.values():
+            spine.set_linewidth(1.8)
+
+        plt.tick_params(axis='both', which='major', direction='in', top=True, right=True,
+                        width=2.0, length=6, labelsize=12)
+        # plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True,
+        #                 width=1.5, length=3)
         plt.grid(alpha=0.3)
+        plt.ylim(0, 1.05)
         if len(wl_right_sel) > 0:
-            plt.legend()
+            plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12},frameon=False)
         plt.tight_layout()
+        plt.grid(False)
         plt.show()
 
     return T_values, p_T_values
@@ -147,9 +178,11 @@ if __name__ == "__main__":
     plot_wrongselected(
     density_ratio=100.0,
     T_true=10000,
-    t_min=5000,
+    t_min=3000,
     t_max=20000,
     num=500,
     show_plot=True,
-    n_right=3,
-    n_wrong=3)
+    n_right=2,
+    n_wrong=0,
+    mode_right='order',
+    mode_wrong='order')

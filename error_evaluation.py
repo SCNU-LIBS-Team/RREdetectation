@@ -22,7 +22,7 @@ def read_csv_with_fallback(file_path, header=0, encodings=None):
 
     raise ValueError(f'无法读取文件: {file_path}。尝试编码: {encodings}。最后错误: {last_error}')
 
-# file_path = r'D:\LIBS\RREdetectation\Elements_database\FeII.csv'
+# file_path = r'D:\LIBS\RREdetectation\Elements_database\FeI.csv'
 file_path = r'D:\LIBS\RREdetectation\Rareearth_pt3\CeII.csv'
 
 df_raw = read_csv_with_fallback(file_path, header=1)
@@ -130,7 +130,7 @@ def plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500):
     plt.show()
 
 
-def derivative_curve_value(i,T):
+def derivative_curve_value(wl,A,E,g,i,T):
     """独立于 derivative_P_T 的可绘图导数指标：mean(|d(lnp)/dT|)。"""
     if T <= 0:
         return 0.0
@@ -140,27 +140,57 @@ def derivative_curve_value(i,T):
     dp_dT = (E[i] - E_mean) / (kB * T**2)
     return dp_dT
 
-def plot_derivative_vs_T(k,t_min=500, t_max=20000, num=2000, save_path='derivative_vs_T.png'):
-    """绘制导数指标随温度 T 的变化曲线。"""
+def plot_derivative_vs_T(wl,A,E,g,k, T_true, t_min=500, t_max=20000, num=2000, save_path='derivative_vs_T.png', mode='single'):
+    """绘制导数指标随温度 T 的变化曲线。
+
+    mode='single': 仅绘制 wl[k] 对应的一条导数线。
+    mode='all': 绘制 wl 全部谱线对应的导数线。
+    """
     T_values = np.linspace(t_min, t_max, num)
-    y_values = np.zeros(num, dtype=float)
-    print(wl[k])
-    for i, T in enumerate(T_values):
-        y_values[i] = derivative_curve_value(k, T)
+    mode = str(mode).strip().lower()
 
-        # y_values[i] = derivative_P_T(k, T)
+    plt.figure(figsize=(7, 5))
 
-    plt.figure(figsize=(9, 5))
-    plt.plot(T_values, y_values, color='tab:green', linewidth=2, label='mean(|d(lnp)/dT|)')
-    plt.axvline(T_true, color='tab:red', linestyle='--', linewidth=1.5, label=f'T_true={T_true}')
-    plt.xlabel('T')
-    plt.ylabel('Derivative Indicator')
-    plt.title('Derivative vs Temperature')
-    plt.minorticks_on()
-    plt.tick_params(axis='both', which='major', direction='in', top=True, right=True)
-    plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True)
-    plt.grid(alpha=0.3)
-    plt.legend()
+    if mode == 'single':
+        if not (0 <= k < len(wl)):
+            raise IndexError(f'k 越界: {k}, 有效范围为 [0, {len(wl) - 1}]。')
+
+        y_values = np.zeros(num, dtype=float)
+        print(wl[k])
+        for i, T in enumerate(T_values):
+            y_values[i] = derivative_curve_value(wl, A, E, g, k, T)
+        plt.plot(T_values, y_values, color='tab:green', linewidth=2, label=f'wl={wl[k]:.1f}nm')
+
+    elif mode == 'all':
+        for line_idx in range(len(wl)):
+            y_values = np.zeros(num, dtype=float)
+            for i, T in enumerate(T_values):
+                y_values[i] = derivative_curve_value(wl, A, E, g, line_idx, T)
+            plt.plot(T_values, y_values, linewidth=2, alpha=0.85, label=f'wl={wl[line_idx]:.1f}nm')
+
+    else:
+        raise ValueError("mode 仅支持 'single' 或 'all'。")
+
+    plt.axvline(T_true, color='tab:red', linestyle='--', linewidth=2, label=f'T_true={T_true}')
+    plt.xlabel('T(K)',fontsize=15, fontweight="semibold")
+    plt.ylabel('Derivative Indicator', fontsize=15, fontweight="semibold")
+    # plt.title('Derivative vs Temperature', fontsize=20, fontweight="semibold")
+
+    for spine in plt.gca().spines.values():
+        spine.set_linewidth(1.8)
+
+    for label in plt.gca().get_xticklabels():
+        label.set_fontweight("semibold")
+    for label in plt.gca().get_yticklabels():
+        label.set_fontweight("semibold")
+
+
+
+    plt.tick_params(axis='both', which='major', direction='in', top=True, right=True,length=6, width=2.0, labelsize=12)
+
+    plt.grid(False)
+    if mode == 'single' or len(wl) <= 20:
+        plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
     plt.tight_layout()
     plt.savefig(save_path, dpi=300)
     plt.show()
@@ -278,12 +308,12 @@ def plot_dU_sum_dT_vs_T_from_df(df_input, t_min=500, t_max=20000, num=2000, save
     plt.plot(T_values, dU_dT_values, color='tab:purple', linewidth=2, label='dU_sum/dT')
     plt.xlabel('T')
     plt.ylabel('dU_sum/dT')
-    plt.title('dU_sum/dT vs Temperature (from filtered df)')
+    # plt.title('dU_sum/dT vs Temperature (from filtered df)')
     plt.minorticks_on()
     plt.tick_params(axis='both', which='major', direction='in', top=True, right=True)
     plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True)
     plt.grid(alpha=0.3)
-    plt.legend()
+    plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
     plt.tight_layout()
     plt.savefig(save_path, dpi=300)
     plt.show()
@@ -293,10 +323,8 @@ def plot_dU_sum_dT_vs_T_from_df(df_input, t_min=500, t_max=20000, num=2000, save
 # print(E[1])
 # print(derivative_P_T(1, 10000))
 
-# plot_derivative_vs_T(0,t_min=1000, t_max=20000, num=2000)
-
+# plot_derivative_vs_T(wl, A, E, g, 0, T_true=10000, t_min=1000, t_max=20000, num=2000, mode='all')
 # plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
-
 # plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
 
 
@@ -304,7 +332,7 @@ def plot_dU_sum_dT_vs_T_from_df(df_input, t_min=500, t_max=20000, num=2000, save
 
 #第二部分理论开发
 #配分函数
-df_raw = read_csv_with_fallback(r'D:\LIBS\RREdetectation\Ucalculation\0406_TiI.csv', header=0)
+# df_raw = read_csv_with_fallback(r'D:\LIBS\RREdetectation\Ucalculation\0406_FeI.csv', header=0)
 # plot_U_sum_vs_T_from_df(df_raw, t_min=1000, t_max=20000, num=2000)
 # plot_dU_sum_dT_vs_T_from_df(df_raw, t_min=1000, t_max=20000, num=2000)
 
