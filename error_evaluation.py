@@ -98,19 +98,31 @@ def plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500, 
     for i, T_calculated in enumerate(T_values):
         confidence_mean[i] = error_evaluation(T_calculated, T_true)
 
-    plt.figure(figsize=(9, 5))
-    plt.plot(T_values, confidence_mean, color='tab:blue', linewidth=2, label='confidence_error')
-    plt.axvline(T_true, color='tab:red', linestyle='--', linewidth=1.5, label=f'T_true={T_true}')
-    plt.xlabel('T_calculated')
-    plt.ylabel('Confidence')
-    plt.title('Confidence under different T_calculated')
+    plt.figure(figsize=(7, 5))
+    plt.plot(T_values, confidence_mean, color='tab:blue', linewidth=2.2, label='Confidence')
+
+    for spine in plt.gca().spines.values():
+        spine.set_linewidth(1.8)
+    for label in plt.gca().get_xticklabels():
+        label.set_fontweight("semibold")
+    for label in plt.gca().get_yticklabels():
+        label.set_fontweight("semibold")
+
+    plt.axvline(T_true, color='tab:red', linestyle='--', linewidth=2, alpha=0.8, label=f'T-Ref={T_true}')
+
+    plt.xlabel('T', fontsize=15, fontweight="semibold")
+    plt.ylabel('Confidence', fontsize=15, fontweight="semibold")
+    plt.title('Confidence-T', fontsize=15, fontweight="semibold")
+
     plt.grid(alpha=0.3)
-    plt.minorticks_on()
-    plt.tick_params(axis='both', which='major', direction='in', top=True, right=True)
-    plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=300)    
+    
+
+    plt.tick_params(axis='both', which='major', direction='in', top=True, right=True,width=2.0, length=6, labelsize=12)
+    plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True,width=2, length=6,labelsize=12)
+
+
+    plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
+    plt.tight_layout() 
     plt.show()
 
 def plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500):
@@ -118,14 +130,25 @@ def plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500):
     p_T_values = np.zeros((len(wl), num))
     for i, T in enumerate(T_values):
         p_T_values[:, i] = rel_intensity(wl, A, E, g, T)
-    plt.figure(figsize=(9, 5))
+    plt.figure(figsize=(7, 5))
     for i in range(len(wl)):
-        plt.plot(T_values, p_T_values[i, :], label=f'wl={wl[i]:.1f}nm')
-    plt.axvline(T_true, color='tab:red', linestyle='--', linewidth=1.5, label=f'T_true={T_true}')
-    plt.xlabel('T')
-    plt.ylabel('p')
-    plt.title('CeII')
-    plt.legend()
+        plt.plot(T_values, p_T_values[i, :], label=f'wl={wl[i]:.1f}nm', linewidth=2.2)
+    plt.axvline(T_true, color='tab:red', linestyle='--', linewidth=2,alpha=0.8, label=f'T_true={T_true}')
+
+    plt.tick_params(axis='both', which='major', direction='in', top=True, right=True,length=6, width=2.0, labelsize=12)
+
+    for spine in plt.gca().spines.values():
+        spine.set_linewidth(1.8)
+    for label in plt.gca().get_xticklabels():
+        label.set_fontweight("semibold")
+    for label in plt.gca().get_yticklabels():
+        label.set_fontweight("semibold")
+
+    plt.xlabel('T',fontsize=15, fontweight="semibold")
+    plt.ylabel('p', fontsize=15, fontweight="semibold")
+    plt.title('P-T Curve', fontsize=15, fontweight="semibold")
+
+    # plt.legend(prop={"weight": "semibold", "size": 12},frameon=False)
     plt.tight_layout()
     plt.show()
 
@@ -319,13 +342,45 @@ def plot_dU_sum_dT_vs_T_from_df(df_input, t_min=500, t_max=20000, num=2000, save
     plt.show()
 
 
+def plot_two_exponentials(x_min=0, x_max=5, num=500, save_path='exp_compare.png'):
+    """按当前脚本风格绘制 exp(-1.5x) 与 exp(-2x) 的对比曲线。"""
+    x = np.linspace(x_min, x_max, num)
+    y1 = np.exp(-1.5 * x)
+    y2 = np.exp(-2.0 * x)
+
+    plt.figure(figsize=(7, 5))
+    plt.plot(x, y1, color='tab:blue', linewidth=2.2, label='exp(-1.5x)')
+    plt.plot(x, y2, color='tab:red', linewidth=2.2, linestyle='--', label='exp(-2x)')
+
+    for spine in plt.gca().spines.values():
+        spine.set_linewidth(1.8)
+    for label in plt.gca().get_xticklabels():
+        label.set_fontweight("semibold")
+    for label in plt.gca().get_yticklabels():
+        label.set_fontweight("semibold")
+
+    plt.xlabel('X', fontsize=15, fontweight="semibold")
+    plt.ylabel('Y', fontsize=15, fontweight="semibold")
+    plt.title('Exponential Curves', fontsize=15, fontweight="semibold")
+
+    plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
+    plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
+    plt.grid(alpha=0.3)
+
+    plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.show()
+
+
 # 测试单个点的导数计算
 # print(E[1])
 # print(derivative_P_T(1, 10000))
 
 # plot_derivative_vs_T(wl, A, E, g, 0, T_true=10000, t_min=1000, t_max=20000, num=2000, mode='all')
-# plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
-# plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
+plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
+plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
+plot_two_exponentials(x_min=0, x_max=5, num=500)
 
 
 
