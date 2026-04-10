@@ -621,7 +621,7 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
         #     print(f"{elem}的距离为{distances}，R2为{final_R2[elem]}，T为{final_T[elem]}")
         if distances<10000 and final_R2[elem]>0:
             #elements_confidence[elem]=1/(1+distances) #倒数映射
-            elements_confidence[elem]=np.exp(-1.9*distances/final_R2[elem]) #指数映射
+            elements_confidence[elem]=np.exp(-1.5*distances/final_R2[elem]) #指数映射
             if final_T[elem]<5000 or final_T[elem]>20000: #电子温度判据
                 elements_confidence[elem]=0
         else:
@@ -1214,13 +1214,13 @@ if __name__ == '__main__':
                 if elem in temp_sensitive_marks:
                     conf_value = 0.0
                 row[elem] = round(conf_value, 4)
-            row['iter_temperature'] = round(float(db_temperature), 4)
+            # row['iter_temperature'] = round(float(db_temperature), 4)
             confidence_rows.append(row)
 
         #print结果展示
         if printbotton:
             print("\n---" ,I_element_name, "---") 
-            # 元素+置信度
+            # 元素+置信度 
             print("--- 元素层面（距离 + 置信度） ---")
             sorted_elems = sorted(elements_result.keys(), key=lambda x: elements_result[x])
 
