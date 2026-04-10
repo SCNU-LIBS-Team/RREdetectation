@@ -621,7 +621,7 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
         #     print(f"{elem}的距离为{distances}，R2为{final_R2[elem]}，T为{final_T[elem]}")
         if distances<10000 and final_R2[elem]>0:
             #elements_confidence[elem]=1/(1+distances) #倒数映射
-            elements_confidence[elem]=np.exp(-2*distances/final_R2[elem]) #指数映射
+            elements_confidence[elem]=np.exp(-1.9*distances/final_R2[elem]) #指数映射
             if final_T[elem]<5000 or final_T[elem]>20000: #电子温度判据
                 elements_confidence[elem]=0
         else:
@@ -997,7 +997,7 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\T_iterationpt2\Pt15' #随机光谱测试
+signal_path10= r'D:\LIBS\RREdetectation\T_iterationpt2\Pt1' #随机光谱测试
 RandPerfOPbotton=True #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
@@ -1214,6 +1214,7 @@ if __name__ == '__main__':
                 if elem in temp_sensitive_marks:
                     conf_value = 0.0
                 row[elem] = round(conf_value, 4)
+            row['iter_temperature'] = round(float(db_temperature), 4)
             confidence_rows.append(row)
 
         #print结果展示
@@ -1265,7 +1266,7 @@ if __name__ == '__main__':
 
     # 批量结果导出到CSV：第一列为光谱名，后续为固定顺序稀土元素置信度
     if confidence_rows:
-        output_columns = ['spectrum_name'] + RAREEARTH_FIXED_ORDER
+        output_columns = ['spectrum_name'] + RAREEARTH_FIXED_ORDER + ['iter_temperature']
         confidence_df = pd.DataFrame(confidence_rows, columns=output_columns)
         confidence_df.to_csv(confidence_csv_path, index=False, encoding='utf-8-sig', float_format='%.4f')
         print(color_text(f"\n已导出稀土元素置信度到 CSV: {confidence_csv_path}", GREEN))
