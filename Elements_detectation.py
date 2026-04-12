@@ -468,7 +468,7 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
         if np.sum(exp_vec) > 0:
             exp_vec = exp_vec / np.sum(exp_vec)
 
-        O_distance =(np.sqrt(np.sum((theo_vec - exp_vec) ** 2)))/(0.03 + match_ratio)  # 考虑匹配率的影响 0.03防止除0   
+        O_distance =(np.sqrt(np.sum((theo_vec - exp_vec) ** 2)))/(1)  # 考虑匹配率的影响 0.03防止除0   
         if O_distance ==0: #完全没谱线或者只有一条谱线的时候
             O_distance=1e+4
 
@@ -621,7 +621,7 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
         #     print(f"{elem}的距离为{distances}，R2为{final_R2[elem]}，T为{final_T[elem]}")
         if distances<10000 and final_R2[elem]>0:
             #elements_confidence[elem]=1/(1+distances) #倒数映射
-            elements_confidence[elem]=np.exp(-1.9*distances/final_R2[elem]) #指数映射
+            elements_confidence[elem]=np.exp(-1.5*distances/final_R2[elem]) #指数映射
             if final_T[elem]<5000 or final_T[elem]>20000: #电子温度判据
                 elements_confidence[elem]=0
         else:
