@@ -22,10 +22,11 @@ def read_csv_with_fallback(file_path, header=0, encodings=None):
 
     raise ValueError(f'无法读取文件: {file_path}。尝试编码: {encodings}。最后错误: {last_error}')
 
-# file_path = r'D:\LIBS\RREdetectation\Elements_database\FeI.csv'
-file_path = r'D:\LIBS\RREdetectation\Rareearth_pt3\CeII.csv'
-
+file_path = r'D:\LIBS\RREdetectation\Elements_database\MgI.csv'
 df_raw = read_csv_with_fallback(file_path, header=1)
+# file_path = r'D:\LIBS\RREdetectation\Rareearth_pt3\YII.csv'
+# df_raw = read_csv_with_fallback(file_path, header=0)
+
 df = df_raw.copy()
 
 df = df.iloc[1::2].copy()
@@ -145,7 +146,7 @@ def plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500):
         label.set_fontweight("semibold")
 
     plt.xlabel('T',fontsize=15, fontweight="semibold")
-    plt.ylabel('p', fontsize=15, fontweight="semibold")
+    plt.ylabel('P', fontsize=15, fontweight="semibold")
     plt.title('P-T Curve', fontsize=15, fontweight="semibold")
 
     # plt.legend(prop={"weight": "semibold", "size": 12},frameon=False)
@@ -373,15 +374,29 @@ def plot_two_exponentials(x_min=0, x_max=5, num=500, save_path='exp_compare.png'
     plt.show()
 
 
+def Intensity_Factor(A,g,E,T):
+    """计算强度因子 A*g*exp(-E/(kB*T))，并处理可能的数值问题。"""
+    if T <= 0:
+        return np.zeros_like(A)
+    factor = A * g *(-E)*np.exp(-E / (kB * T))
+    denominator = A*g*np.exp(-E / (kB * T))
+    factor=factor/np.sum(denominator)
+
+    # print(factor)
+    # print(denominator)
+    # print(E)
+    # print(np.mean(E))
+    # print(np.std(E))
+    print(E-np.sum(factor))
+    return factor
+
 # 测试单个点的导数计算
 # print(E[1])
 # print(derivative_P_T(1, 10000))
 
 # plot_derivative_vs_T(wl, A, E, g, 0, T_true=10000, t_min=1000, t_max=20000, num=2000, mode='all')
-plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
-plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
-plot_two_exponentials(x_min=0, x_max=5, num=500)
-
+# plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
+# plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
 
 
 
@@ -391,6 +406,7 @@ plot_two_exponentials(x_min=0, x_max=5, num=500)
 # plot_U_sum_vs_T_from_df(df_raw, t_min=1000, t_max=20000, num=2000)
 # plot_dU_sum_dT_vs_T_from_df(df_raw, t_min=1000, t_max=20000, num=2000)
 
-
+#第三部分开发强度因子
+# Intensity_Factor(A, g, E, T=10000)
 
 
