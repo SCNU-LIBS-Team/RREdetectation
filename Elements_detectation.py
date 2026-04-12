@@ -1214,13 +1214,13 @@ if __name__ == '__main__':
                 if elem in temp_sensitive_marks:
                     conf_value = 0.0
                 row[elem] = round(conf_value, 4)
-            row['iter_temperature'] = round(float(db_temperature), 4)
+            # row['iter_temperature'] = round(float(db_temperature), 4)
             confidence_rows.append(row)
 
         #print结果展示
         if printbotton:
             print("\n---" ,I_element_name, "---") 
-            # 元素+置信度
+            # 元素+置信度 
             print("--- 元素层面（距离 + 置信度） ---")
             sorted_elems = sorted(elements_result.keys(), key=lambda x: elements_result[x])
 
