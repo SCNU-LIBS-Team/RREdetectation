@@ -409,5 +409,5 @@ def Intensity_Factor(A,g,E,T):
 # Intensity_Factor(A, g, E, T=10000)
 
 
-plot_two_exponentials(x_min=0, x_max=5, num=500)
+# plot_two_exponentials(x_min=0, x_max=5, num=500)
 

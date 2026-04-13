@@ -469,7 +469,7 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
             exp_vec = exp_vec / np.sum(exp_vec)
 
         #此处的ratio改了！
-        O_distance =(np.sqrt(np.sum((theo_vec - exp_vec) ** 2)))/(1)  # 考虑匹配率的影响 0.03防止除0   
+        O_distance =(np.sqrt(np.sum((theo_vec - exp_vec) ** 2)))/(match_ratio + 0.03)  # 考虑匹配率的影响 0.03防止除0   
         if O_distance ==0: #完全没谱线或者只有一条谱线的时候
             O_distance=1e+4
 
@@ -998,7 +998,7 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\Ratio_Remove\Pt15' #随机光谱测试
+signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum\Pt1' #随机光谱测试
 RandPerfOPbotton=True #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
@@ -1007,12 +1007,12 @@ target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['07125_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['03124_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
 plottarget='YbII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
-TargetTempScanMode=False #指定元素温度扫描模式（5000-20000 K）
-scan_target_element='La' #温度扫描模式下的目标元素
+TargetTempScanMode=True #指定元素温度扫描模式（5000-20000 K）
+scan_target_element='Yb' #温度扫描模式下的目标元素
 scan_t_min=5000
 scan_t_max=20000
 scan_t_step=250
@@ -1267,7 +1267,8 @@ if __name__ == '__main__':
 
     # 批量结果导出到CSV：第一列为光谱名，后续为固定顺序稀土元素置信度
     if confidence_rows:
-        output_columns = ['spectrum_name'] + RAREEARTH_FIXED_ORDER + ['iter_temperature']
+        output_columns = ['spectrum_name'] + RAREEARTH_FIXED_ORDER 
+        # + ['iter_temperature']
         confidence_df = pd.DataFrame(confidence_rows, columns=output_columns)
         confidence_df.to_csv(confidence_csv_path, index=False, encoding='utf-8-sig', float_format='%.4f')
         print(color_text(f"\n已导出稀土元素置信度到 CSV: {confidence_csv_path}", GREEN))

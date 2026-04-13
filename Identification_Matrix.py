@@ -203,8 +203,8 @@ def generate_identification_matrix(contents_df, predictions, show_plot=True, sho
     # 按需求裁掉最后四列
     if contents_df.shape[1] <= 4 or pred_df.shape[1] <= 4:
         raise ValueError("contents_df 或 predictions 的列数不足，无法裁掉最后四列")
-    contents_df = contents_df.iloc[:, :-5]
-    pred_df = pred_df.iloc[:, :-5]
+    contents_df = contents_df.iloc[:, :-4]
+    pred_df = pred_df.iloc[:, :-4]
 
     # 自动对齐：优先按交集对齐；若名称完全不匹配则按位置对齐
     common_samples = list(contents_df.index.intersection(pred_df.index))
@@ -254,7 +254,7 @@ def generate_identification_matrix(contents_df, predictions, show_plot=True, sho
 
 
 #整套模式
-filepath = r'D:\LIBS\RREdetectation\Ratio_Remove\Pt10'
+filepath = r'D:\LIBS\RREdetectation\T_scanon\Pt5'
 confidence_path=os.path.join(filepath,'rareearth_confidence_results.csv')
 contents_path=os.path.join(filepath,'Randomrareearth_contents.csv')
 confidence=pd.read_csv(confidence_path)

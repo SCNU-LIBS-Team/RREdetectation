@@ -79,6 +79,8 @@ file_path= r'D:\LIBS\RREdetectation\Rareearth_pt3'
 I_file_list = glob.glob(os.path.join(file_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 I_elements_list = [name for name in I_elements_list if name.upper().endswith('II')]
+output_dir = r'D:\LIBS\RREdetectation\Randomselected_delta_5K-20K'
+os.makedirs(output_dir, exist_ok=True)
 print("找到以下元素文件：", I_elements_list)
 for elem_name in I_elements_list:
     target_path=os.path.join(file_path, f"{elem_name}.csv")
@@ -125,7 +127,7 @@ for elem_name in I_elements_list:
     records = []
     for idx, wl_sub, A_sub, E_sub, g_sub in combinations_list:
 
-        delta_p = rel_intensity(wl_sub, A_sub, E_sub, g_sub, T=12000) - rel_intensity(wl_sub, A_sub, E_sub, g_sub, T=8000)
+        delta_p = rel_intensity(wl_sub, A_sub, E_sub, g_sub, T=20000) - rel_intensity(wl_sub, A_sub, E_sub, g_sub, T=5000)
         records.append({
             'idx': idx.tolist(),
             'n_lines': int(len(idx)),
@@ -141,7 +143,7 @@ for elem_name in I_elements_list:
 
 
     # # 若需保存可取消注释
-    output_csv = os.path.join(r'D:\LIBS\RREdetectation\Randomselected_delta', elem_name + '.csv')
+    output_csv = os.path.join(output_dir, elem_name + '.csv')
     result_df.to_csv(output_csv, index=False, encoding='utf-8-sig')
     print(f'结果已保存到: {output_csv}')
 
