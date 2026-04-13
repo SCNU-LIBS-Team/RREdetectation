@@ -347,7 +347,7 @@ def plot_two_exponentials(x_min=0, x_max=5, num=500, save_path='exp_compare.png'
     """按当前脚本风格绘制 exp(-1.5x) 与 exp(-2x) 的对比曲线。"""
     x = np.linspace(x_min, x_max, num)
     y1 = np.exp(-1.5 * x)
-    y2 = np.exp(-2.0 * x)
+    y2 = np.exp(-7.5 * x)
 
     plt.figure(figsize=(7, 5))
     plt.plot(x, y1, color='tab:blue', linewidth=2.2, label='exp(-1.5x)')
@@ -370,7 +370,6 @@ def plot_two_exponentials(x_min=0, x_max=5, num=500, save_path='exp_compare.png'
 
     plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
     plt.tight_layout()
-    plt.savefig(save_path, dpi=300)
     plt.show()
 
 
@@ -409,4 +408,6 @@ def Intensity_Factor(A,g,E,T):
 #第三部分开发强度因子
 # Intensity_Factor(A, g, E, T=10000)
 
+
+plot_two_exponentials(x_min=0, x_max=5, num=500)
 

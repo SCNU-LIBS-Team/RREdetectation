@@ -468,6 +468,7 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
         if np.sum(exp_vec) > 0:
             exp_vec = exp_vec / np.sum(exp_vec)
 
+        #此处的ratio改了！
         O_distance =(np.sqrt(np.sum((theo_vec - exp_vec) ** 2)))/(1)  # 考虑匹配率的影响 0.03防止除0   
         if O_distance ==0: #完全没谱线或者只有一条谱线的时候
             O_distance=1e+4
@@ -997,7 +998,7 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\T_iterationpt2\Pt1' #随机光谱测试
+signal_path10= r'D:\LIBS\RREdetectation\Ratio_Remove\Pt15' #随机光谱测试
 RandPerfOPbotton=True #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
@@ -1016,7 +1017,7 @@ scan_t_min=5000
 scan_t_max=20000
 scan_t_step=250
 
-AutoElemTempMarkMode=False #自动扫描有置信度稀土元素并在输出中标注温度敏感性
+AutoElemTempMarkMode=True #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 auto_mark_conf_min=0.05 #参与扫描的最小置信度阈值
 auto_mark_delta_threshold=0.5 #最大-最小置信度差值超过该阈值则标注
 
