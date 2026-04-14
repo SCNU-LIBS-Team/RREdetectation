@@ -13,6 +13,7 @@ from Wavelet_peakfinding import find_peaks_ridge,peak_correction,wavelet_peak_de
 from Elements_Combfact import elements_database, elements_database_pt2,elements_database_lineswitch#元素库制作
 from scipy.optimize import linear_sum_assignment #匈牙利算法
 from RandSpec_PerformanceOP import RandSepc_PerforOP #随机光谱性能评估
+from error_evaluation import U_Calculate, rel_intensity
 
 
 #终端颜色设置
@@ -362,6 +363,7 @@ def match_spectral_lines_weighted(theo_wl, theo_int, exp_wl, exp_int, scope=0.2,
     
     matched_theo = []
     matched_exp = []
+    matched_theo_idx = []
     theo_vec = []
     exp_vec = []
     
@@ -370,14 +372,15 @@ def match_spectral_lines_weighted(theo_wl, theo_int, exp_wl, exp_int, scope=0.2,
             # 匹配成功
             matched_theo.append((theo_wl[i], theo_int[i]))
             matched_exp.append((exp_wl_sel[j], exp_int_sel[j]))
+            matched_theo_idx.append(i)
             theo_vec.append(theo_int[i])
             exp_vec.append(exp_int_sel[j])
         else:
             # 未匹配
             theo_vec.append(0)
             exp_vec.append(0)
-    
-    return np.array(theo_vec), np.array(exp_vec), matched_theo, matched_exp
+
+    return np.array(theo_vec), np.array(exp_vec), matched_theo, matched_exp, np.array(matched_theo_idx, dtype=int)
 
 #施工中的置信度判断策略
 def confidence_score(base_elem,element_distance,element_T,element_R2,element_linecounts,final_T,final_R2,final_lc,final_distance,elements_confidence):
@@ -413,7 +416,17 @@ def confidence_score(base_elem,element_distance,element_T,element_R2,element_lin
         else:
             elements_confidence[elem]=0
 
-def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,global_intensity,scope=0.2,plot=False,target='KI'):
+def compute_element_confidence_shape(
+    elements,
+    peak_wl,
+    peak_int,
+    global_wl,
+    global_intensity,
+    scope=0.2,
+    plot=False,
+    target='KI',
+    return_line_payload=False,
+    ):
     """
     方案二：用理论和实验谱形的欧几里得距离作为相似度
     elements: 元素数据库 { "ElemI": {"data": [wl, intensity]} }
@@ -436,6 +449,7 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
     Boltzmann_T={}
     Boltzmann_R2={}
     Boltzmann_linecounts={}
+    element_line_payload={}
 
 
     #遍历每一个粒子
@@ -454,14 +468,40 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
         I_iterative=[]
 
 
-        theo_vec, exp_vec, matched_theo, matched_exp = match_spectral_lines_weighted(element_wl, element_intensity, peak_wl, peak_int, scope)
+        theo_vec, exp_vec, matched_theo, matched_exp, matched_theo_idx = match_spectral_lines_weighted(
+            element_wl,
+            element_intensity,
+            peak_wl,
+            peak_int,
+            scope,
+        )
         theo_vec = np.array(theo_vec)
         exp_vec = np.array(exp_vec)
         N_total = len(element_wl)
         N_matched = len(matched_exp)
         match_ratio = N_matched / N_total if N_total > 0 else 0 # 匹配率
+
+        matched_theo_idx = np.asarray(matched_theo_idx, dtype=int)
+        matched_wl_param = np.asarray(element_wl, dtype=float)[matched_theo_idx].copy() if matched_theo_idx.size > 0 else np.empty((0,), dtype=float)
+        matched_intensity_param = np.asarray(element_intensity, dtype=float)[matched_theo_idx].copy() if matched_theo_idx.size > 0 else np.empty((0,), dtype=float)
+        matched_A_param = np.asarray(element_A, dtype=float)[matched_theo_idx].copy() if matched_theo_idx.size > 0 else np.empty((0,), dtype=float)
+        matched_E_param = np.asarray(element_E, dtype=float)[matched_theo_idx].copy() if matched_theo_idx.size > 0 else np.empty((0,), dtype=float)
+        matched_g_param = np.asarray(element_g, dtype=float)[matched_theo_idx].copy() if matched_theo_idx.size > 0 else np.empty((0,), dtype=float)
+
+        # 只传出匹配到的理论谱线参数，便于外部后处理
+        element_line_payload[element_name] = {
+            'wl': matched_wl_param,
+            'intensity': matched_intensity_param,
+            'A': matched_A_param,
+            'E': matched_E_param,
+            'g': matched_g_param,
+            'matched_theo_idx': matched_theo_idx.copy(),
+            'matched_theo': np.asarray(matched_theo, dtype=float).copy() if len(matched_theo) > 0 else np.empty((0, 2), dtype=float),
+            'matched_exp': np.asarray(matched_exp, dtype=float).copy() if len(matched_exp) > 0 else np.empty((0, 2), dtype=float),
+        }
         
 
+        
         # 归一化
         if np.sum(theo_vec) > 0:
             theo_vec = theo_vec / np.sum(theo_vec)
@@ -469,7 +509,7 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
             exp_vec = exp_vec / np.sum(exp_vec)
 
         #此处的ratio改了！
-        O_distance =(np.sqrt(np.sum((theo_vec - exp_vec) ** 2)))/(match_ratio + 0.03)  # 考虑匹配率的影响 0.03防止除0   
+        O_distance =(np.sqrt(np.sum((theo_vec - exp_vec) ** 2)))/(1)  # 考虑匹配率的影响 0.03防止除0   
         if O_distance ==0: #完全没谱线或者只有一条谱线的时候
             O_distance=1e+4
 
@@ -479,10 +519,9 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
             matched_wl = np.array([t[0] for t in matched_theo])
             matched_I = np.array([t[1] for t in matched_exp])  # 实验强度
 
-            # 从理论库中取对应的 A、E、g
-            matched_idx = [np.argmin(np.abs(element_wl - wl)) for wl in matched_wl]
-            slope, intercept, T_fit, R2, y  = Boltzmann_fit(matched_I, matched_wl, element_A[matched_idx], element_g[matched_idx], element_E[matched_idx])
-            slope,intecept,T_fit_iterative,R2_itertative,y,E_iterative,wl_iterative,I_iterative,A_iterative,g_iterative=Boltzmann_fit_iterative(matched_I, matched_wl, element_A[matched_idx], element_g[matched_idx], element_E[matched_idx],R2_start_threshold=0.97, max_iter=3, verbose=False)
+            # 从匹配索引直接取对应的 A、E、g
+            slope, intercept, T_fit, R2, y  = Boltzmann_fit(matched_I, matched_wl, matched_A_param, matched_g_param, matched_E_param)
+            slope,intecept,T_fit_iterative,R2_itertative,y,E_iterative,wl_iterative,I_iterative,A_iterative,g_iterative=Boltzmann_fit_iterative(matched_I, matched_wl, matched_A_param, matched_g_param, matched_E_param,R2_start_threshold=0.97, max_iter=3, verbose=False)
             
             Boltzmann_T[element_name] = T_fit
             Boltzmann_R2[element_name] = R2
@@ -622,13 +661,15 @@ def compute_element_confidence_shape(elements, peak_wl, peak_int,global_wl,globa
         #     print(f"{elem}的距离为{distances}，R2为{final_R2[elem]}，T为{final_T[elem]}")
         if distances<10000 and final_R2[elem]>0:
             #elements_confidence[elem]=1/(1+distances) #倒数映射
-            elements_confidence[elem]=np.exp(-1.5*distances/final_R2[elem]) #指数映射
+            elements_confidence[elem]=np.exp(-4.5*distances/final_R2[elem]) #指数映射
             if final_T[elem]<5000 or final_T[elem]>20000: #电子温度判据
                 elements_confidence[elem]=0
         else:
             elements_confidence[elem]=0
             # if elem=='Ca': #特殊元素判据
             #    print('1')
+    if return_line_payload:
+        return match_results,final_results,final_T,final_R2,elements_confidence,element_line_payload
     return match_results,final_results,final_T,final_R2,elements_confidence
 
  
@@ -868,7 +909,9 @@ def T_iteration(signal, x, T_initial, max_iterations=10, tolerance=1e-3, candida
 
     # print(color_text(f"[多起点] 选择全局最优结果，评分={best_score:.4f}", GREEN))
     return best_result[0], best_result[1], best_result[2], best_result[3]
+
 #遍历暴力求解算法
+
 def Brute_Force_T_iteration(signal, x, t_min=7000.0, t_max=25000.0, t_step=250.0):
     if t_step <= 0:
         raise ValueError("t_step 必须大于 0")
@@ -940,7 +983,7 @@ def Brute_Force_T_iteration(signal, x, t_min=7000.0, t_max=25000.0, t_step=250.0
     return best_scan_T, best_element, best_element_T, best_confidence
 
 #温度扫描——元素勘误
-def scan_target_element_confidence(peak_wl,peak_int,x,intensity_sum,target_elem,t_min=5000.0,t_max=20000.0,t_step=250.0,):
+def scan_target_element_confidence(peak_wl,peak_int,x,intensity_sum,target_elem,elements_confidence_main,t_min=5000.0,t_max=20000.0,t_step=250.0,):
 
     """扫描温度区间并返回指定元素置信度曲线。"""
     if t_step <= 0:
@@ -952,16 +995,6 @@ def scan_target_element_confidence(peak_wl,peak_int,x,intensity_sum,target_elem,
     target_confidences = []
 
     for scan_idx, scan_T in enumerate(temperature_grid, start=1):
-        elements_main, _ = elements_database_pt2(folder_path, float(scan_T))
-        _, _, _, _, elements_confidence_main = compute_element_confidence_shape(
-            elements_main,
-            peak_wl,
-            peak_int,
-            x,
-            intensity_sum,
-            scope=0.2,
-            plot=False,
-        )
 
         elements_rockmain = [elem for elem, conf in elements_confidence_main.items() if conf > 0.7]
         elements_rareearth, _ = elements_database_lineswitch(folder_path2, float(scan_T), elements_rockmain, LineSwitchMode)
@@ -982,6 +1015,8 @@ def scan_target_element_confidence(peak_wl,peak_int,x,intensity_sum,target_elem,
     return temperature_grid, np.asarray(target_confidences, dtype=float)
 
 
+
+
 ###数据库导入
 folder_path = r'D:\LIBS\RREdetectation\Elements_database' #元素库路径
 folder_path2 =r'D:\LIBS\RREdetectation\Rareearth_pt3' #稀土元素光谱路径 Lineswitch Mode（threshold=0.15nm）(pt2:0.2nm)
@@ -998,8 +1033,8 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum\Pt1' #随机光谱测试
-RandPerfOPbotton=True #随机光谱性能测试模式
+signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum\Pt5' #随机光谱测试
+RandPerfOPbotton=False #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
@@ -1007,27 +1042,28 @@ target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['03124_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['07141_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
-plottarget='YbII'#指定绘图元素（仅在 plotbotton=True 时生效）
+plottarget='EuII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
 TargetTempScanMode=True #指定元素温度扫描模式（5000-20000 K）
 scan_target_element='Yb' #温度扫描模式下的目标元素
-scan_t_min=5000
-scan_t_max=20000
-scan_t_step=250
+scan_t_min=3000
+scan_t_max=25000
+scan_t_step=100
 
 AutoElemTempMarkMode=True #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 auto_mark_conf_min=0.05 #参与扫描的最小置信度阈值
 auto_mark_delta_threshold=0.5 #最大-最小置信度差值超过该阈值则标注
 
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=True#是否检测文件内的全部光谱 （全文件）
+checkallbutton=False#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
-save2csvbotton=True #是否保存稀土元素置信度结果到CSV
+save2csvbotton=False #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
 Titerationbotton=True #是否启用温度迭代算法
+ReturnRawLinePayloadMode=False #是否返回每个元素的原始谱线参数( wl/intensity/A/E/g/matched_* )
 
 
 # 模式控制逻辑：绘图模式优先级最高，开启后强制关闭其他模式；指定元素模式优先级次之，开启后覆盖文件筛选但不影响绘图设置
@@ -1061,6 +1097,7 @@ if __name__ == '__main__':
     confidence_csv_path = os.path.join(target_path, 'rareearth_confidence_results.csv')
     confidence_rows = []
 
+    #文件选择
     if not files_to_process:
         print(f"未找到待处理文件，target_files={target_files}")
 
@@ -1077,6 +1114,35 @@ if __name__ == '__main__':
         true_peak_idx, peak_wl, peak_int = wavelet_peak_detection(signal,x,wavelet='mexh', scales=np.arange(1, 11), 
                                 neighbor=4, min_length=3, coeffi_threshold=700, window=5)#峰值校正
 
+        #温度迭代算法
+        if Titerationbotton:
+            db_temperature=T_initial
+            print(f"正在进行温度迭代算法，初始温度: {db_temperature:.2f} K")
+            T_iteration_result= T_iteration(
+                    signal,
+                    x,
+                    T_initial=T_initial,
+                    max_iterations=12,
+                    tolerance=1e-5,
+                    candidate_mode='alterable',
+                    t_min=5000,
+                    t_max=20000.0,
+                    multistart_count=10,
+                    alpha=0.35,
+                    top_k=3,
+                )
+            db_temperature=T_iteration_result[0]
+        else:
+            db_temperature=T_initial
+        print(f"迭代得到的电子温度: {db_temperature:.2f} K")
+        #基体元素检测 
+        elements_main,elements_main_list=elements_database_pt2(folder_path,db_temperature) 
+        particle_main,elements_main,elements_T_main,elements_R2_main,elements_confidence_main=compute_element_confidence_shape(elements_main, peak_wl, peak_int,x,intensity_sum,
+                                                                                            scope=0.2,plot=plotbotton,target=plottarget)
+        #     r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
+        #     conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
+        #     print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
+    
         if TargetTempScanMode:
             print(
                 color_text(
@@ -1091,6 +1157,7 @@ if __name__ == '__main__':
                 x,
                 intensity_sum,
                 scan_target_element,
+                elements_confidence_main=elements_confidence_main,
                 t_min=scan_t_min,
                 t_max=scan_t_max,
                 t_step=scan_t_step,
@@ -1134,35 +1201,6 @@ if __name__ == '__main__':
             plt.show()
             continue
 
-        #温度迭代算法
-        if Titerationbotton:
-            db_temperature=T_initial
-            print(f"正在进行温度迭代算法，初始温度: {db_temperature:.2f} K")
-            T_iteration_result= T_iteration(
-                    signal,
-                    x,
-                    T_initial=T_initial,
-                    max_iterations=12,
-                    tolerance=1e-5,
-                    candidate_mode='alterable',
-                    t_min=5000,
-                    t_max=20000.0,
-                    multistart_count=10,
-                    alpha=0.35,
-                    top_k=3,
-                )
-            db_temperature=T_iteration_result[0]
-        else:
-            db_temperature=T_initial
-        print(f"迭代得到的电子温度: {db_temperature:.2f} K")
-        #基体元素检测 
-        elements_main,elements_main_list=elements_database_pt2(folder_path,db_temperature) 
-        particle_main,elements_main,elements_T_main,elements_R2_main,elements_confidence_main=compute_element_confidence_shape(elements_main, peak_wl, peak_int,x,intensity_sum,
-                                                                                            scope=0.2,plot=plotbotton,target=plottarget)
-        #     r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
-        #     conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
-        #     print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}")
-    
         #基体元素筛选
         elements_rockmain = []
         for elem, conf in elements_confidence_main.items():
@@ -1171,9 +1209,18 @@ if __name__ == '__main__':
     
         #elements_database_line_switch header=1
         elements_rareearth,elements_rareearth_list=elements_database_lineswitch(folder_path2,db_temperature,elements_rockmain,LineSwitchMode) 
-        particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements_rareearth, peak_wl, peak_int,x,intensity_sum,
-                                                                                                    scope=0.2,plot=plotbotton,target=plottarget)
+        if ReturnRawLinePayloadMode:
+            particle_result,elements_result,elements_T,elements_R2,elements_confidence,elements_line_payload=compute_element_confidence_shape(elements_rareearth, peak_wl, peak_int,x,intensity_sum,
+                                                                                                        scope=0.2,plot=plotbotton,target=plottarget,
+                                                                                                        return_line_payload=True)
+        else:
+            particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements_rareearth, peak_wl, peak_int,x,intensity_sum,
+                                                                                                        scope=0.2,plot=plotbotton,target=plottarget)
+            elements_line_payload = {}
         
+
+
+
         # 对有置信度的元素做温度扫描，若置信度波动超过阈值则在最终输出中标注
         temp_sensitive_marks = {}
         if AutoElemTempMarkMode:
@@ -1189,6 +1236,7 @@ if __name__ == '__main__':
                     x,
                     intensity_sum,
                     scan_elem,
+                    elements_confidence_main=elements_confidence_main,
                     t_min=scan_t_min,
                     t_max=scan_t_max,
                     t_step=scan_t_step,
@@ -1196,16 +1244,57 @@ if __name__ == '__main__':
                 if scan_conf_elem.size == 0:
                     continue
 
-                delta_conf = float(np.max(scan_conf_elem) - np.min(scan_conf_elem))
-                if delta_conf >= auto_mark_delta_threshold:
-                    best_idx_elem = int(np.argmax(scan_conf_elem))
-                    min_idx_elem = int(np.argmin(scan_conf_elem))
+                best_idx_elem = int(np.argmax(scan_conf_elem))
+                min_idx_elem = int(np.argmin(scan_conf_elem))
+            #极值勘误部分
+                #无极值温度
+
+                if 7000<= float(scan_T_elem[best_idx_elem]) <=13000 :
+                    continue
+                else:
                     temp_sensitive_marks[scan_elem] = {
-                        'delta_conf': delta_conf,
-                        'best_t': float(scan_T_elem[best_idx_elem]),
-                        'min_t': float(scan_T_elem[min_idx_elem]),
+                'delta_conf': 1,
+                'best_t': float(scan_T_elem[best_idx_elem]),
+                'min_t': float(scan_T_elem[min_idx_elem]),
+                'delta_p': float(1)
                     }
- 
+                    
+            #阈值勘误部分-----施工中
+                # payload_key = f"{scan_elem}II"
+                # payload = elements_line_payload.get(payload_key, {})
+                # # print(payload)
+                
+                # wl_sel = np.asarray(payload.get('wl', []), dtype=float)
+                # A_sel = np.asarray(payload.get('A', []), dtype=float)
+                # E_sel = np.asarray(payload.get('E', []), dtype=float)
+                # g_sel = np.asarray(payload.get('g', []), dtype=float)
+                # matched_idx_sel = np.asarray(payload.get('matched_theo_idx', []), dtype=int)
+                # # print(matched_idx_sel)
+
+                # if wl_sel.size == 0 or A_sel.size == 0 or E_sel.size == 0 or g_sel.size == 0:
+                #     continue
+
+                # p_best = rel_intensity(wl_sel, A_sel, E_sel, g_sel, float(scan_T_elem[best_idx_elem]))
+                # p_min = rel_intensity(wl_sel, A_sel, E_sel, g_sel, float(scan_T_elem[min_idx_elem]))
+                # if matched_idx_sel.size > 0:
+                #     # delta_p = float(np.sum(np.abs(p_best[matched_idx_sel] - p_min[matched_idx_sel])))
+                #     delta_p=0.1
+                # else:
+                #     delta_p = float(np.sum(np.abs(p_best - p_min)))
+
+
+                # #计算置信度delta
+                # delta_conf = float(np.max(scan_conf_elem) - np.min(scan_conf_elem))
+                # # if delta_conf >= auto_mark_delta_threshold:
+                # if delta_conf >= 0:
+                #     temp_sensitive_marks[scan_elem] = {
+                #         'delta_conf': delta_conf,
+                #         'best_t': float(scan_T_elem[best_idx_elem]),
+                #         'min_t': float(scan_T_elem[min_idx_elem]),
+                #         'delta_p': float(delta_p)
+                #     }
+
+
         # 记录当前光谱的稀土元素置信度（固定列顺序）
         if save2csvbotton:
             row = {'spectrum_name': I_element_name}
@@ -1241,7 +1330,7 @@ if __name__ == '__main__':
                     if elem in temp_sensitive_marks:
                         mark = temp_sensitive_marks[elem]
                         sensitivity_mark = color_text(
-                            f" [温度敏感 ΔC={mark['delta_conf']:.3f}, {mark['min_t']:.0f}K->{mark['best_t']:.0f}K]",
+                            f" [温度敏感 ΔC={mark['delta_conf']:.3f}, {mark['min_t']:.0f}K->{mark['best_t']:.0f}K, ΔP={mark['delta_p']:.3f}]",
                             YELLOW,
                         )
                     print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}{sensitivity_mark}")
