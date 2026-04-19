@@ -1042,12 +1042,12 @@ target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['07141_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['07103_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
-plottarget='EuII'#指定绘图元素（仅在 plotbotton=True 时生效）
+plottarget='LaII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
-TargetTempScanMode=True #指定元素温度扫描模式（5000-20000 K）
-scan_target_element='Yb' #温度扫描模式下的目标元素
+TargetTempScanMode=False #指定元素温度扫描模式（5000-20000 K）
+scan_target_element='Tb' #温度扫描模式下的目标元素
 scan_t_min=3000
 scan_t_max=25000
 scan_t_step=100
@@ -1062,8 +1062,8 @@ plotbotton=False#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
 save2csvbotton=False #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
-Titerationbotton=True #是否启用温度迭代算法
-ReturnRawLinePayloadMode=False #是否返回每个元素的原始谱线参数( wl/intensity/A/E/g/matched_* )
+Titerationbotton=False #是否启用温度迭代算法
+ReturnRawLinePayloadMode=True #是否返回每个元素的原始谱线参数( wl/intensity/A/E/g/matched_* )
 
 
 # 模式控制逻辑：绘图模式优先级最高，开启后强制关闭其他模式；指定元素模式优先级次之，开启后覆盖文件筛选但不影响绘图设置
@@ -1246,53 +1246,76 @@ if __name__ == '__main__':
 
                 best_idx_elem = int(np.argmax(scan_conf_elem))
                 min_idx_elem = int(np.argmin(scan_conf_elem))
-            #极值勘误部分
-                #无极值温度
+            # #极值勘误部分
+            #     #无极值温度
 
-                if 7000<= float(scan_T_elem[best_idx_elem]) <=13000 :
-                    continue
-                else:
-                    temp_sensitive_marks[scan_elem] = {
-                'delta_conf': 1,
-                'best_t': float(scan_T_elem[best_idx_elem]),
-                'min_t': float(scan_T_elem[min_idx_elem]),
-                'delta_p': float(1)
-                    }
+            #     if 7000<= float(scan_T_elem[best_idx_elem]) <=13000 :
+            #         continue
+            #     else:
+            #         temp_sensitive_marks[scan_elem] = {
+            #     'delta_conf': 1,
+            #     'best_t': float(scan_T_elem[best_idx_elem]),
+            #     'min_t': float(scan_T_elem[min_idx_elem]),
+            #     'delta_p': float(1)
+            #         }
                     
-            #阈值勘误部分-----施工中
-                # payload_key = f"{scan_elem}II"
-                # payload = elements_line_payload.get(payload_key, {})
-                # # print(payload)
+            #浮动阈值勘误部分-----施工中
+                payload_key = f"{scan_elem}II"
+                payload = elements_line_payload.get(payload_key, {})
+                # print(payload)
                 
-                # wl_sel = np.asarray(payload.get('wl', []), dtype=float)
-                # A_sel = np.asarray(payload.get('A', []), dtype=float)
-                # E_sel = np.asarray(payload.get('E', []), dtype=float)
-                # g_sel = np.asarray(payload.get('g', []), dtype=float)
-                # matched_idx_sel = np.asarray(payload.get('matched_theo_idx', []), dtype=int)
-                # # print(matched_idx_sel)
+                wl_sel = np.asarray(payload.get('wl', []), dtype=float)
+                A_sel = np.asarray(payload.get('A', []), dtype=float)
+                E_sel = np.asarray(payload.get('E', []), dtype=float)
+                g_sel = np.asarray(payload.get('g', []), dtype=float)
+                matched_idx_sel = np.asarray(payload.get('matched_theo_idx', []), dtype=int)
+                if scan_elem=='Yb':
+                    print(wl_sel, A_sel, E_sel, g_sel, matched_idx_sel)
 
-                # if wl_sel.size == 0 or A_sel.size == 0 or E_sel.size == 0 or g_sel.size == 0:
-                #     continue
+                if wl_sel.size == 0 or A_sel.size == 0 or E_sel.size == 0 or g_sel.size == 0:
+                    continue
 
-                # p_best = rel_intensity(wl_sel, A_sel, E_sel, g_sel, float(scan_T_elem[best_idx_elem]))
-                # p_min = rel_intensity(wl_sel, A_sel, E_sel, g_sel, float(scan_T_elem[min_idx_elem]))
-                # if matched_idx_sel.size > 0:
-                #     # delta_p = float(np.sum(np.abs(p_best[matched_idx_sel] - p_min[matched_idx_sel])))
-                #     delta_p=0.1
-                # else:
-                #     delta_p = float(np.sum(np.abs(p_best - p_min)))
+                p_best = rel_intensity(wl_sel, A_sel, E_sel, g_sel, float(scan_T_elem[best_idx_elem]))
+                p_min = rel_intensity(wl_sel, A_sel, E_sel, g_sel, float(scan_T_elem[min_idx_elem]))
+                
+                delta_conf = float(np.max(scan_conf_elem) - np.min(scan_conf_elem))
+                
+                if matched_idx_sel.size > 0:
+                    # delta_p = float(np.sum(np.abs(p_best[matched_idx_sel] - p_min[matched_idx_sel])))
+                    delta_p = float(np.max(np.abs(p_best - p_min)))
+                    delta_conf_cal=1-np.exp(-(np.sum((p_best-p_min)**2))*len(matched_idx_sel)*4.5) #根据概率差值计算置信度差值
+                else:
+                    delta_p = 0.0
+                    delta_conf_cal = 0.0
+                    
+                if delta_conf >=0.8:
+                    temp_sensitive_marks[scan_elem] = {
+                        'delta_conf': delta_conf,
+                        'best_t': float(scan_T_elem[best_idx_elem]),
+                        'min_t': float(scan_T_elem[min_idx_elem]),
+                        'delta_p': float(delta_p),
+                        'delta_conf_cal': float(delta_conf_cal)
+                    }
+                else:
+                    if delta_conf>(delta_conf_cal*1.1):
+                        temp_sensitive_marks[scan_elem] = {
+                            'delta_conf': delta_conf,
+                            'best_t': float(scan_T_elem[best_idx_elem]),
+                            'min_t': float(scan_T_elem[min_idx_elem]),
+                            'delta_p': float(delta_p),
+                            'delta_conf_cal': float(delta_conf_cal)
+                        }
 
-
-                # #计算置信度delta
+                # #固定阈值勘误部分
                 # delta_conf = float(np.max(scan_conf_elem) - np.min(scan_conf_elem))
                 # # if delta_conf >= auto_mark_delta_threshold:
-                # if delta_conf >= 0:
-                #     temp_sensitive_marks[scan_elem] = {
-                #         'delta_conf': delta_conf,
-                #         'best_t': float(scan_T_elem[best_idx_elem]),
-                #         'min_t': float(scan_T_elem[min_idx_elem]),
-                #         'delta_p': float(delta_p)
-                #     }
+                # if delta_conf >= 0.8:
+                    # temp_sensitive_marks[scan_elem] = {
+                    #     'delta_conf': delta_conf,
+                    #     'best_t': float(scan_T_elem[best_idx_elem]),
+                    #     'min_t': float(scan_T_elem[min_idx_elem]),
+                    #     'delta_p': float(delta_conf)
+                    # }
 
 
         # 记录当前光谱的稀土元素置信度（固定列顺序）
@@ -1348,7 +1371,7 @@ if __name__ == '__main__':
                     if elem in temp_sensitive_marks:
                         mark = temp_sensitive_marks[elem]
                         sensitivity_mark = color_text(
-                            f" [温度敏感 ΔC={mark['delta_conf']:.3f}, {mark['min_t']:.0f}K->{mark['best_t']:.0f}K]",
+                            f" [温度敏感 ΔC={mark['delta_conf']:.3f}, {mark['min_t']:.0f}K->{mark['best_t']:.0f}K, ΔP={mark['delta_p']:.3f}], ΔC_cal={mark['delta_conf_cal']:.3f}",
                             YELLOW,
                         )
                     print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}{sensitivity_mark}")

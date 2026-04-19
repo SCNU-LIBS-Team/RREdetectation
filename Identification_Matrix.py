@@ -254,7 +254,7 @@ def generate_identification_matrix(contents_df, predictions, show_plot=True, sho
 
 
 #整套模式
-filepath = r'D:\LIBS\RREdetectation\RandomSpectrum\Pt5'
+filepath = r'D:\LIBS\RREdetectation\Confidence_debug\Ratio_Remove\Pt5'
 confidence_path=os.path.join(filepath,'rareearth_confidence_results.csv')
 contents_path=os.path.join(filepath,'Randomrareearth_contents.csv')
 confidence=pd.read_csv(confidence_path)
