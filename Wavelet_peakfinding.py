@@ -218,7 +218,7 @@ def wavelet_peak_detection(signal, wl, wavelet='mexh', scales=np.arange(1, 11),
 # # print(peak_ridgefound)
 
 
-# true_peak_idx, true_peak_wl, true_peak_int = peak_correction(ridges_found, x, signal, window=5) 
+# # true_peak_idx, true_peak_wl, true_peak_int = peak_correction(ridges_found, x, signal, window=5) 
 
 
 # true_peak_idx, true_peak_wl, true_peak_int = wavelet_peak_detection(signal, x, wavelet='mexh', scales=np.arange(1, 11), 

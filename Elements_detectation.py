@@ -1033,8 +1033,8 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum\Pt5' #随机光谱测试
-RandPerfOPbotton=False #随机光谱性能测试模式
+signal_path10= r'D:\LIBS\RREdetectation\Confidence_debug\threshold_0.8\Pt15' #随机光谱测试
+RandPerfOPbotton=True #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
@@ -1047,7 +1047,7 @@ target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
 plottarget='LaII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
 TargetTempScanMode=False #指定元素温度扫描模式（5000-20000 K）
-scan_target_element='Tb' #温度扫描模式下的目标元素
+scan_target_element='Yb' #温度扫描模式下的目标元素
 scan_t_min=3000
 scan_t_max=25000
 scan_t_step=100
@@ -1057,12 +1057,12 @@ auto_mark_conf_min=0.05 #参与扫描的最小置信度阈值
 auto_mark_delta_threshold=0.5 #最大-最小置信度差值超过该阈值则标注
 
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=False#是否检测文件内的全部光谱 （全文件）
+checkallbutton=True#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
-save2csvbotton=False #是否保存稀土元素置信度结果到CSV
+save2csvbotton=True #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
-Titerationbotton=False #是否启用温度迭代算法
+Titerationbotton=True #是否启用温度迭代算法
 ReturnRawLinePayloadMode=True #是否返回每个元素的原始谱线参数( wl/intensity/A/E/g/matched_* )
 
 
@@ -1259,63 +1259,65 @@ if __name__ == '__main__':
             #     'delta_p': float(1)
             #         }
                     
-            #浮动阈值勘误部分-----施工中
-                payload_key = f"{scan_elem}II"
-                payload = elements_line_payload.get(payload_key, {})
-                # print(payload)
+            # #浮动阈值勘误部分-----施工中
+            #     payload_key = f"{scan_elem}II"
+            #     payload = elements_line_payload.get(payload_key, {})
+            #     # print(payload)
                 
-                wl_sel = np.asarray(payload.get('wl', []), dtype=float)
-                A_sel = np.asarray(payload.get('A', []), dtype=float)
-                E_sel = np.asarray(payload.get('E', []), dtype=float)
-                g_sel = np.asarray(payload.get('g', []), dtype=float)
-                matched_idx_sel = np.asarray(payload.get('matched_theo_idx', []), dtype=int)
-                if scan_elem=='Yb':
-                    print(wl_sel, A_sel, E_sel, g_sel, matched_idx_sel)
+            #     wl_sel = np.asarray(payload.get('wl', []), dtype=float)
+            #     A_sel = np.asarray(payload.get('A', []), dtype=float)
+            #     E_sel = np.asarray(payload.get('E', []), dtype=float)
+            #     g_sel = np.asarray(payload.get('g', []), dtype=float)
+            #     matched_idx_sel = np.asarray(payload.get('matched_theo_idx', []), dtype=int)
+            #     # if scan_elem=='Yb':
+            #     #     print(wl_sel, A_sel, E_sel, g_sel, matched_idx_sel)
 
-                if wl_sel.size == 0 or A_sel.size == 0 or E_sel.size == 0 or g_sel.size == 0:
-                    continue
+            #     if wl_sel.size == 0 or A_sel.size == 0 or E_sel.size == 0 or g_sel.size == 0:
+            #         continue
 
-                p_best = rel_intensity(wl_sel, A_sel, E_sel, g_sel, float(scan_T_elem[best_idx_elem]))
-                p_min = rel_intensity(wl_sel, A_sel, E_sel, g_sel, float(scan_T_elem[min_idx_elem]))
+            #     p_best = rel_intensity(wl_sel, A_sel, E_sel, g_sel, float(scan_T_elem[best_idx_elem]))
+            #     p_min = rel_intensity(wl_sel, A_sel, E_sel, g_sel, float(scan_T_elem[min_idx_elem]))
                 
-                delta_conf = float(np.max(scan_conf_elem) - np.min(scan_conf_elem))
+            #     delta_conf = float(np.max(scan_conf_elem) - np.min(scan_conf_elem))
                 
-                if matched_idx_sel.size > 0:
-                    # delta_p = float(np.sum(np.abs(p_best[matched_idx_sel] - p_min[matched_idx_sel])))
-                    delta_p = float(np.max(np.abs(p_best - p_min)))
-                    delta_conf_cal=1-np.exp(-(np.sum((p_best-p_min)**2))*len(matched_idx_sel)*4.5) #根据概率差值计算置信度差值
-                else:
-                    delta_p = 0.0
-                    delta_conf_cal = 0.0
+            #     if matched_idx_sel.size > 0:
+            #         # delta_p = float(np.sum(np.abs(p_best[matched_idx_sel] - p_min[matched_idx_sel])))
+            #         delta_p = float(np.max(np.abs(p_best - p_min)))
+            #         delta_conf_cal=1-np.exp(-(np.sum((p_best-p_min)**2))*len(matched_idx_sel)*4.5) #根据概率差值计算置信度差值
+            #     else:
+            #         delta_p = 0.0
+            #         delta_conf_cal = 0.0
                     
-                if delta_conf >=0.8:
+            #     if delta_conf >=0.8:
+            #         temp_sensitive_marks[scan_elem] = {
+            #             'delta_conf': delta_conf,
+            #             'best_t': float(scan_T_elem[best_idx_elem]),
+            #             'min_t': float(scan_T_elem[min_idx_elem]),
+            #             'delta_p': float(delta_p),
+            #             'delta_conf_cal': float(delta_conf_cal)
+            #         }
+            #     else:
+            #         if delta_conf>(delta_conf_cal*1.3):
+            #             temp_sensitive_marks[scan_elem] = {
+            #                 'delta_conf': delta_conf,
+            #                 'best_t': float(scan_T_elem[best_idx_elem]),
+            #                 'min_t': float(scan_T_elem[min_idx_elem]),
+            #                 'delta_p': float(delta_p),
+            #                 'delta_conf_cal': float(delta_conf_cal)
+            #             }
+
+                #固定阈值0.8勘误
+                #计算置信度delta
+                delta_conf = float(np.max(scan_conf_elem) - np.min(scan_conf_elem))
+                # if delta_conf >= auto_mark_delta_threshold:
+                if delta_conf >= 0.8:
                     temp_sensitive_marks[scan_elem] = {
                         'delta_conf': delta_conf,
                         'best_t': float(scan_T_elem[best_idx_elem]),
                         'min_t': float(scan_T_elem[min_idx_elem]),
-                        'delta_p': float(delta_p),
-                        'delta_conf_cal': float(delta_conf_cal)
+                        'delta_p': float(delta_conf),
+                        'delta_conf_cal': 0
                     }
-                else:
-                    if delta_conf>(delta_conf_cal*1.1):
-                        temp_sensitive_marks[scan_elem] = {
-                            'delta_conf': delta_conf,
-                            'best_t': float(scan_T_elem[best_idx_elem]),
-                            'min_t': float(scan_T_elem[min_idx_elem]),
-                            'delta_p': float(delta_p),
-                            'delta_conf_cal': float(delta_conf_cal)
-                        }
-
-                # #固定阈值勘误部分
-                # delta_conf = float(np.max(scan_conf_elem) - np.min(scan_conf_elem))
-                # # if delta_conf >= auto_mark_delta_threshold:
-                # if delta_conf >= 0.8:
-                    # temp_sensitive_marks[scan_elem] = {
-                    #     'delta_conf': delta_conf,
-                    #     'best_t': float(scan_T_elem[best_idx_elem]),
-                    #     'min_t': float(scan_T_elem[min_idx_elem]),
-                    #     'delta_p': float(delta_conf)
-                    # }
 
 
         # 记录当前光谱的稀土元素置信度（固定列顺序）
@@ -1327,7 +1329,7 @@ if __name__ == '__main__':
                 if elem in temp_sensitive_marks:
                     conf_value = 0.0
                 row[elem] = round(conf_value, 4)
-            # row['iter_temperature'] = round(float(db_temperature), 4)
+            row['iter_temperature'] = round(float(db_temperature), 4)
             confidence_rows.append(row)
 
         #print结果展示
@@ -1379,8 +1381,7 @@ if __name__ == '__main__':
 
     # 批量结果导出到CSV：第一列为光谱名，后续为固定顺序稀土元素置信度
     if confidence_rows:
-        output_columns = ['spectrum_name'] + RAREEARTH_FIXED_ORDER 
-        # + ['iter_temperature']
+        output_columns = ['spectrum_name'] + RAREEARTH_FIXED_ORDER + ['iter_temperature']
         confidence_df = pd.DataFrame(confidence_rows, columns=output_columns)
         confidence_df.to_csv(confidence_csv_path, index=False, encoding='utf-8-sig', float_format='%.4f')
         print(color_text(f"\n已导出稀土元素置信度到 CSV: {confidence_csv_path}", GREEN))
