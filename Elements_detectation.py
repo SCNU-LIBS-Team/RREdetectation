@@ -1042,12 +1042,17 @@ target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['07103_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['07121_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
 plottarget='LaII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
+<<<<<<< Updated upstream
 TargetTempScanMode=False #指定元素温度扫描模式（5000-20000 K）
 scan_target_element='Yb' #温度扫描模式下的目标元素
+=======
+TargetTempScanMode=True #指定元素温度扫描模式（5000-20000 K）
+scan_target_element='La' #温度扫描模式下的目标元素
+>>>>>>> Stashed changes
 scan_t_min=3000
 scan_t_max=25000
 scan_t_step=100
@@ -1190,13 +1195,32 @@ if __name__ == '__main__':
                 )
                 
 
-            plt.figure(figsize=(8, 4))
-            plt.plot(scan_T, scan_conf, marker='o', linewidth=1.5)
-            plt.xlabel('Temperature (K)')
-            plt.ylabel('Confidence')
-            plt.title(f'{I_element_name} - {scan_target_element} Confidence vs Temperature')
-            plt.grid(True, alpha=0.3)
-            plt.tick_params(axis='both', which='both', direction='in', top=True, right=True)
+            plt.figure(figsize=(7, 5))
+            plt.plot(
+                scan_T,
+                scan_conf,
+                color='tab:blue',
+                linewidth=2.2,
+                marker='o',
+                label=f'{scan_target_element} Confidence',
+            )
+
+            for spine in plt.gca().spines.values():
+                spine.set_linewidth(1.8)
+            for label in plt.gca().get_xticklabels():
+                label.set_fontweight("semibold")
+            for label in plt.gca().get_yticklabels():
+                label.set_fontweight("semibold")
+
+            plt.xlabel('Temperature (K)', fontsize=15, fontweight="semibold")
+            plt.ylabel('Confidence', fontsize=15, fontweight="semibold")
+            plt.title(f'{I_element_name} - {scan_target_element} Confidence vs Temperature', fontsize=15, fontweight="semibold")
+
+            plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
+            plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
+            plt.grid(alpha=0.3)
+
+            plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
             plt.tight_layout()
             plt.show()
             continue
@@ -1264,6 +1288,7 @@ if __name__ == '__main__':
             #     payload = elements_line_payload.get(payload_key, {})
             #     # print(payload)
                 
+<<<<<<< Updated upstream
             #     wl_sel = np.asarray(payload.get('wl', []), dtype=float)
             #     A_sel = np.asarray(payload.get('A', []), dtype=float)
             #     E_sel = np.asarray(payload.get('E', []), dtype=float)
@@ -1271,6 +1296,15 @@ if __name__ == '__main__':
             #     matched_idx_sel = np.asarray(payload.get('matched_theo_idx', []), dtype=int)
             #     # if scan_elem=='Yb':
             #     #     print(wl_sel, A_sel, E_sel, g_sel, matched_idx_sel)
+=======
+                wl_sel = np.asarray(payload.get('wl', []), dtype=float)
+                A_sel = np.asarray(payload.get('A', []), dtype=float)
+                E_sel = np.asarray(payload.get('E', []), dtype=float)
+                g_sel = np.asarray(payload.get('g', []), dtype=float)
+                matched_idx_sel = np.asarray(payload.get('matched_theo_idx', []), dtype=int)
+                if scan_elem=='Y':
+                    print(wl_sel, A_sel, E_sel, g_sel, matched_idx_sel)
+>>>>>>> Stashed changes
 
             #     if wl_sel.size == 0 or A_sel.size == 0 or E_sel.size == 0 or g_sel.size == 0:
             #         continue
