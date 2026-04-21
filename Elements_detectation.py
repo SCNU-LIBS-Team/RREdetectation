@@ -241,32 +241,58 @@ def Boltzmann_plot(matched_i, matched_wl, element_A, element_E, element_g, eleme
             slope, intercept, T_fit,R2, y_full = Boltzmann_fit(matched_I, matched_wl,A_sel, g_sel, E_sel)
             # slope, intercept, T_fit,R2, y_full, y_used = Boltzmann_fit_iterative(matched_I, matched_wl,A_sel, g_sel, E_sel,R2_start_threshold=0.97,max_iter=5,verbose=False)
             # print(f"拟合温度 T = {T_fit:.2f} K, 斜率 = {slope:.3f}")
-            plt.figure(figsize=(6,4))
-            plt.scatter(E_sel, y_full, c='r', label='Used Points')
-            plt.plot(E_sel, slope * E_sel + intercept, 'b--',label=f'Fit T={T_fit:.1f} K, R2={R2:.3f}')
-            plt.xlabel('E (eV)')
-            plt.ylabel('ln(I / (g·A))')
-            plt.title(f'{element_name} Boltzmann Plot')
-            plt.legend()
-            plt.grid(True, alpha=0.3)
-            # plt.minorticks_on()
-            plt.tick_params(axis='both', which='both', direction='in',top=True, right=True)
+            plt.figure(figsize=(7, 5))
+            plt.scatter(E_sel, y_full, color='tab:red', s=35, label='Used Points')
+            plt.plot(E_sel, slope * E_sel + intercept, color='tab:blue', linewidth=2.2,
+                     linestyle='--', label=f'Fit T={T_fit:.1f} K, R2={R2:.3f}')
+
+            for spine in plt.gca().spines.values():
+                spine.set_linewidth(1.8)
+            for label in plt.gca().get_xticklabels():
+                label.set_fontweight("semibold")
+            for label in plt.gca().get_yticklabels():
+                label.set_fontweight("semibold")
+
+            plt.xlabel('E (eV)', fontsize=15, fontweight="semibold")
+            plt.ylabel('ln(I / (g·A))', fontsize=15, fontweight="semibold")
+            plt.title(f'{element_name} Boltzmann Plot', fontsize=15, fontweight="semibold")
+
+            plt.tick_params(axis='both', which='major', direction='in', top=True, right=True,
+                            width=2.0, length=6, labelsize=12)
+            plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True,
+                            width=2.0, length=6, labelsize=12)
+            plt.grid(alpha=0.3)
+            plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
+            plt.tight_layout()
         if mode=='iterative':
         #绘图
             slope, intercept, T_fit, R2, y_used, E_used, wl_used, I_used, A_used, g_used = \
                 Boltzmann_fit_iterative(matched_I, matched_wl, A_sel, g_sel, E_sel,
                                         R2_start_threshold=0.1, max_iter=1, verbose=False)
 
-            plt.figure(figsize=(6,4))
-            plt.scatter(E_used, y_used, c='r', label='Used Points')
-            plt.plot(E_used, slope * E_used + intercept, 'b--',label=f'Fit T={T_fit:.1f} K, R2={R2:.3f}')
-            plt.xlabel('E (eV)')
-            plt.ylabel('ln(I / (g·A))')
-            plt.title(f'{element_name} Boltzmann Plot')
-            plt.legend()
-            plt.grid(True, alpha=0.3)
-            # plt.minorticks_on()
-            plt.tick_params(axis='both', which='both', direction='in',top=True, right=True)
+            plt.figure(figsize=(7, 5))
+            plt.scatter(E_used, y_used, color='tab:red', s=35, label='Used Points')
+            plt.plot(E_used, slope * E_used + intercept, color='tab:blue', linewidth=2.2,
+                     linestyle='--', label=f'Fit T={T_fit:.1f} K, R2={R2:.3f}')
+
+            for spine in plt.gca().spines.values():
+                spine.set_linewidth(1.8)
+            for label in plt.gca().get_xticklabels():
+                label.set_fontweight("semibold")
+            for label in plt.gca().get_yticklabels():
+                label.set_fontweight("semibold")
+
+            plt.xlabel('E (eV)', fontsize=15, fontweight="semibold")
+            plt.ylabel('ln(I / (g·A))', fontsize=15, fontweight="semibold")
+            plt.title(f'{element_name} Boltzmann Plot', fontsize=15, fontweight="semibold")
+
+            plt.tick_params(axis='both', which='major', direction='in', top=True, right=True,
+                            width=2.0, length=6, labelsize=12)
+            plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True,
+                            width=2.0, length=6, labelsize=12)
+            plt.grid(alpha=0.3)
+            plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
+            plt.tight_layout()
         
     else:
         print(f"{element_name} 匹配峰数不足，无法绘制玻尔兹曼图。")
@@ -533,7 +559,7 @@ def compute_element_confidence_shape(
             Boltzmann_linecounts[element_name]= 0
 
         if element_name == target and plot:
-            plt.figure(figsize=(8,4))
+            plt.figure(figsize=(7, 5))
 
            # print(len(E_iterative))
         # 全部理论谱线（浅蓝）
@@ -542,7 +568,6 @@ def compute_element_confidence_shape(
                 plt.vlines(wl, 0, inten_norm,
                         color='lightblue', alpha=0.5,
                         label='All Theoretical' if wl==element_wl[0] else "")
-                plt.legend(loc='upper right')
 
 
             # 理论匹配谱线（蓝）      
@@ -553,7 +578,6 @@ def compute_element_confidence_shape(
                     plt.vlines(wl, 0, inten_norm_theo,
                             color='b', alpha=0.7,
                             label='Matched Theoretical' if wl==matched_theo[0][0] else "")
-                    plt.legend(loc='upper right')
 
             # --- 匹配成功的实验谱线（红色） ---
             if matched_exp:
@@ -566,13 +590,27 @@ def compute_element_confidence_shape(
                     plt.vlines(wl, 0, inten_norm_exp,
                             color='r', alpha=0.7,
                             label='Matched Experimental' if wl==matched_exp[0][0] else "")
-                    plt.legend(loc='upper right')
-            # plt.minorticks_on()
-            plt.tick_params(axis='both', which='both', direction='in',top=True, right=True)
+            for spine in plt.gca().spines.values():
+                spine.set_linewidth(1.8)
+            for label in plt.gca().get_xticklabels():
+                label.set_fontweight("semibold")
+            for label in plt.gca().get_yticklabels():
+                label.set_fontweight("semibold")
+
+            plt.title(f'Matched Stick Spectrum for {element_name}', fontsize=15, fontweight="semibold")
+            plt.xlabel('Wavelength (nm)', fontsize=15, fontweight="semibold")
+            plt.ylabel('Normalized Intensity', fontsize=15, fontweight="semibold")
+            plt.tick_params(axis='both', which='major', direction='in', top=True, right=True,
+                            width=2.0, length=6, labelsize=12)
+            plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True,
+                            width=2.0, length=6, labelsize=12)
+            plt.grid(alpha=0.3)
+            plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
+            plt.tight_layout()
                     
             ### --- 新增波形标注逻辑 --- ###
-            plt.figure(figsize=(10,4))
-            plt.plot(global_wl, global_intensity, color='black', lw=1, label='Original Spectrum')
+            plt.figure(figsize=(7, 5))
+            plt.plot(global_wl, global_intensity, color='black', linewidth=2.2, label='Original Spectrum')
 
             # 标出所有理论谱线位置（浅蓝色线）
             for wl in element_wl:
@@ -580,20 +618,25 @@ def compute_element_confidence_shape(
 
             # 标出匹配到的实验峰（红色点）
             for wl, inten in matched_exp:
-                plt.scatter(wl, inten, color='red', s=25)
+                plt.scatter(wl, inten, color='tab:red', s=35)
 
-            plt.title('Original Spectrum with CrII Peaks Marked')
-            plt.xlabel('Wavelength (nm)')
-            plt.ylabel('Intensity')
+            for spine in plt.gca().spines.values():
+                spine.set_linewidth(1.8)
+            for label in plt.gca().get_xticklabels():
+                label.set_fontweight("semibold")
+            for label in plt.gca().get_yticklabels():
+                label.set_fontweight("semibold")
 
-            plt.legend(loc='upper right')
-
-
-            plt.title(f'Matched Stick Spectrum for {element_name}')
-            plt.xlabel('Wavelength (nm)')
-            plt.ylabel('Normalized Intensity')
-            # plt.minorticks_on()
-            plt.tick_params(axis='both', which='both', direction='in',top=True, right=True)
+            plt.title(f'Original Spectrum with {element_name} Peaks Marked', fontsize=15, fontweight="semibold")
+            plt.xlabel('Wavelength (nm)', fontsize=15, fontweight="semibold")
+            plt.ylabel('Intensity', fontsize=15, fontweight="semibold")
+            plt.tick_params(axis='both', which='major', direction='in', top=True, right=True,
+                            width=2.0, length=6, labelsize=12)
+            plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True,
+                            width=2.0, length=6, labelsize=12)
+            plt.grid(alpha=0.3)
+            plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
+            plt.tight_layout()
 
             Boltzmann_plot(matched_exp, matched_theo, element_A, element_E, element_g, element_wl,element_name,mode='normal')
             iterative_combined = np.column_stack((wl_iterative, I_iterative))
@@ -1033,8 +1076,8 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\Confidence_debug\threshold_0.8\Pt15' #随机光谱测试
-RandPerfOPbotton=True #随机光谱性能测试模式
+signal_path10= r'D:\LIBS\RREdetectation\Confidence_debug\T_scanoff\Pt10' #随机光谱测试
+RandPerfOPbotton=False #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
@@ -1042,22 +1085,17 @@ target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['07121_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['07405_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
-plottarget='LaII'#指定绘图元素（仅在 plotbotton=True 时生效）
+plottarget='AlI'#指定绘图元素（仅在 plotbotton=True 时生效）
 
-<<<<<<< Updated upstream
-TargetTempScanMode=False #指定元素温度扫描模式（5000-20000 K）
-scan_target_element='Yb' #温度扫描模式下的目标元素
-=======
 TargetTempScanMode=True #指定元素温度扫描模式（5000-20000 K）
-scan_target_element='La' #温度扫描模式下的目标元素
->>>>>>> Stashed changes
+scan_target_element='Er' #温度扫描模式下的目标元素
 scan_t_min=3000
 scan_t_max=25000
 scan_t_step=100
 
-AutoElemTempMarkMode=True #自动扫描有置信度稀土元素并在输出中标注温度敏感性
+AutoElemTempMarkMode=False #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 auto_mark_conf_min=0.05 #参与扫描的最小置信度阈值
 auto_mark_delta_threshold=0.5 #最大-最小置信度差值超过该阈值则标注
 
@@ -1065,10 +1103,10 @@ specifybotton = False  # True: 遍历全部文件，仅输出目标元素；Fals
 checkallbutton=True#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
-save2csvbotton=True #是否保存稀土元素置信度结果到CSV
+save2csvbotton=False #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
-Titerationbotton=True #是否启用温度迭代算法
-ReturnRawLinePayloadMode=True #是否返回每个元素的原始谱线参数( wl/intensity/A/E/g/matched_* )
+Titerationbotton=False #是否启用温度迭代算法
+ReturnRawLinePayloadMode=False #是否返回每个元素的原始谱线参数( wl/intensity/A/E/g/matched_* )
 
 
 # 模式控制逻辑：绘图模式优先级最高，开启后强制关闭其他模式；指定元素模式优先级次之，开启后覆盖文件筛选但不影响绘图设置
@@ -1220,6 +1258,10 @@ if __name__ == '__main__':
             plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
             plt.grid(alpha=0.3)
 
+            # 温度参考线
+            plt.axvline(7500, color='tab:red', linewidth=2.0, linestyle='--', alpha=0.8, label='7500 K')
+            plt.axvline(12000, color='tab:red', linewidth=2.0, linestyle='-.', alpha=0.8, label='12000 K')
+
             plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
             plt.tight_layout()
             plt.show()
@@ -1251,7 +1293,7 @@ if __name__ == '__main__':
             print(color_text(f"\n[{I_element_name}] 启动自动温度敏感元素标注算法，扫描置信度≥{auto_mark_conf_min}的元素", BLUE))
             candidate_scan_elems = [
                 elem for elem, conf in elements_confidence.items()
-                if float(conf) >= auto_mark_conf_min
+                if float(conf) >= auto_mark_conf_min and float(elements_R2.get(elem, 0.0)) == 1.0
             ]
             for scan_elem in candidate_scan_elems:
                 scan_T_elem, scan_conf_elem = scan_target_element_confidence(
@@ -1288,7 +1330,6 @@ if __name__ == '__main__':
             #     payload = elements_line_payload.get(payload_key, {})
             #     # print(payload)
                 
-<<<<<<< Updated upstream
             #     wl_sel = np.asarray(payload.get('wl', []), dtype=float)
             #     A_sel = np.asarray(payload.get('A', []), dtype=float)
             #     E_sel = np.asarray(payload.get('E', []), dtype=float)
@@ -1296,15 +1337,6 @@ if __name__ == '__main__':
             #     matched_idx_sel = np.asarray(payload.get('matched_theo_idx', []), dtype=int)
             #     # if scan_elem=='Yb':
             #     #     print(wl_sel, A_sel, E_sel, g_sel, matched_idx_sel)
-=======
-                wl_sel = np.asarray(payload.get('wl', []), dtype=float)
-                A_sel = np.asarray(payload.get('A', []), dtype=float)
-                E_sel = np.asarray(payload.get('E', []), dtype=float)
-                g_sel = np.asarray(payload.get('g', []), dtype=float)
-                matched_idx_sel = np.asarray(payload.get('matched_theo_idx', []), dtype=int)
-                if scan_elem=='Y':
-                    print(wl_sel, A_sel, E_sel, g_sel, matched_idx_sel)
->>>>>>> Stashed changes
 
             #     if wl_sel.size == 0 or A_sel.size == 0 or E_sel.size == 0 or g_sel.size == 0:
             #         continue
@@ -1396,21 +1428,22 @@ if __name__ == '__main__':
                     break
             else:
                 for elem in sorted_elems:
-                    dist = elements_result.get(elem, np.nan)
-                    conf = elements_confidence.get(elem, 0)
-                    elem_T = elements_T.get(elem, 0)
-                    R2 = elements_R2.get(elem, 0)
-                    temp_text = color_text(f"温度={elem_T:<8.4f}", BLUE)
-                    r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
-                    conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
-                    sensitivity_mark = ""
-                    if elem in temp_sensitive_marks:
-                        mark = temp_sensitive_marks[elem]
-                        sensitivity_mark = color_text(
-                            f" [温度敏感 ΔC={mark['delta_conf']:.3f}, {mark['min_t']:.0f}K->{mark['best_t']:.0f}K, ΔP={mark['delta_p']:.3f}], ΔC_cal={mark['delta_conf_cal']:.3f}",
-                            YELLOW,
-                        )
-                    print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}{sensitivity_mark}")
+                    # if elements_R2.get(elem, 0) == 1.0 and float(elements_confidence.get(elem, 0)) > 0.05:
+                        dist = elements_result.get(elem, np.nan)
+                        conf = elements_confidence.get(elem, 0)
+                        elem_T = elements_T.get(elem, 0)
+                        R2 = elements_R2.get(elem, 0)
+                        temp_text = color_text(f"温度={elem_T:<8.4f}", BLUE)
+                        r2_text = color_text(f"R2 = {R2:<8.4f}", YELLOW)
+                        conf_text = color_text(f"置信度 = {conf:<8.4f}", GREEN)
+                        sensitivity_mark = ""
+                        if elem in temp_sensitive_marks:
+                            mark = temp_sensitive_marks[elem]
+                            sensitivity_mark = color_text(
+                                f" [温度敏感 ΔC={mark['delta_conf']:.3f}, {mark['min_t']:.0f}K->{mark['best_t']:.0f}K, ΔP={mark['delta_p']:.3f}], ΔC_cal={mark['delta_conf_cal']:.3f}",
+                                YELLOW,
+                            )
+                        print(f"{elem:<6s} 平均距离 = {dist:<8.4f} | {temp_text} | {r2_text} | {conf_text}{sensitivity_mark}")
 
 
     # 批量结果导出到CSV：第一列为光谱名，后续为固定顺序稀土元素置信度
