@@ -1076,8 +1076,8 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\Confidence_debug\T_scanoff\Pt10' #随机光谱测试
-RandPerfOPbotton=False #随机光谱性能测试模式
+signal_path10= r'D:\LIBS\RREdetectation\Confidence_debug\Extremepoint_correction\Pt15' #随机光谱测试
+RandPerfOPbotton=True #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
@@ -1089,13 +1089,13 @@ target_files=['07405_95_random'] #待测光谱文件名列表（不带扩展名�
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
 plottarget='AlI'#指定绘图元素（仅在 plotbotton=True 时生效）
 
-TargetTempScanMode=True #指定元素温度扫描模式（5000-20000 K）
+TargetTempScanMode=False #指定元素温度扫描模式（5000-20000 K）
 scan_target_element='Er' #温度扫描模式下的目标元素
 scan_t_min=3000
 scan_t_max=25000
 scan_t_step=100
 
-AutoElemTempMarkMode=False #自动扫描有置信度稀土元素并在输出中标注温度敏感性
+AutoElemTempMarkMode=True #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 auto_mark_conf_min=0.05 #参与扫描的最小置信度阈值
 auto_mark_delta_threshold=0.5 #最大-最小置信度差值超过该阈值则标注
 
@@ -1103,9 +1103,9 @@ specifybotton = False  # True: 遍历全部文件，仅输出目标元素；Fals
 checkallbutton=True#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
-save2csvbotton=False #是否保存稀土元素置信度结果到CSV
+save2csvbotton=True #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
-Titerationbotton=False #是否启用温度迭代算法
+Titerationbotton=True #是否启用温度迭代算法
 ReturnRawLinePayloadMode=False #是否返回每个元素的原始谱线参数( wl/intensity/A/E/g/matched_* )
 
 
@@ -1290,10 +1290,16 @@ if __name__ == '__main__':
         # 对有置信度的元素做温度扫描，若置信度波动超过阈值则在最终输出中标注
         temp_sensitive_marks = {}
         if AutoElemTempMarkMode:
-            print(color_text(f"\n[{I_element_name}] 启动自动温度敏感元素标注算法，扫描置信度≥{auto_mark_conf_min}的元素", BLUE))
+            print(color_text(f"\n[{I_element_name}] 启动自动温度敏感元素标注算法，扫描置信度≥{auto_mark_conf_min}的R2=1的特殊元素", BLUE))
+            # candidate_scan_elems = [
+            #     elem for elem, conf in elements_confidence.items()
+            #     if float(conf) >= auto_mark_conf_min and float(elements_R2.get(elem, 0.0)) == 1.0
+            # ]
+            # print(f"候选扫描元素: {candidate_scan_elems}")
+            allowed_elems = {"La", "Yb", "Tb", "Eu", "Er"}
             candidate_scan_elems = [
                 elem for elem, conf in elements_confidence.items()
-                if float(conf) >= auto_mark_conf_min and float(elements_R2.get(elem, 0.0)) == 1.0
+                if elem in allowed_elems and float(elements_R2.get(elem, 0.0)) == 1.0
             ]
             for scan_elem in candidate_scan_elems:
                 scan_T_elem, scan_conf_elem = scan_target_element_confidence(
@@ -1312,18 +1318,18 @@ if __name__ == '__main__':
 
                 best_idx_elem = int(np.argmax(scan_conf_elem))
                 min_idx_elem = int(np.argmin(scan_conf_elem))
-            # #极值勘误部分
-            #     #无极值温度
-
-            #     if 7000<= float(scan_T_elem[best_idx_elem]) <=13000 :
-            #         continue
-            #     else:
-            #         temp_sensitive_marks[scan_elem] = {
-            #     'delta_conf': 1,
-            #     'best_t': float(scan_T_elem[best_idx_elem]),
-            #     'min_t': float(scan_T_elem[min_idx_elem]),
-            #     'delta_p': float(1)
-            #         }
+                
+                
+            #极值勘误部分
+                best_t = float(scan_T_elem[best_idx_elem])
+                if best_t < 7450 or best_t > 12100:
+                    temp_sensitive_marks[scan_elem] = {
+                        'delta_conf': 1,
+                        'best_t': best_t,
+                        'min_t': float(scan_T_elem[min_idx_elem]),
+                        'delta_p': float(1),
+                        'delta_conf_cal': float(1)
+                    }
                     
             # #浮动阈值勘误部分-----施工中
             #     payload_key = f"{scan_elem}II"
@@ -1372,18 +1378,18 @@ if __name__ == '__main__':
             #                 'delta_conf_cal': float(delta_conf_cal)
             #             }
 
-                #固定阈值0.8勘误
-                #计算置信度delta
-                delta_conf = float(np.max(scan_conf_elem) - np.min(scan_conf_elem))
-                # if delta_conf >= auto_mark_delta_threshold:
-                if delta_conf >= 0.8:
-                    temp_sensitive_marks[scan_elem] = {
-                        'delta_conf': delta_conf,
-                        'best_t': float(scan_T_elem[best_idx_elem]),
-                        'min_t': float(scan_T_elem[min_idx_elem]),
-                        'delta_p': float(delta_conf),
-                        'delta_conf_cal': 0
-                    }
+                # #固定阈值0.8勘误
+                # #计算置信度delta
+                # delta_conf = float(np.max(scan_conf_elem) - np.min(scan_conf_elem))
+                # # if delta_conf >= auto_mark_delta_threshold:
+                # if delta_conf >= 0.8:
+                #     temp_sensitive_marks[scan_elem] = {
+                #         'delta_conf': delta_conf,
+                #         'best_t': float(scan_T_elem[best_idx_elem]),
+                #         'min_t': float(scan_T_elem[min_idx_elem]),
+                #         'delta_p': float(delta_conf),
+                #         'delta_conf_cal': 0
+                #     }
 
 
         # 记录当前光谱的稀土元素置信度（固定列顺序）
