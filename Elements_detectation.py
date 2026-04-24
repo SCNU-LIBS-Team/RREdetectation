@@ -1101,11 +1101,11 @@ auto_mark_delta_threshold=0.5 #最大-最小置信度差值超过该阈值则标
 
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=True#是否检测文件内的全部光谱 （全文件）
-plotbotton=False#是否绘图展示Boltzmann图
+plotbotton=True#是否绘图展示Boltzmann图
 LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
 save2csvbotton=True #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
-Titerationbotton=True #是否启用温度迭代算法
+Titerationbotton=False #是否启用温度迭代算法
 ReturnRawLinePayloadMode=False #是否返回每个元素的原始谱线参数( wl/intensity/A/E/g/matched_* )
 
 
