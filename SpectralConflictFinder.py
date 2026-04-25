@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from Wavelet_peakfinding import find_peaks_ridge,wavelet_peak_detection
 
 THRESHOLD = 0.15  # nm distance allowed between catalog line and detected peak
-#Now let's workout the Threshold from the Halpha line of Hydrogen, which is at 656.28 nm. 
+
 #Ne=(FWHM/gamma)*sqrt(ln(2)/pi)*1e16
 
 folder_path = r'D:\LIBS\RREdetectation\Rareearth' #元素谱线库的路径

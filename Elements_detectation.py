@@ -14,6 +14,7 @@ from Elements_Combfact import elements_database, elements_database_pt2,elements_
 from scipy.optimize import linear_sum_assignment #匈牙利算法
 from RandSpec_PerformanceOP import RandSepc_PerforOP #随机光谱性能评估
 from error_evaluation import U_Calculate, rel_intensity
+from MultiPeakfit.Gaussfit import CWTPeakFWHMEstimator,GaussMultiPeakFitter
 
 
 #终端颜色设置
@@ -1040,7 +1041,7 @@ def scan_target_element_confidence(peak_wl,peak_int,x,intensity_sum,target_elem,
     for scan_idx, scan_T in enumerate(temperature_grid, start=1):
 
         elements_rockmain = [elem for elem, conf in elements_confidence_main.items() if conf > 0.7]
-        elements_rareearth, _ = elements_database_lineswitch(folder_path2, float(scan_T), elements_rockmain, LineSwitchMode)
+        elements_rareearth, _ = elements_database_lineswitch(folder_path2, float(scan_T), elements_rockmain, LineSwitchMode=True)
         _, _, _, _, elements_confidence = compute_element_confidence_shape(
             elements_rareearth,
             peak_wl,
@@ -1102,7 +1103,6 @@ auto_mark_delta_threshold=0.5 #最大-最小置信度差值超过该阈值则标
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=True#是否检测文件内的全部光谱 （全文件）
 plotbotton=True#是否绘图展示Boltzmann图
-LineSwitchMode=True #是否启用稀土元素谱线开关策略（threshold=0.15nm）
 save2csvbotton=True #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
 Titerationbotton=False #是否启用温度迭代算法
@@ -1274,7 +1274,7 @@ if __name__ == '__main__':
                 elements_rockmain.append(elem)
     
         #elements_database_line_switch header=1
-        elements_rareearth,elements_rareearth_list=elements_database_lineswitch(folder_path2,db_temperature,elements_rockmain,LineSwitchMode) 
+        elements_rareearth,elements_rareearth_list=elements_database_lineswitch(folder_path2,db_temperature,elements_rockmain,LineSwitchMode=True) 
         if ReturnRawLinePayloadMode:
             particle_result,elements_result,elements_T,elements_R2,elements_confidence,elements_line_payload=compute_element_confidence_shape(elements_rareearth, peak_wl, peak_int,x,intensity_sum,
                                                                                                         scope=0.2,plot=plotbotton,target=plottarget,
