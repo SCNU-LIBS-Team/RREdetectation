@@ -1111,7 +1111,7 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\Confidence_debug\Extremepoint_correction\Pt15' #随机光谱测试
+signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt1' #随机光谱测试
 RandPerfOPbotton=False #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
@@ -1120,12 +1120,12 @@ target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['03124_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['070101_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
 plottarget='AlI'#指定绘图元素（仅在 plotbotton=True 时生效）
 
 TargetTempScanMode=False #指定元素温度扫描模式（5000-20000 K）
-scan_target_element='Er' #温度扫描模式下的目标元素
+scan_target_element='Yb' #温度扫描模式下的目标元素
 scan_t_min=3000
 scan_t_max=25000
 scan_t_step=100
@@ -1137,7 +1137,7 @@ auto_mark_delta_threshold=0.5 #最大-最小置信度差值超过该阈值则标
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=False#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
-save2csvbotton=True #是否保存稀土元素置信度结果到CSV
+save2csvbotton=False #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
 Titerationbotton=False #是否启用温度迭代算法
 ReturnRawLinePayloadMode=False #是否返回每个元素的原始谱线参数( wl/intensity/A/E/g/matched_* )
@@ -1216,7 +1216,7 @@ if __name__ == '__main__':
         elements_main,elements_main_list=elements_database_pt2(folder_path,db_temperature) 
         particle_main,elements_main,elements_T_main,elements_R2_main,elements_confidence_main=compute_element_confidence_shape(elements_main, peak_wl, peak_int,x,intensity_sum,
                                                                                             scope=0.2,plot=plotbotton,target=plottarget)
-
+        print(elements_confidence_main)
         
         
         #特定元素电子温度扫描
@@ -1304,7 +1304,7 @@ if __name__ == '__main__':
         #基体元素筛选
         elements_rockmain = []
         for elem, conf in elements_confidence_main.items():
-            if conf>0.7: #置信度阈值
+            if conf>0.3: #置信度阈值
                 elements_rockmain.append(elem)
     
         #elements_database_line_switch header=1
@@ -1323,14 +1323,20 @@ if __name__ == '__main__':
         #仅仅对单个元素Sm进行，而且是没检测出来Sm的
         
   
-        main_elements_normalized = {str(m).strip().upper() for m in elements_rockmain} 
+        allowed_main_elements = {"TI", "K", "NA", "MG", "CA", "SI", "FE", "AL"}
+        main_elements_normalized = {
+            normalized
+            for m in elements_rockmain
+            for normalized in [str(m).strip().upper()]
+            if normalized in allowed_main_elements
+        }
         print(main_elements_normalized)
         def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
             file_list = glob.glob(os.path.join(folder_path, "*.csv"))
             elements_list = [os.path.splitext(os.path.basename(f))[0] for f in file_list]
             elements = {}
             for element_name in elements_list: 
-                if element_name=='TbII':
+                if element_name=='EuII':
                     file_path = os.path.join(folder_path, element_name + ".csv")
                     df = pd.read_csv(file_path, header=0, encoding="gbk")
                     if df.shape[1] > 9:
@@ -1462,7 +1468,7 @@ if __name__ == '__main__':
                                             estimator=CWTPeakFWHMEstimator(segment_wl, segment_signal,scale=0.48,threshold=0.01)
                                             cwt_peaks, cwt_fwhm, cwt_data=estimator.cwt_peak_detection()
                                             
-                                            wl_np = np.asarray(wl, dtype=float)
+                                            wl_np = np.asarray(segment_wl, dtype=float)
                                             intensity_np = np.asarray(segment_signal, dtype=float)
                                             peak_indices = np.asarray(extrema_idx, dtype=int)
                                             peak_indices = peak_indices[(peak_indices >= 0) & (peak_indices < len(wl_np))]

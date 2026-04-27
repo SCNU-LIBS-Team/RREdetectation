@@ -7,7 +7,7 @@ import pywt
 
 
 #数据导入部分
-signal_path=r'D:\LIBS\RREdetectation\MultiPeakfit\4_26data.csv'
+signal_path=r'D:\LIBS\RREdetectation\MultiPeakfit\4_25data.csv'
 data=pd.read_csv(signal_path,header=0,encoding="gbk")
 
 wl=data.iloc[:,0]
@@ -95,7 +95,17 @@ class CWTPeakFWHMEstimator:
 
     def estimate_fwhm(self, cwt_data, peak_indices, wavelength):
         fwhm_list = []
+        cwt_data = np.asarray(cwt_data, dtype=float)
         wavelength = np.asarray(wavelength, dtype=float)
+        n = min(cwt_data.size, wavelength.size)
+        if n == 0:
+            return np.array(fwhm_list)
+
+        cwt_data = cwt_data[:n]
+        wavelength = wavelength[:n]
+        peak_indices = np.asarray(peak_indices, dtype=int)
+        peak_indices = peak_indices[(peak_indices >= 0) & (peak_indices < n)]
+
         for idx in peak_indices:
             # 左侧最大值
             left = idx
@@ -168,7 +178,12 @@ class GaussMultiPeakFitter:
 
         amp_upper = np.maximum(peak_height_upper, 1e-8)
         amp_init = amp_upper * 0.5
-        sigma_init = np.full(peak_mu.size, max(x_span / (8.0 * max(peak_mu.size, 1)), sigma_min), dtype=float)
+        sigma_default = max(x_span / (8.0 * max(peak_mu.size, 1)), sigma_min)
+
+        if self.fwhm_two.size == peak_mu.size:
+            sigma_init = np.clip(self.fwhm_two / 2.35482, sigma_min, sigma_max)
+        else:
+            sigma_init = np.full(peak_mu.size, sigma_default, dtype=float)
 
         x0 = np.concatenate([amp_init, sigma_init])
         bounds = [(0.0, float(u)) for u in amp_upper] + [(sigma_min, sigma_max)] * peak_mu.size
@@ -332,7 +347,7 @@ fitter = GaussMultiPeakFitter(
     selected_idx=selected_idx,
 )
 fitter.fit()
-fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
+# fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
 
 
 

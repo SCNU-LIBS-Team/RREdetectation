@@ -78,7 +78,17 @@ def remove_edge_artifacts(cwt_data, minima_indices):
 
 def estimate_fwhm(cwt_data, peak_indices, wavelength):
     fwhm_list = []
+    cwt_data = np.asarray(cwt_data, dtype=float)
     wavelength = np.asarray(wavelength, dtype=float)
+    n = min(cwt_data.size, wavelength.size)
+    if n == 0:
+        return np.array(fwhm_list)
+
+    cwt_data = cwt_data[:n]
+    wavelength = wavelength[:n]
+    peak_indices = np.asarray(peak_indices, dtype=int)
+    peak_indices = peak_indices[(peak_indices >= 0) & (peak_indices < n)]
+
     for idx in peak_indices:
         # 左侧最大值
         left = idx
@@ -372,5 +382,4 @@ if __name__ == '__main__':
     # fitted = multi_peak_model(wl, result.x, len(peaks))
     
     # plot_full_result(wl, rel_int, result.x, len(peaks))
-    
     
