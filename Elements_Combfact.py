@@ -153,6 +153,7 @@ def elements_database_lineswitch(folder_path, T, main_elements, LineSwitchMode=F
     elements_list = [os.path.splitext(os.path.basename(f))[0] for f in file_list]
     elements = {}
     for element_name in elements_list: 
+        # print(f"Processing element: {element_name}")
         file_path = os.path.join(folder_path, element_name + ".csv")
 
    

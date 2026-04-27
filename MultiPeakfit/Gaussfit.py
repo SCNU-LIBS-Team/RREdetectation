@@ -7,7 +7,7 @@ import pywt
 
 
 #数据导入部分
-signal_path=r'D:\LIBS\RREdetectation\MultiPeakfit\4_25data.csv'
+signal_path=r'D:\LIBS\RREdetectation\MultiPeakfit\4_26data.csv'
 data=pd.read_csv(signal_path,header=0,encoding="gbk")
 
 wl=data.iloc[:,0]
@@ -62,7 +62,7 @@ class CWTPeakFWHMEstimator:
 
         min_val = np.min(cwt_data)
         selected = [i for i in minima if abs(cwt_data[i]) > threshold * abs(min_val)]
-        print (f"找到 {len(selected)} 个满足阈值条件的极小值点，原始极小值点数量: {len(minima)}")
+        #print (f"找到 {len(selected)} 个满足阈值条件的极小值点，原始极小值点数量: {len(minima)}")
         return np.array(selected, dtype=int)
 
     def remove_edge_artifacts(self,cwt_data, minima_indices):
@@ -177,6 +177,7 @@ class GaussMultiPeakFitter:
         best_ratio = None
         best_full_rms = np.inf
         best_solution = None
+        window_fallback_warned = False
 
         for ratio in ratio_candidates:
             # 拟合窗口: 左边界向左扩展 ratio*FWHM1，右边界向右扩展 ratio*FWHM2
@@ -188,7 +189,9 @@ class GaussMultiPeakFitter:
                     fit_mask = np.ones_like(x_full, dtype=bool)
             else:
                 fit_mask = np.ones_like(x_full, dtype=bool)
-                print('警告：无法根据 FWHM 和 selected_idx 设置拟合窗口，使用全谱数据进行拟合。')
+                if not window_fallback_warned:
+                    print('Warning：无法根据 FWHM 和 selected_idx 设置拟合窗口，使用全谱数据进行拟合。')
+                    window_fallback_warned = True
 
             x_fit = x_full[fit_mask]
             y_fit = y_full[fit_mask]
@@ -289,7 +292,8 @@ for i in range(1, len(rel_int) - 1):
         extrema_idx.append(i)
 
 manual_peak_wl = [
-    # 275.43, 275.57
+    #  275.43, 275.57
+
 # 305.85,306.20
 ]
 
@@ -317,7 +321,7 @@ peak_indices = peak_indices[(peak_indices >= 0) & (peak_indices < len(wl_np))]
 top2_local = np.argsort(intensity_np[peak_indices])[-2:]
 selected_idx = np.sort(peak_indices[top2_local])
 fwhm_two = estimator.estimate_fwhm(np.asarray(cwt_data, dtype=float), selected_idx,wl_np)
-
+print(f"Estimated FWHM for selected peaks: {fwhm_two}")
 
 fitter = GaussMultiPeakFitter(
     wl=wl,

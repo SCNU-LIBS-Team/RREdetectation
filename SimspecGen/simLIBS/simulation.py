@@ -68,7 +68,7 @@ class SimulatedLIBS(object):
         resolution: int = 1000,
         low_w: int = 200,
         upper_w: int = 1000,
-        max_ion_charge: int = 3,
+        max_ion_charge: int = 2,
         webscraping: str = "static",
         headless: bool = True,
         keep_browser_open: bool = False,
@@ -179,7 +179,7 @@ class SimulatedLIBS(object):
             "https://physics.nist.gov/cgi-bin/ASD/lines1.pl?composition={}"
             "&spectra={}"
             "&low_w={}&limits_type=0&upp_w={}"
-            "&show_av=3&unit=1"
+            "&show_av=2&unit=1"
             "&resolution={}"
             "&temp={}"
             "&eden={}"
