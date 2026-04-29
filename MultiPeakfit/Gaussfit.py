@@ -146,6 +146,17 @@ class GaussMultiPeakFitter:
         self.total_fit = np.zeros_like(self.wl, dtype=float)
         self.fitted_mu = np.array([])
         self.fitted_amp = np.array([])
+        
+        #残差分析和迭代拟合结果
+        self.residual = np.array([])
+        self.residual_linear_fit = np.array([])
+        self.new_residual = np.array([])
+        self.residual_corrected_components = np.empty((0, self.wl.size), dtype=float)
+        self.residual_corrected_total = np.zeros_like(self.wl, dtype=float)
+        self.refitted_params = np.empty((0, 3), dtype=float)
+        self.refitted_components = np.empty((0, self.wl.size), dtype=float)
+        self.refitted_total_fit = np.zeros_like(self.wl, dtype=float)
+        self.refit_history = []
 
     @staticmethod
     def gaussian(x, a, mu, sigma):
@@ -161,6 +172,15 @@ class GaussMultiPeakFitter:
         self.fitted_params = []
         self.component_fits = []
         self.total_fit = np.zeros_like(self.wl, dtype=float)
+        self.residual = np.array([])
+        self.residual_linear_fit = np.array([])
+        self.new_residual = np.array([])
+        self.residual_corrected_components = np.empty((0, self.wl.size), dtype=float)
+        self.residual_corrected_total = np.zeros_like(self.wl, dtype=float)
+        self.refitted_params = np.empty((0, 3), dtype=float)
+        self.refitted_components = np.empty((0, self.wl.size), dtype=float)
+        self.refitted_total_fit = np.zeros_like(self.wl, dtype=float)
+        self.refit_history = []
 
         x_full = self.wl
         y_full = self.rel_int
@@ -177,7 +197,7 @@ class GaussMultiPeakFitter:
         sigma_max = max(x_span / 2.0, sigma_min * 10.0)
 
         amp_upper = np.maximum(peak_height_upper, 1e-8)
-        amp_init = amp_upper * 0.5
+        amp_init = amp_upper * 0.8
         sigma_default = max(x_span / (8.0 * max(peak_mu.size, 1)), sigma_min)
 
         if self.fwhm_two.size == peak_mu.size:
@@ -194,6 +214,8 @@ class GaussMultiPeakFitter:
         best_solution = None
         window_fallback_warned = False
 
+        
+        #动态窗口拟合
         for ratio in ratio_candidates:
             # 拟合窗口: 左边界向左扩展 ratio*FWHM1，右边界向右扩展 ratio*FWHM2
             if peak_mu.size >= 2 and self.fwhm_two.size >= 2 and self.selected_idx.size >= 2:
@@ -254,19 +276,189 @@ class GaussMultiPeakFitter:
             print(f'Best ratio: {best_ratio:.2f}, Full-spectrum RMS: {best_full_rms:.6f}')
         else:
             print('Global gaussian fitting failed for all ratio candidates.')
-
-        if self.fitted_params:
+        iterative_switch = True
+        if self.fitted_params and iterative_switch:
             fitted_params_arr = np.array(self.fitted_params, dtype=float)
             self.fitted_mu = fitted_params_arr[:, 1]
             self.fitted_amp = fitted_params_arr[:, 0]
             print('Fitted peaks (A, mu, sigma):')
             print(pd.DataFrame(fitted_params_arr, columns=['A', 'mu', 'sigma']))
+
+            current_params = fitted_params_arr.copy()
+            self.refit_history = []
+            refit_iterations = 10
+
+            for iter_idx in range(refit_iterations):
+                (
+                    self.residual,
+                    self.residual_linear_fit,
+                    self.new_residual,
+                    self.residual_corrected_components,
+                    self.residual_corrected_total,
+                    self.refitted_params,
+                    self.refitted_components,
+                    self.refitted_total_fit,
+                ) = self.residual_iterative_fit(current_params, x_full, y_full)
+
+                refit_rms = float(np.sqrt(np.mean((y_full - self.refitted_total_fit) ** 2)))
+                self.refit_history.append({
+                    'iteration': iter_idx + 1,
+                    'params': self.refitted_params.copy(),
+                    'components': self.refitted_components.copy(),
+                    'total_fit': self.refitted_total_fit.copy(),
+                    'rms': refit_rms,
+                })
+
+                if self.refitted_params.size == 0:
+                    break
+
+                current_params = self.refitted_params.copy()
+
+            print(f'Refitted corrected peaks with fixed mu after {len(self.refit_history)} iterations (A, mu, sigma):')
+            print(pd.DataFrame(self.refitted_params, columns=['A', 'mu', 'sigma']))
         else:
             self.fitted_mu = np.array([])
             self.fitted_amp = np.array([])
+            self.residual = np.array([])
+            self.residual_linear_fit = np.array([])
+            self.new_residual = np.array([])
+            self.residual_corrected_components = np.empty((0, self.wl.size), dtype=float)
+            self.residual_corrected_total = np.zeros_like(self.wl, dtype=float)
+            self.refitted_params = np.empty((0, 3), dtype=float)
+            self.refitted_components = np.empty((0, self.wl.size), dtype=float)
+            self.refitted_total_fit = np.zeros_like(self.wl, dtype=float)
+            self.refit_history = []
 
         return self
 
+    @staticmethod
+    def residual_iterative_fit(fitted_params, x_full, y_full):
+        x_arr = np.asarray(x_full, dtype=float)
+        y_arr = np.asarray(y_full, dtype=float)
+        component_fits = []
+        total_fit = np.zeros_like(y_arr, dtype=float)
+
+        for a_i, mu_i, sigma_i in fitted_params:
+            y_comp = GaussMultiPeakFitter.gaussian(x_arr, float(a_i), float(mu_i), float(sigma_i))
+            component_fits.append(y_comp)
+            total_fit += y_comp
+
+        residual = y_arr - total_fit
+
+        valid_mask = np.isfinite(x_arr) & np.isfinite(residual)
+        if np.count_nonzero(valid_mask) < 2:
+            raise ValueError('At least two valid points are required for residual linear regression.')
+
+        slope, intercept = np.polyfit(x_arr[valid_mask], residual[valid_mask], 1)
+        residual_linear_fit = slope * x_arr + intercept
+        new_residual = residual - residual_linear_fit
+
+        
+        #零检验
+        if len(component_fits) == 0:
+            residual_corrected_components = np.empty((0, y_arr.size), dtype=float)
+            residual_corrected_total = np.zeros_like(y_arr, dtype=float)
+            refitted_params = np.empty((0, 3), dtype=float)
+            refitted_components = np.empty((0, y_arr.size), dtype=float)
+            refitted_total = np.zeros_like(y_arr, dtype=float)
+            return (
+                residual,
+                residual_linear_fit,
+                new_residual,
+                residual_corrected_components,
+                residual_corrected_total,
+                refitted_params,
+                refitted_components,
+                refitted_total,
+            )
+
+        
+        #残差比例处理
+        component_fits = np.asarray(component_fits, dtype=float)
+        component_sum = np.sum(component_fits, axis=0)
+        component_weights = np.divide(
+            component_fits,
+            component_sum,
+            out=np.zeros_like(component_fits),
+            where=np.abs(component_sum) > 1e-12,
+        )
+        
+        residual_corrected_components = component_fits + component_weights * residual
+        residual_corrected_total = np.sum(residual_corrected_components, axis=0)
+
+        x_span = float(np.nanmax(x_arr) - np.nanmin(x_arr))
+        sigma_min = max(x_span / (len(x_arr) * 10.0), 1e-4)
+        sigma_max = max(x_span / 2.0, sigma_min * 10.0)
+        refitted_params = []
+        refitted_components = []
+
+        for y_target, (a_i, mu_i, sigma_i) in zip(residual_corrected_components, fitted_params):
+            y_target = np.asarray(y_target, dtype=float)
+            valid_component_mask = np.isfinite(x_arr) & np.isfinite(y_target)
+
+            if np.count_nonzero(valid_component_mask) < 2:
+                refit_a = float(a_i)
+                refit_sigma = float(np.clip(sigma_i, sigma_min, sigma_max))
+            else:
+                peak_idx = int(np.argmin(np.abs(x_arr - float(mu_i))))
+                amp_at_center = max(float(y_target[peak_idx]), 1e-8)
+                #修正峰取值上限，防止过拟合
+                amp_upper = max(
+                    float(np.nanmax(y_target[valid_component_mask])),
+                    float(a_i),
+                    amp_at_center,
+                    1e-8,
+                )
+                amp_init = min(max(float(a_i), amp_at_center), amp_upper)
+                sigma_init = float(np.clip(sigma_i, sigma_min, sigma_max))
+
+                def fixed_mu_gaussian_rms(params):
+                    amp, sigma = params
+                    y_pred = GaussMultiPeakFitter.gaussian(
+                        x_arr[valid_component_mask],
+                        amp,
+                        float(mu_i),
+                        sigma,
+                    )
+                    return float(np.sqrt(np.mean((y_target[valid_component_mask] - y_pred) ** 2)))
+
+                refit_result = minimize(
+                    fixed_mu_gaussian_rms,
+                    x0=np.array([amp_init, sigma_init], dtype=float),
+                    method='L-BFGS-B',
+                    bounds=[(0.0, amp_upper), (sigma_min, sigma_max)],
+                    options={'maxiter': 20000, 'ftol': 1e-12},
+                )
+
+                if refit_result.success:
+                    refit_a = float(refit_result.x[0])
+                    refit_sigma = float(refit_result.x[1])
+                else:
+                    refit_a = float(a_i)
+                    refit_sigma = sigma_init
+
+            refitted_params.append((refit_a, float(mu_i), refit_sigma))
+            refitted_components.append(
+                GaussMultiPeakFitter.gaussian(x_arr, refit_a, float(mu_i), refit_sigma)
+            )
+
+        refitted_params = np.asarray(refitted_params, dtype=float)
+        refitted_components = np.asarray(refitted_components, dtype=float)
+        refitted_total = np.sum(refitted_components, axis=0)
+
+        return (
+            residual,
+            residual_linear_fit,
+            new_residual,
+            residual_corrected_components,
+            residual_corrected_total,
+            refitted_params,
+            refitted_components,
+            refitted_total,
+        )
+
+        
+    
     def plot(self, peak_wl, peak_int):
         plt.figure(figsize=(7,5))
         plt.plot(self.wl, self.rel_int, color='tab:blue', linewidth=1.8, label='wl-int')
@@ -307,7 +499,7 @@ for i in range(1, len(rel_int) - 1):
         extrema_idx.append(i)
 
 manual_peak_wl = [
-    #  275.43, 275.57
+     275.43, 275.57
 
 # 305.85,306.20
 ]
@@ -347,7 +539,7 @@ fitter = GaussMultiPeakFitter(
     selected_idx=selected_idx,
 )
 fitter.fit()
-# fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
+fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
 
 
 

@@ -1097,7 +1097,7 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
     elements_list = [os.path.splitext(os.path.basename(f))[0] for f in file_list]
     elements = {}
     for element_name in elements_list: 
-        if element_name=='SmII':
+        if element_name=='EuII':
             file_path = os.path.join(folder_path, element_name + ".csv")
             df = pd.read_csv(file_path, header=0, encoding="gbk")
             if df.shape[1] > 9:
@@ -1239,7 +1239,8 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
                                 valid_mask=segment_wl.notna() & segment_signal.notna()
                                 segment_wl=segment_wl[valid_mask].reset_index(drop=True)
                                 segment_signal=segment_signal[valid_mask].reset_index(drop=True)
-                                segment_signal = segment_signal - segment_signal.min()
+                                #基线部分
+                                # segment_signal = segment_signal - segment_signal.min()
                                 
                                 
                                 # 自动找局部极大值
