@@ -1105,11 +1105,18 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
                 wl = df.iloc[:, 1]*0.1
                 pure_element_flag = df.iloc[:, 9]
                 normalized_pure_element = pure_element_flag.astype(str).str.strip().str.upper()
+                rock_line_columns = ["Element", "Wavelength", "LineIntensity", "LineType"]
+                rock_line_rows = []
+                rock_line_dir = r"D:\LIBS\RREdetectation\RockBaseElemLines\Linespectrum"
+
                 for elem_toremove in elements_rockmain:
-                    wl_tofit = []
-                    elem_toremovelines=pd.read_csv(os.path.join(r"D:\LIBS\RREdetectation\RockBaseElemLines\Linespectrum", elem_toremove + ".csv"), header=0, encoding="gbk")
-                    
-                    #数据清洗
+                    elem_toremovelines = pd.read_csv(
+                        os.path.join(rock_line_dir, elem_toremove + ".csv"),
+                        header=0,
+                        encoding="gbk",
+                    )
+
+                    # 数据清洗
                     line_wl_col = elem_toremovelines.columns[0]
                     line_intensity_cols = list(elem_toremovelines.columns[1:4])
                     elem_toremovelines[line_wl_col] = pd.to_numeric(elem_toremovelines[line_wl_col], errors='coerce')
@@ -1117,195 +1124,255 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
                     elem_toremovelines[line_intensity_cols] = elem_toremovelines[line_intensity_cols].apply(pd.to_numeric, errors='coerce')
                     intensity_valid_mask = elem_toremovelines[line_intensity_cols].notna()
                     elem_toremovelines["LineIntensity"] = elem_toremovelines[line_intensity_cols].bfill(axis=1).iloc[:, 0]
-                    #linetype标记
+                    # linetype标记
                     elem_toremovelines["LineType"] = np.where(
                         intensity_valid_mask.any(axis=1),
                         intensity_valid_mask.idxmax(axis=1),
                         np.nan,
                     )
 
-                    if elem_toremove in normalized_pure_element.values:
-                        indices_to_remove = normalized_pure_element[normalized_pure_element == elem_toremove].index
-                        wl_tofit.append(wl[indices_to_remove])
-                        # elem_lines = elem_toremovelines[second_col].to_numpy(dtype=float)
+                    line_wl_np = elem_toremovelines[line_wl_col].to_numpy(dtype=float)
+                    line_intensity_np = elem_toremovelines["LineIntensity"].to_numpy(dtype=float)
+                    line_type_np = elem_toremovelines["LineType"].to_numpy(dtype=object)
+                    valid_line_mask = np.isfinite(line_wl_np)
+                    if np.any(valid_line_mask):
+                        rock_line_rows.append(np.column_stack([
+                            np.full(np.count_nonzero(valid_line_mask), elem_toremove, dtype=object),
+                            line_wl_np[valid_line_mask],
+                            line_intensity_np[valid_line_mask],
+                            line_type_np[valid_line_mask],
+                        ]))
 
-                        for wl_series in wl_tofit:
-                            for wl_value in wl_series:
-                                # nearest_idx = int(np.argmin(np.abs(elem_lines - wl_value)))
-                                # nearest_line = elem_lines[nearest_idx]
+                elements_rockmain_lines_np = (
+                    np.vstack(rock_line_rows)
+                    if rock_line_rows
+                    else np.empty((0, len(rock_line_columns)), dtype=object)
+                )
+                #处理后element_rockmain_lines_np存在元素、波长、强度、类型四列，后续根据元素和波长筛选谱线进行拟合选线
 
-                                #回到原始光谱寻找峰值极小值
-                                segment_wl, segment_signal, left_min_wl, right_min_wl = extract_spectrum_between_minima(
-                                    x,
-                                    signal,
-                                    wl_value,
-                                )
+                #后续处理（elements_rockmain_lines_np ）
+                line_wl_col = "Wavelength"
+                all_elem_toremovelines = pd.DataFrame(elements_rockmain_lines_np, columns=rock_line_columns)
+                all_elem_toremovelines[line_wl_col] = pd.to_numeric(
+                    all_elem_toremovelines[line_wl_col],
+                    errors='coerce',
+                )
+                all_elem_toremovelines["LineIntensity"] = pd.to_numeric(
+                    all_elem_toremovelines["LineIntensity"],
+                    errors='coerce',
+                )
+
+                fit_peak_indices = normalized_pure_element[
+                    normalized_pure_element.isin(elements_rockmain)
+                ].index
+                wl_tofit = pd.to_numeric(wl.loc[fit_peak_indices], errors='coerce').dropna() #匹配后存在的基体元素的全部谱线
+
+                if wl_tofit.empty:
+                    print(color_text(f"\nNo confilict elem", YELLOW))
+
+                for peak_index, wl_value in wl_tofit.items():
+                    source_elem = normalized_pure_element.loc[peak_index]
+
+                    #回到原始光谱寻找峰值极小值
+                    segment_wl, segment_signal, left_min_wl, right_min_wl = extract_spectrum_between_minima(
+                        x,
+                        signal,
+                        wl_value,
+                    )
+                    lines_in_window = pd.DataFrame(columns=rock_line_columns)
+
+                    if segment_wl.size == 0:
+                        print(color_text(
+                            f"拟合波长 {wl_value:.4f} 未截取到有效原始光谱窗口，跳过该峰位",
+                            YELLOW,
+                        ))
+                        continue
                                 
-                                
-                                
-                                if segment_wl.size > 0:
-                                    print(color_text(
-                                        f"原始光谱截取窗口: {left_min_wl:.4f} - {right_min_wl:.4f}, 点数: {segment_wl.size},拟合波长 {wl_value:.4f}",
-                                        BLUE,
-                                    ))
-                                    line_left = min(float(left_min_wl), float(right_min_wl))
-                                    line_right = max(float(left_min_wl), float(right_min_wl))
+                    if segment_wl.size > 0:
+                        print(color_text(
+                            f"原始光谱截取窗口: {left_min_wl:.4f} - {right_min_wl:.4f}, 点数: {segment_wl.size},拟合波长 {wl_value:.4f}",
+                            BLUE,
+                        ))
+                        line_left = min(float(left_min_wl), float(right_min_wl))
+                        line_right = max(float(left_min_wl), float(right_min_wl))
                                     
-                                    #窗口选线
-                                    lines_in_window = elem_toremovelines.loc[
-                                        elem_toremovelines[line_wl_col].between(line_left, line_right, inclusive="both")
-                                        & elem_toremovelines["LineIntensity"].notna(),
-                                        [line_wl_col, "LineIntensity", "LineType"],
-                                    ].copy()
-                                    if lines_in_window.empty:
-                                        print(color_text(
-                                            f"{elem_toremove} 在 {line_left:.4f} - {line_right:.4f} nm 范围内没有谱线",
-                                            YELLOW,
-                                        ))
-                                    else:
-                                        print(color_text(
-                                            f"{elem_toremove} 在 {line_left:.4f} - {line_right:.4f} nm 范围内的全部谱线:",
-                                            GREEN,
-                                        ))
-                                        print(lines_in_window.to_string(index=False))
+                        #窗口选线：从所有 elements_rockmain 的谱线里一起筛选
+                        lines_in_window = all_elem_toremovelines.loc[
+                            all_elem_toremovelines[line_wl_col].between(line_left, line_right, inclusive="both")
+                            & all_elem_toremovelines["LineIntensity"].notna(),
+                            ["Element", line_wl_col, "LineIntensity", "LineType"],
+                        ].copy()
+                        if lines_in_window.empty:
+                            print(color_text(
+                                f"所有基体元素在 {line_left:.4f} - {line_right:.4f} nm 范围内没有谱线",
+                                YELLOW,
+                            ))
+                        else:
+                            lines_in_window = lines_in_window.sort_values(["Element", line_wl_col]).reset_index(drop=True)
+                            print(color_text(
+                                f"所有基体元素在 {line_left:.4f} - {line_right:.4f} nm 范围内的全部谱线:",
+                                GREEN,
+                            ))
+                            print(lines_in_window.to_string(index=False))
                                 
                                 
-                                #拟合选线逻辑
-                                strongest_lines = []
-                                if segment_wl.size > 0 and not lines_in_window.empty:
-                                    strongest_line_rows = lines_in_window.nlargest(2, "LineIntensity")
-                                    strongest_lines = strongest_line_rows[line_wl_col].astype(float).tolist()
-                                    strongest_line_summary = ", ".join(
-                                        f"{float(row[line_wl_col]):.4f} nm, intensity={float(row['LineIntensity']):.4e}"
-                                        for _, row in strongest_line_rows.iterrows()
-                                    )
-                                    print(color_text(
-                                        f"选中用于拟合的最强前 {len(strongest_lines)} 条 {elem_toremove} 谱线: {strongest_line_summary}",
-                                        GREEN,
-                                    ))
+                    #拟合选线逻辑
+                    strongest_lines = []
+                    fit_boundary_line_wl = None
+                    if segment_wl.size > 0 and not lines_in_window.empty:
+                        strongest_line_rows = lines_in_window.nlargest(2, "LineIntensity")
+                        strongest_lines = strongest_line_rows[line_wl_col].astype(float).tolist()
+                        fit_boundary_line_wl = float(strongest_line_rows.iloc[0][line_wl_col])
+                        strongest_line_summary = ", ".join(
+                            f"{row['Element']} {float(row[line_wl_col]):.4f} nm, intensity={float(row['LineIntensity']):.4e}"
+                            for _, row in strongest_line_rows.iterrows()
+                        )
+                        print(color_text(
+                            f"选中用于拟合的所有基体元素最强前 {len(strongest_lines)} 条谱线: {strongest_line_summary}",
+                            GREEN,
+                        ))
 
-                                #拟合数值显示
-                                if segment_wl.size > 0:
-                                    plt.figure(figsize=(7, 5))
-                                    plt.plot(
-                                        segment_wl,
-                                        segment_signal,
-                                        color='tab:blue',
-                                        linewidth=2.2,
-                                        label='Extracted spectrum',
-                                    )
-                                    plt.axvline(
-                                        wl_value,
-                                        color='tab:green',
-                                        linewidth=2.0,
-                                        linestyle='--',
-                                        label=f'{element_name}: {wl_value:.4f}',
-                                    )
+                    #拟合数值显示
+                    if segment_wl.size > 0:
+                        plt.figure(figsize=(7, 5))
+                        plt.plot(
+                            segment_wl,
+                            segment_signal,
+                            color='tab:blue',
+                            linewidth=2.2,
+                            label='Extracted spectrum',
+                        )
+                        plt.axvline(
+                            wl_value,
+                            color='tab:green',
+                            linewidth=2.0,
+                            linestyle='--',
+                            label=f'{element_name}/{source_elem}: {wl_value:.4f}',
+                        )
                                     
-                                    for line_wavelength, line_intensity, line_type in lines_in_window[
-                                        [line_wl_col, "LineIntensity", "LineType"]
-                                    ].itertuples(index=False, name=None):
-                                        is_selected_line = any(
-                                            np.isclose(line_wavelength, selected_line)
-                                            for selected_line in strongest_lines
-                                        )
-                                        plt.axvline(
-                                            line_wavelength,
-                                            color='tab:orange' if is_selected_line else 'tab:red',
-                                            linewidth=2.0,
-                                            linestyle='--',
-                                        )
-
-
-                                    ax = plt.gca()
-                                    for spine in ax.spines.values():
-                                        spine.set_linewidth(1.8)
-                                    for label in ax.get_xticklabels():
-                                        label.set_fontweight("semibold")
-                                    for label in ax.get_yticklabels():
-                                        label.set_fontweight("semibold")
-
-                                    plt.xlabel('Wavelength', fontsize=15, fontweight="semibold")
-                                    plt.ylabel('Intensity', fontsize=15, fontweight="semibold")
-                                    plt.title(
-                                        f'{element_name} vs {elem_toremove} Spectrum Window',
-                                        fontsize=15,
-                                        fontweight="semibold",
-                                    )
-
-                                    plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
-                                    plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
-                                    plt.grid(alpha=0.3)
-                                    plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
-                                    plt.tight_layout()
-                                    #plt.show()
-                                
-                                segment_wl = pd.Series(pd.to_numeric(segment_wl, errors='coerce'))
-                                segment_signal = pd.Series(pd.to_numeric(segment_signal, errors='coerce'))
-
-                                valid_mask=segment_wl.notna() & segment_signal.notna()
-                                segment_wl=segment_wl[valid_mask].reset_index(drop=True)
-                                segment_signal=segment_signal[valid_mask].reset_index(drop=True)
-                                
-                                #基线部分
-                                #segment_signal = segment_signal - segment_signal.min()
-                                
-                                
-                                # 自动找局部极大值
-                                extrema_idx = []
-                                for i in range(1, len(segment_signal) - 1):
-                                    is_local_max = segment_signal.iloc[i] > segment_signal.iloc[i - 1] and segment_signal.iloc[i] > segment_signal.iloc[i + 1]
-                                    if is_local_max:
-                                        extrema_idx.append(i)
-
-                                manual_peak_wl = [float(wl_value)]
-                                manual_peak_wl.extend(float(line_wavelength) for line_wavelength in strongest_lines)
-                                print(color_text(f"手动峰位列表: {manual_peak_wl}", BLUE))
-                                
-                                if len(manual_peak_wl) > 0:
-                                    wl_np_for_peak = segment_wl.to_numpy(dtype=float)
-                                    # 将手动峰位映射到最接近的采样点索引
-                                    extrema_idx = sorted(int(np.argmin(np.abs(wl_np_for_peak - target_mu))) for target_mu in manual_peak_wl)
-
-                                if len(extrema_idx) == 0:
-                                    raise ValueError('未找到可用峰位，请检查数据或 manual_peak_wl 设置。')
-
-                                
-
-                                peak_wl = segment_wl.iloc[extrema_idx]
-                                peak_int = segment_signal.iloc[extrema_idx]
-
-                                #类调用
-                                estimator=CWTPeakFWHMEstimator(segment_wl, segment_signal,scale=0.48,threshold=0.01)
-                                cwt_peaks, cwt_fwhm, cwt_data=estimator.cwt_peak_detection()
-                                
-                                wl_np = np.asarray(segment_wl, dtype=float)
-                                peak_indices = np.asarray(extrema_idx, dtype=int)
-                                peak_indices = peak_indices[(peak_indices >= 0) & (peak_indices < len(wl_np))]
-
-                                selected_idx = np.sort(peak_indices)
-                                fwhm_selected = estimator.estimate_fwhm(np.asarray(cwt_data, dtype=float), selected_idx, wl_np)
-                                print(color_text(f"Fitted FWHM: {fwhm_selected}", RED))
-                                
-                                
-                                fitter = GaussMultiPeakFitter(
-                                wl=segment_wl.to_numpy(dtype=float),
-                                rel_int=segment_signal.to_numpy(dtype=float),
-                                extrema_idx=extrema_idx,
-                                fwhm_selected=fwhm_selected,
-                                wl_np=wl_np,
-                                selected_idx=selected_idx,
+                        for line_element, line_wavelength, line_intensity, line_type in lines_in_window[
+                            ["Element", line_wl_col, "LineIntensity", "LineType"]
+                        ].itertuples(index=False, name=None):
+                            line_wavelength = float(line_wavelength)
+                            is_selected_line = any(
+                                np.isclose(line_wavelength, selected_line)
+                                for selected_line in strongest_lines
                             )
-                                fitter.fit()
-                                fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
+                            plt.axvline(
+                                line_wavelength,
+                                color='tab:orange' if is_selected_line else 'tab:red',
+                                linewidth=2.0,
+                                linestyle='--',
+                            )
+
+
+                        ax = plt.gca()
+                        for spine in ax.spines.values():
+                            spine.set_linewidth(1.8)
+                        for label in ax.get_xticklabels():
+                            label.set_fontweight("semibold")
+                        for label in ax.get_yticklabels():
+                            label.set_fontweight("semibold")
+
+                        plt.xlabel('Wavelength', fontsize=15, fontweight="semibold")
+                        plt.ylabel('Intensity', fontsize=15, fontweight="semibold")
+                        plt.title(
+                            f'{element_name} vs All Rock Main Elements Spectrum Window',
+                            fontsize=15,
+                            fontweight="semibold",
+                        )
+
+                        plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
+                        plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
+                        plt.grid(alpha=0.3)
+                        plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
+                        plt.tight_layout()
+                        #plt.show()
                                 
-                                #显示数据debug
+                    segment_wl = pd.Series(pd.to_numeric(segment_wl, errors='coerce'))
+                    segment_signal = pd.Series(pd.to_numeric(segment_signal, errors='coerce'))
+
+                    valid_mask=segment_wl.notna() & segment_signal.notna()
+                    segment_wl=segment_wl[valid_mask].reset_index(drop=True)
+                    segment_signal=segment_signal[valid_mask].reset_index(drop=True)
+                                
+                    #基线部分
+                    # segment_signal = segment_signal - segment_signal.min()
+                                
+                                
+                    # 自动找局部极大值
+                    extrema_idx = []
+                    for i in range(1, len(segment_signal) - 1):
+                        is_local_max = segment_signal.iloc[i] > segment_signal.iloc[i - 1] and segment_signal.iloc[i] > segment_signal.iloc[i + 1]
+                        if is_local_max:
+                            extrema_idx.append(i)
+
+                    manual_peak_wl = [float(wl_value)]
+                    manual_peak_wl.extend(float(line_wavelength) for line_wavelength in strongest_lines)
+                    print(color_text(f"手动峰位列表: {manual_peak_wl}", BLUE))
+                                
+                    if len(manual_peak_wl) > 0:
+                        wl_np_for_peak = segment_wl.to_numpy(dtype=float)
+                        int_np_for_peak = segment_signal.to_numpy(dtype=float)
+                        sort_idx_for_peak = np.argsort(wl_np_for_peak)
+                        wl_sorted_for_peak = wl_np_for_peak[sort_idx_for_peak]
+                        int_sorted_for_peak = int_np_for_peak[sort_idx_for_peak]
+
+                        manual_peak_wl_np = np.asarray(manual_peak_wl, dtype=float)
+                        in_range_mask = (
+                            (manual_peak_wl_np >= wl_sorted_for_peak[0])
+                            & (manual_peak_wl_np <= wl_sorted_for_peak[-1])
+                        )
+                        if not np.all(in_range_mask):
+                            skipped_peak_wl = manual_peak_wl_np[~in_range_mask]
+                            print(color_text(f"跳过超出截取窗口、无法插值的手动峰位: {skipped_peak_wl.tolist()}", YELLOW))
+
+                        manual_peak_wl_np = np.sort(manual_peak_wl_np[in_range_mask])
+                        peak_wl = pd.Series(manual_peak_wl_np)
+                        peak_int = pd.Series(np.interp(manual_peak_wl_np, wl_sorted_for_peak, int_sorted_for_peak))
+
+                        # FWHM 估计仍基于离散 CWT 结果，这里只保留最近采样点索引用于估计峰宽。
+                        extrema_idx = sorted(int(np.argmin(np.abs(wl_np_for_peak - target_mu))) for target_mu in manual_peak_wl_np)
+
+                    if len(extrema_idx) == 0:
+                        raise ValueError('未找到可用峰位，请检查数据或 manual_peak_wl 设置。')
+
+                    if len(manual_peak_wl) == 0:
+                        peak_wl = segment_wl.iloc[extrema_idx]
+                        peak_int = segment_signal.iloc[extrema_idx]
 
 
- 
-                        
-                    else:
-                        print(color_text(f"\nNo confilict elem",YELLOW))
+                    #类调用
+                    estimator=CWTPeakFWHMEstimator(segment_wl, segment_signal,scale=0.48,threshold=0.01)
+                    cwt_peaks, cwt_fwhm, cwt_data=estimator.cwt_peak_detection()
+                                
+                    wl_np = np.asarray(segment_wl, dtype=float)
+                    peak_indices = np.asarray(extrema_idx, dtype=int)
+                    peak_indices = peak_indices[(peak_indices >= 0) & (peak_indices < len(wl_np))]
+
+                    selected_idx = np.sort(peak_indices)
+                    fwhm_selected = estimator.estimate_fwhm(np.asarray(cwt_data, dtype=float), selected_idx, wl_np)
+                    print(color_text(f"Fitted FWHM: {fwhm_selected}", RED))
+                                
+                    fit_left_mu = None
+                    fit_right_mu = None
+                    # if fit_boundary_line_wl is not None and np.isfinite(fit_boundary_line_wl):
+                    #     fit_left_mu, fit_right_mu = sorted([float(wl_value), fit_boundary_line_wl])
+                                
+                    fitter = GaussMultiPeakFitter(
+                        wl=segment_wl.to_numpy(dtype=float),
+                        rel_int=segment_signal.to_numpy(dtype=float),
+                        extrema_idx=extrema_idx,
+                        fwhm_selected=fwhm_selected,
+                        wl_np=wl_np,
+                        selected_idx=selected_idx,
+                        peak_mu=peak_wl.to_numpy(dtype=float),
+                        peak_height_upper=peak_int.to_numpy(dtype=float),
+                        fit_left_mu=fit_left_mu,
+                        fit_right_mu=fit_right_mu,
+                    )
+                    fitter.fit()
+                    fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
 
 
 ###数据库导入
@@ -1430,7 +1497,7 @@ if __name__ == '__main__':
         elements_main,elements_main_list=elements_database_pt2(folder_path,db_temperature) 
         particle_main,elements_main,elements_T_main,elements_R2_main,elements_confidence_main=compute_element_confidence_shape(elements_main, peak_wl, peak_int,x,intensity_sum,
                                                                                             scope=0.2,plot=plotbotton,target=plottarget)
-        print(elements_confidence_main)
+        # print(elements_confidence_main)
         
         
         #特定元素电子温度扫描
@@ -1544,7 +1611,7 @@ if __name__ == '__main__':
             for normalized in [str(m).strip().upper()]
             if normalized in allowed_main_elements
         }
-        print(main_elements_normalized)
+        # print(main_elements_normalized)
 
 
 

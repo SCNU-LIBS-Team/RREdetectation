@@ -133,7 +133,19 @@ class CWTPeakFWHMEstimator:
         return peaks, fwhm, cwt_data
 
 class GaussMultiPeakFitter:
-    def __init__(self, wl, rel_int, extrema_idx, fwhm_selected, wl_np, selected_idx):
+    def __init__(
+        self,
+        wl,
+        rel_int,
+        extrema_idx,
+        fwhm_selected,
+        wl_np,
+        selected_idx,
+        peak_mu=None,
+        peak_height_upper=None,
+        fit_left_mu=None,
+        fit_right_mu=None,
+    ):
         self.wl = np.asarray(wl, dtype=float)
         self.rel_int = np.asarray(rel_int, dtype=float)
         #这里如果做了寻峰,extreme_idx为寻峰结果,但是如果是手动填入,extreme_idx为手动峰位对应的索引
@@ -141,6 +153,10 @@ class GaussMultiPeakFitter:
         self.fwhm_selected = np.asarray(fwhm_selected, dtype=float)
         self.wl_np = np.asarray(wl_np, dtype=float)
         self.selected_idx = np.asarray(selected_idx, dtype=int)
+        self.peak_mu = None if peak_mu is None else np.asarray(peak_mu, dtype=float)
+        self.peak_height_upper = None if peak_height_upper is None else np.asarray(peak_height_upper, dtype=float)
+        self.fit_left_mu = None if fit_left_mu is None else float(fit_left_mu)
+        self.fit_right_mu = None if fit_right_mu is None else float(fit_right_mu)
         self.fitted_params = []
         self.component_fits = []
         self.total_fit = np.zeros_like(self.wl, dtype=float)
@@ -184,8 +200,20 @@ class GaussMultiPeakFitter:
 
         x_full = self.wl
         y_full = self.rel_int
-        peak_mu = self.wl[self.extrema_idx]
-        peak_height_upper = self.rel_int[self.extrema_idx]
+        if self.peak_mu is not None:
+            peak_mu = self.peak_mu
+            if self.peak_height_upper is not None and self.peak_height_upper.size == peak_mu.size:
+                peak_height_upper = self.peak_height_upper
+            else:
+                order = np.argsort(x_full)
+                peak_height_upper = np.interp(peak_mu, x_full[order], y_full[order])
+
+            valid_peak_mask = np.isfinite(peak_mu) & np.isfinite(peak_height_upper)
+            peak_mu = peak_mu[valid_peak_mask]
+            peak_height_upper = peak_height_upper[valid_peak_mask]
+        else:
+            peak_mu = self.wl[self.extrema_idx]
+            peak_height_upper = self.rel_int[self.extrema_idx]
 
         if peak_mu.size == 0:
             self.fitted_mu = np.array([])
@@ -227,10 +255,30 @@ class GaussMultiPeakFitter:
                 peak_order = np.argsort(self.wl_np[self.selected_idx])
                 ordered_idx = self.selected_idx[peak_order]
                 ordered_fwhm = self.fwhm_selected[peak_order]
-                left_mu = float(self.wl_np[ordered_idx[0]])
-                right_mu = float(self.wl_np[ordered_idx[-1]])
-                left_fwhm = float(ordered_fwhm[0])
-                right_fwhm = float(ordered_fwhm[-1])
+                auto_left_mu = float(self.wl_np[ordered_idx[0]])
+                auto_right_mu = float(self.wl_np[ordered_idx[-1]])
+                auto_left_fwhm = float(ordered_fwhm[0])
+                auto_right_fwhm = float(ordered_fwhm[-1])
+
+                left_mu = auto_left_mu if self.fit_left_mu is None else self.fit_left_mu
+                right_mu = auto_right_mu if self.fit_right_mu is None else self.fit_right_mu
+
+                if self.fit_left_mu is None:
+                    left_fwhm = auto_left_fwhm
+                else:
+                    left_fwhm_idx = int(np.argmin(np.abs(peak_mu - left_mu)))
+                    left_fwhm = float(self.fwhm_selected[left_fwhm_idx])
+
+                if self.fit_right_mu is None:
+                    right_fwhm = auto_right_fwhm
+                else:
+                    right_fwhm_idx = int(np.argmin(np.abs(peak_mu - right_mu)))
+                    right_fwhm = float(self.fwhm_selected[right_fwhm_idx])
+
+                if left_mu > right_mu:
+                    left_mu, right_mu = right_mu, left_mu
+                    left_fwhm, right_fwhm = right_fwhm, left_fwhm
+
                 fit_mask = (x_full >= left_mu - ratio * left_fwhm) & (x_full <= right_mu + ratio * right_fwhm)
                 if np.count_nonzero(fit_mask) < 3:
                     fit_mask = np.ones_like(x_full, dtype=bool)
@@ -284,6 +332,7 @@ class GaussMultiPeakFitter:
                 self.total_fit += y_comp
 
             print(f'Best ratio: {best_ratio:.2f}, Full-spectrum RMS: {best_full_rms:.6f}')
+            print()
         else:
             print('Global gaussian fitting failed for all ratio candidates.')
         iterative_switch = False
@@ -516,14 +565,34 @@ manual_peak_wl = [
 
 if len(manual_peak_wl) > 0:
     wl_np_for_peak = wl.to_numpy(dtype=float)
-    # 将手动峰位映射到最接近的采样点索引
-    extrema_idx = sorted(int(np.argmin(np.abs(wl_np_for_peak - target_mu))) for target_mu in manual_peak_wl)
+    int_np_for_peak = rel_int.to_numpy(dtype=float)
+    sort_idx_for_peak = np.argsort(wl_np_for_peak)
+    wl_sorted_for_peak = wl_np_for_peak[sort_idx_for_peak]
+    int_sorted_for_peak = int_np_for_peak[sort_idx_for_peak]
+
+    manual_peak_wl_np = np.asarray(manual_peak_wl, dtype=float)
+    in_range_mask = (
+        (manual_peak_wl_np >= wl_sorted_for_peak[0])
+        & (manual_peak_wl_np <= wl_sorted_for_peak[-1])
+    )
+    if not np.all(in_range_mask):
+        skipped_peak_wl = manual_peak_wl_np[~in_range_mask]
+        print(f"跳过超出截取窗口、无法插值的手动峰位: {skipped_peak_wl.tolist()}")
+
+    #插值部分
+    manual_peak_wl_np = np.sort(manual_peak_wl_np[in_range_mask])
+    peak_wl = pd.Series(manual_peak_wl_np)
+    peak_int = pd.Series(np.interp(manual_peak_wl_np, wl_sorted_for_peak, int_sorted_for_peak))
+
+    # FWHM 估计仍基于离散 CWT 结果，这里只保留最近采样点索引用于估计峰宽。
+    extrema_idx = sorted(int(np.argmin(np.abs(wl_np_for_peak - target_mu))) for target_mu in manual_peak_wl_np)
 
 if len(extrema_idx) == 0:
     raise ValueError('未找到可用峰位，请检查数据或 manual_peak_wl 设置。')
 
-peak_wl = wl.iloc[extrema_idx]
-peak_int = rel_int.iloc[extrema_idx]
+if len(manual_peak_wl) == 0:
+    peak_wl = wl.iloc[extrema_idx]
+    peak_int = rel_int.iloc[extrema_idx]
 
 
 #估计所有选中峰的FWHM
@@ -545,6 +614,8 @@ fitter = GaussMultiPeakFitter(
     fwhm_selected=fwhm_selected,
     wl_np=wl_np,
     selected_idx=selected_idx,
+    peak_mu=peak_wl.to_numpy(dtype=float),
+    peak_height_upper=peak_int.to_numpy(dtype=float),
 )
 fitter.fit()
 fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
