@@ -1107,7 +1107,7 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
                 normalized_pure_element = pure_element_flag.astype(str).str.strip().str.upper()
                 for elem_toremove in elements_rockmain:
                     wl_tofit = []
-                    elem_toremovelines=pd.read_csv(os.path.join("D:\LIBS\RREdetectation\RockBaseElemLines\Linespectrum", elem_toremove + ".csv"), header=0, encoding="gbk")
+                    elem_toremovelines=pd.read_csv(os.path.join(r"D:\LIBS\RREdetectation\RockBaseElemLines\Linespectrum", elem_toremove + ".csv"), header=0, encoding="gbk")
                     
                     #数据清洗
                     line_wl_col = elem_toremovelines.columns[0]
@@ -1171,13 +1171,16 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
                                 
                                 
                                 #拟合选线逻辑
-                                strongest_line = None
+                                strongest_lines = []
                                 if segment_wl.size > 0 and not lines_in_window.empty:
-                                    strongest_line_row = lines_in_window.loc[lines_in_window["LineIntensity"].idxmax()]
-                                    strongest_line = float(strongest_line_row[line_wl_col])
-                                    strongest_line_intensity = float(strongest_line_row["LineIntensity"])
+                                    strongest_line_rows = lines_in_window.nlargest(2, "LineIntensity")
+                                    strongest_lines = strongest_line_rows[line_wl_col].astype(float).tolist()
+                                    strongest_line_summary = ", ".join(
+                                        f"{float(row[line_wl_col]):.4f} nm, intensity={float(row['LineIntensity']):.4e}"
+                                        for _, row in strongest_line_rows.iterrows()
+                                    )
                                     print(color_text(
-                                        f"选中用于拟合的最强 {elem_toremove} 谱线: {strongest_line:.4f} nm, intensity={strongest_line_intensity:.4e}",
+                                        f"选中用于拟合的最强前 {len(strongest_lines)} 条 {elem_toremove} 谱线: {strongest_line_summary}",
                                         GREEN,
                                     ))
 
@@ -1202,9 +1205,13 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
                                     for line_wavelength, line_intensity, line_type in lines_in_window[
                                         [line_wl_col, "LineIntensity", "LineType"]
                                     ].itertuples(index=False, name=None):
+                                        is_selected_line = any(
+                                            np.isclose(line_wavelength, selected_line)
+                                            for selected_line in strongest_lines
+                                        )
                                         plt.axvline(
                                             line_wavelength,
-                                            color='tab:orange' if strongest_line is not None and np.isclose(line_wavelength, strongest_line) else 'tab:red',
+                                            color='tab:orange' if is_selected_line else 'tab:red',
                                             linewidth=2.0,
                                             linestyle='--',
                                         )
@@ -1239,8 +1246,9 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
                                 valid_mask=segment_wl.notna() & segment_signal.notna()
                                 segment_wl=segment_wl[valid_mask].reset_index(drop=True)
                                 segment_signal=segment_signal[valid_mask].reset_index(drop=True)
+                                
                                 #基线部分
-                                # segment_signal = segment_signal - segment_signal.min()
+                                #segment_signal = segment_signal - segment_signal.min()
                                 
                                 
                                 # 自动找局部极大值
@@ -1251,14 +1259,13 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
                                         extrema_idx.append(i)
 
                                 manual_peak_wl = [float(wl_value)]
-                                if strongest_line is not None:
-                                    manual_peak_wl.append(float(strongest_line))
+                                manual_peak_wl.extend(float(line_wavelength) for line_wavelength in strongest_lines)
                                 print(color_text(f"手动峰位列表: {manual_peak_wl}", BLUE))
                                 
                                 if len(manual_peak_wl) > 0:
                                     wl_np_for_peak = segment_wl.to_numpy(dtype=float)
                                     # 将手动峰位映射到最接近的采样点索引
-                                    extrema_idx = sorted({int(np.argmin(np.abs(wl_np_for_peak - target_mu))) for target_mu in manual_peak_wl})
+                                    extrema_idx = sorted(int(np.argmin(np.abs(wl_np_for_peak - target_mu))) for target_mu in manual_peak_wl)
 
                                 if len(extrema_idx) == 0:
                                     raise ValueError('未找到可用峰位，请检查数据或 manual_peak_wl 设置。')
@@ -1273,21 +1280,19 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
                                 cwt_peaks, cwt_fwhm, cwt_data=estimator.cwt_peak_detection()
                                 
                                 wl_np = np.asarray(segment_wl, dtype=float)
-                                intensity_np = np.asarray(segment_signal, dtype=float)
                                 peak_indices = np.asarray(extrema_idx, dtype=int)
                                 peak_indices = peak_indices[(peak_indices >= 0) & (peak_indices < len(wl_np))]
 
-                                top2_local = np.argsort(intensity_np[peak_indices])[-2:]
-                                selected_idx = np.sort(peak_indices[top2_local])
-                                fwhm_two = estimator.estimate_fwhm(np.asarray(cwt_data, dtype=float), selected_idx,wl_np)
-                                print(color_text(f"Fitted FWHM: {fwhm_two}", RED))
+                                selected_idx = np.sort(peak_indices)
+                                fwhm_selected = estimator.estimate_fwhm(np.asarray(cwt_data, dtype=float), selected_idx, wl_np)
+                                print(color_text(f"Fitted FWHM: {fwhm_selected}", RED))
                                 
                                 
                                 fitter = GaussMultiPeakFitter(
                                 wl=segment_wl.to_numpy(dtype=float),
                                 rel_int=segment_signal.to_numpy(dtype=float),
                                 extrema_idx=extrema_idx,
-                                fwhm_two=fwhm_two,
+                                fwhm_selected=fwhm_selected,
                                 wl_np=wl_np,
                                 selected_idx=selected_idx,
                             )

@@ -7,7 +7,7 @@ import pywt
 
 
 #数据导入部分
-signal_path=r'D:\LIBS\RREdetectation\MultiPeakfit\4_25data.csv'
+signal_path=r'D:\LIBS\RREdetectation\MultiPeakfit\4_24data.csv'
 data=pd.read_csv(signal_path,header=0,encoding="gbk")
 
 wl=data.iloc[:,0]
@@ -19,6 +19,7 @@ valid_mask=wl.notna() & rel_int.notna()
 wl=wl[valid_mask]
 rel_int=rel_int[valid_mask]
 rel_int = rel_int - rel_int.min()
+
 
 
 
@@ -131,14 +132,13 @@ class CWTPeakFWHMEstimator:
         fwhm = self.estimate_fwhm(cwt_data, peaks, self.wl)
         return peaks, fwhm, cwt_data
 
-
 class GaussMultiPeakFitter:
-    def __init__(self, wl, rel_int, extrema_idx, fwhm_two, wl_np, selected_idx):
+    def __init__(self, wl, rel_int, extrema_idx, fwhm_selected, wl_np, selected_idx):
         self.wl = np.asarray(wl, dtype=float)
         self.rel_int = np.asarray(rel_int, dtype=float)
         #这里如果做了寻峰,extreme_idx为寻峰结果,但是如果是手动填入,extreme_idx为手动峰位对应的索引
         self.extrema_idx = np.asarray(extrema_idx, dtype=int)
-        self.fwhm_two = np.asarray(fwhm_two, dtype=float)
+        self.fwhm_selected = np.asarray(fwhm_selected, dtype=float)
         self.wl_np = np.asarray(wl_np, dtype=float)
         self.selected_idx = np.asarray(selected_idx, dtype=int)
         self.fitted_params = []
@@ -195,13 +195,14 @@ class GaussMultiPeakFitter:
         x_span = float(x_full.max() - x_full.min())
         sigma_min = max(x_span / (len(x_full) * 10.0), 1e-4)
         sigma_max = max(x_span / 2.0, sigma_min * 10.0)
+        sigma_max = 0.12
 
         amp_upper = np.maximum(peak_height_upper, 1e-8)
         amp_init = amp_upper * 0.8
         sigma_default = max(x_span / (8.0 * max(peak_mu.size, 1)), sigma_min)
 
-        if self.fwhm_two.size == peak_mu.size:
-            sigma_init = np.clip(self.fwhm_two / 2.35482, sigma_min, sigma_max)
+        if self.fwhm_selected.size == peak_mu.size:
+            sigma_init = np.clip(self.fwhm_selected / 2.35482, sigma_min, sigma_max)
         else:
             sigma_init = np.full(peak_mu.size, sigma_default, dtype=float)
 
@@ -217,11 +218,20 @@ class GaussMultiPeakFitter:
         
         #动态窗口拟合
         for ratio in ratio_candidates:
-            # 拟合窗口: 左边界向左扩展 ratio*FWHM1，右边界向右扩展 ratio*FWHM2
-            if peak_mu.size >= 2 and self.fwhm_two.size >= 2 and self.selected_idx.size >= 2:
-                left_mu = float(self.wl_np[self.selected_idx[0]])
-                right_mu = float(self.wl_np[self.selected_idx[1]])
-                fit_mask = (x_full >= left_mu - ratio * float(self.fwhm_two[0])) & (x_full <= right_mu + ratio * float(self.fwhm_two[1]))
+            # 拟合窗口: 使用最左/最右选中峰作为边界，并按对应 FWHM 动态扩展
+            if (
+                peak_mu.size >= 1
+                and self.fwhm_selected.size == peak_mu.size
+                and self.selected_idx.size == peak_mu.size
+            ):
+                peak_order = np.argsort(self.wl_np[self.selected_idx])
+                ordered_idx = self.selected_idx[peak_order]
+                ordered_fwhm = self.fwhm_selected[peak_order]
+                left_mu = float(self.wl_np[ordered_idx[0]])
+                right_mu = float(self.wl_np[ordered_idx[-1]])
+                left_fwhm = float(ordered_fwhm[0])
+                right_fwhm = float(ordered_fwhm[-1])
+                fit_mask = (x_full >= left_mu - ratio * left_fwhm) & (x_full <= right_mu + ratio * right_fwhm)
                 if np.count_nonzero(fit_mask) < 3:
                     fit_mask = np.ones_like(x_full, dtype=bool)
             else:
@@ -276,7 +286,7 @@ class GaussMultiPeakFitter:
             print(f'Best ratio: {best_ratio:.2f}, Full-spectrum RMS: {best_full_rms:.6f}')
         else:
             print('Global gaussian fitting failed for all ratio candidates.')
-        iterative_switch = True
+        iterative_switch = False
         if self.fitted_params and iterative_switch:
             fitted_params_arr = np.array(self.fitted_params, dtype=float)
             self.fitted_mu = fitted_params_arr[:, 1]
@@ -499,15 +509,15 @@ for i in range(1, len(rel_int) - 1):
         extrema_idx.append(i)
 
 manual_peak_wl = [
-     275.43, 275.57
+    #  275.43, 275.57,275.70
 
-# 305.85,306.20
+    305.85,306.20
 ]
 
 if len(manual_peak_wl) > 0:
     wl_np_for_peak = wl.to_numpy(dtype=float)
     # 将手动峰位映射到最接近的采样点索引
-    extrema_idx = sorted({int(np.argmin(np.abs(wl_np_for_peak - target_mu))) for target_mu in manual_peak_wl})
+    extrema_idx = sorted(int(np.argmin(np.abs(wl_np_for_peak - target_mu))) for target_mu in manual_peak_wl)
 
 if len(extrema_idx) == 0:
     raise ValueError('未找到可用峰位，请检查数据或 manual_peak_wl 设置。')
@@ -516,25 +526,23 @@ peak_wl = wl.iloc[extrema_idx]
 peak_int = rel_int.iloc[extrema_idx]
 
 
-#估计两个峰的FWHM
+#估计所有选中峰的FWHM
 estimator = CWTPeakFWHMEstimator(wl, rel_int, scale=0.48, threshold=0.01)
 cwt_peaks, cwt_fwhm, cwt_data = estimator.cwt_peak_detection()
 
 wl_np = np.asarray(wl, dtype=float)
-intensity_np = np.asarray(rel_int, dtype=float)
 peak_indices = np.asarray(extrema_idx, dtype=int)
 peak_indices = peak_indices[(peak_indices >= 0) & (peak_indices < len(wl_np))]
 
-top2_local = np.argsort(intensity_np[peak_indices])[-2:]
-selected_idx = np.sort(peak_indices[top2_local])
-fwhm_two = estimator.estimate_fwhm(np.asarray(cwt_data, dtype=float), selected_idx,wl_np)
-print(f"Estimated FWHM for selected peaks: {fwhm_two}")
+selected_idx = np.sort(peak_indices)
+fwhm_selected = estimator.estimate_fwhm(np.asarray(cwt_data, dtype=float), selected_idx, wl_np)
+print(f"Estimated FWHM for selected peaks: {fwhm_selected}")
 
 fitter = GaussMultiPeakFitter(
     wl=wl,
     rel_int=rel_int,
     extrema_idx=extrema_idx,
-    fwhm_two=fwhm_two,
+    fwhm_selected=fwhm_selected,
     wl_np=wl_np,
     selected_idx=selected_idx,
 )
