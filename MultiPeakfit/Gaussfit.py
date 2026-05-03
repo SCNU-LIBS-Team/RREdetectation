@@ -617,8 +617,8 @@ fitter = GaussMultiPeakFitter(
     peak_mu=peak_wl.to_numpy(dtype=float),
     peak_height_upper=peak_int.to_numpy(dtype=float),
 )
-fitter.fit()
-fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
+# fitter.fit()
+# fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
 
 
 

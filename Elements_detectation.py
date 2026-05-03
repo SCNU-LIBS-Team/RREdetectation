@@ -1060,7 +1060,7 @@ def scan_target_element_confidence(peak_wl,peak_int,x,intensity_sum,target_elem,
     return temperature_grid, np.asarray(target_confidences, dtype=float)
 
 #谱线波段节选
-def extract_spectrum_between_minima(x, y, wl_a):
+def extract_spectrum_between_minima(x, y, wl_a, ratio=1):
     x_arr = np.asarray(x, dtype=float)
     y_arr = np.asarray(y, dtype=float)
     valid_mask = np.isfinite(x_arr) & np.isfinite(y_arr)
@@ -1083,8 +1083,25 @@ def extract_spectrum_between_minima(x, y, wl_a):
     left_candidates = local_minima[x_arr[local_minima] < center_wl]
     right_candidates = local_minima[x_arr[local_minima] > center_wl]
 
-    left_idx = left_candidates[-1] if left_candidates.size > 0 else 0
-    right_idx = right_candidates[0] if right_candidates.size > 0 else x_arr.size - 1
+    peak_left_idx = left_candidates[-1] if left_candidates.size > 0 else 0
+    peak_right_idx = right_candidates[0] if right_candidates.size > 0 else x_arr.size - 1
+    peak_region = np.arange(peak_left_idx, peak_right_idx + 1)
+    peak_idx = int(peak_region[np.argmax(y_arr[peak_region])])
+    peak_y = float(y_arr[peak_idx])
+    print(f"中心波长: {center_wl}, 峰顶波长: {x_arr[peak_idx]}, 峰值强度: {peak_y}")
+    valley_limit = peak_y * float(ratio)
+
+    left_idx = 0
+    for idx in left_candidates[::-1]:
+        if y_arr[idx] <= valley_limit:
+            left_idx = idx
+            break
+
+    right_idx = x_arr.size - 1
+    for idx in right_candidates:
+        if y_arr[idx] <= valley_limit:
+            right_idx = idx
+            break
 
     if left_idx > right_idx:
         left_idx, right_idx = right_idx, left_idx
@@ -1097,7 +1114,7 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
     elements_list = [os.path.splitext(os.path.basename(f))[0] for f in file_list]
     elements = {}
     for element_name in elements_list: 
-        if element_name=='EuII':
+        if element_name=='TbII':
             file_path = os.path.join(folder_path, element_name + ".csv")
             df = pd.read_csv(file_path, header=0, encoding="gbk")
             if df.shape[1] > 9:
@@ -1220,7 +1237,7 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
                     strongest_lines = []
                     fit_boundary_line_wl = None
                     if segment_wl.size > 0 and not lines_in_window.empty:
-                        strongest_line_rows = lines_in_window.nlargest(2, "LineIntensity")
+                        strongest_line_rows = lines_in_window.nlargest(1, "LineIntensity")
                         strongest_lines = strongest_line_rows[line_wl_col].astype(float).tolist()
                         fit_boundary_line_wl = float(strongest_line_rows.iloc[0][line_wl_col])
                         strongest_line_summary = ", ".join(
@@ -1247,7 +1264,7 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
                             color='tab:green',
                             linewidth=2.0,
                             linestyle='--',
-                            label=f'{element_name}/{source_elem}: {wl_value:.4f}',
+                            label=f'{element_name}: {wl_value:.4f}',
                         )
                                     
                         for line_element, line_wavelength, line_intensity, line_type in lines_in_window[
