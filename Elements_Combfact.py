@@ -148,7 +148,13 @@ def elements_database_pt2(folder_path, T):
 
     return elements, elements_list
 
-def elements_database_lineswitch(folder_path, T, main_elements, LineSwitchMode=False):
+def elements_database_lineswitch(
+    folder_path,
+    T,
+    main_elements,
+    LineSwitchMode=False,
+    IncludeMatrixPureLinesMode=False,
+):
     file_list = glob.glob(os.path.join(folder_path, "*.csv"))
     elements_list = [os.path.splitext(os.path.basename(f))[0] for f in file_list]
     elements = {}
@@ -184,7 +190,9 @@ def elements_database_lineswitch(folder_path, T, main_elements, LineSwitchMode=F
                 lambda x: _has_non_matrix_pure_elements(x, main_elements_normalized)
             )
 
-            if LineSwitchMode:
+            if IncludeMatrixPureLinesMode:
+                enable_mask = base_mask | has_matrix_pure
+            elif LineSwitchMode:
                 enable_mask = (base_mask | (has_pure_flag & non_matrix_pure)) & (~has_matrix_pure)
             else:
                 enable_mask = base_mask

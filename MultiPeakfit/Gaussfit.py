@@ -332,7 +332,7 @@ class GaussMultiPeakFitter:
                 self.total_fit += y_comp
 
             print(f'Best ratio: {best_ratio:.2f}, Full-spectrum RMS: {best_full_rms:.6f}')
-            print()
+
         else:
             print('Global gaussian fitting failed for all ratio candidates.')
         iterative_switch = False

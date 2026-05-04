@@ -1108,7 +1108,7 @@ def extract_spectrum_between_minima(x, y, wl_a, ratio=1):
 
     return x_arr[left_idx:right_idx + 1], y_arr[left_idx:right_idx + 1], x_arr[left_idx], x_arr[right_idx]
 
-#选线拟合策略
+###选线拟合策略
 
 #元素名称
 def base_element_name(element_name):
@@ -1240,11 +1240,27 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload,target_base_elem
                 wl_tofit = pd.to_numeric(wl.loc[fit_peak_indices], errors='coerce').dropna() #匹配后存在的基体元素的全部谱线
 
                 if wl_tofit.empty:
-                    print(color_text(f"\nNo confilict elem", YELLOW))
+                    print(color_text(f"{element_name} No conflict elements", YELLOW))
 
-                for peak_index, wl_value in wl_tofit.items():
+                wl_tofit_count = len(wl_tofit)
+                if wl_tofit_count > 0:
+                    print(color_text(
+                        f"{element_name} 需要多峰拟合处理的谱线数量: {wl_tofit_count}",
+                        BLUE,
+                    ))
+
+                for fit_count, (peak_index, wl_value) in enumerate(wl_tofit.items(), start=1):
                     source_elem = normalized_pure_element.loc[peak_index]
-
+                    print(color_text(
+                        (
+                            f"[{fit_count}/{wl_tofit_count}] 正在处理多峰拟合谱线: "
+                            f"目标元素={element_name}, "
+                            f"重叠基体元素={source_elem}, "
+                            f"PeakIndex={int(peak_index)}, "
+                            f"Wavelength={float(wl_value):.4f} nm"
+                        ),
+                        BLUE,
+                    ))
                     #回到原始光谱寻找峰值极小值
                     segment_wl, segment_signal, left_min_wl, right_min_wl = extract_spectrum_between_minima(
                         x,
@@ -1261,10 +1277,10 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload,target_base_elem
                         continue
                                 
                     if segment_wl.size > 0:
-                        print(color_text(
+                        print(
                             f"原始光谱截取窗口: {left_min_wl:.4f} - {right_min_wl:.4f}, 点数: {segment_wl.size},拟合波长 {wl_value:.4f}",
-                            BLUE,
-                        ))
+
+                        )
                         line_left = min(float(left_min_wl), float(right_min_wl))
                         line_right = max(float(left_min_wl), float(right_min_wl))
                                     
@@ -1484,6 +1500,7 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload,target_base_elem
                         ),
                         GREEN,
                     ))
+                    print()
                     
 
 
@@ -1753,9 +1770,10 @@ if __name__ == '__main__':
                 db_temperature,
                 elements_rockmain,
                 LineSwitchMode=False,
+                IncludeMatrixPureLinesMode=True,
             )
             rescue_rows = []
-            
+
             
             #rescue_elem为代拟合元素
             for rescue_elem in zero_conf_elements:
@@ -1774,6 +1792,26 @@ if __name__ == '__main__':
                     peak_int,
                     rescue_fit_params,
                 )
+                
+                
+                #新选线 debug部分
+                for elem_name, elem_data in rescue_elements.items():
+                    theo_wl = elem_data["data"][:, 0]
+                    fit_wl = rescue_fit_params["TargetWavelength"].to_numpy(dtype=float)
+
+                    print(f"\n检查 {elem_name} 理论库是否包含拟合波长:")
+                    for w in fit_wl:
+                        if theo_wl.size == 0:
+                            print(f"{elem_name}: 理论库为空, fitted wl={w:.4f}")
+                            continue
+
+                        min_diff = np.min(np.abs(theo_wl - w))
+                        print(
+                            f"{elem_name}: fitted wl={w:.4f}, "
+                            f"nearest theo diff={min_diff:.6f}, "
+                            f"in_scope={min_diff <= 0.2}"
+                        )
+
                 (
                     _rescue_match_results,
                     rescue_results,
@@ -1788,7 +1826,7 @@ if __name__ == '__main__':
                     intensity_sum,
                     scope=0.2,
                     plot=True,
-                    target=plottarget,
+                    target='TbII',
                 )
 
                 if rescue_elem not in rescue_confidence:
