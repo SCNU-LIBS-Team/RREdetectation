@@ -549,76 +549,82 @@ class GaussMultiPeakFitter:
         plt.tight_layout()
         plt.show()
 
+if __name__ == '__main__':
+    # 自动找局部极大值  
+    extrema_idx = []
+    for i in range(1, len(rel_int) - 1):
+        is_local_max = rel_int.iloc[i] > rel_int.iloc[i - 1] and rel_int.iloc[i] > rel_int.iloc[i + 1]
+        if is_local_max:
+            extrema_idx.append(i)
 
-# 自动找局部极大值
-extrema_idx = []
-for i in range(1, len(rel_int) - 1):
-    is_local_max = rel_int.iloc[i] > rel_int.iloc[i - 1] and rel_int.iloc[i] > rel_int.iloc[i + 1]
-    if is_local_max:
-        extrema_idx.append(i)
+    manual_peak_wl = [
+        #  275.43, 275.57,275.70
 
-manual_peak_wl = [
-    #  275.43, 275.57,275.70
+        305.85,306.20
+    ]
 
-    305.85,306.20
-]
+    if len(manual_peak_wl) > 0:
+        wl_np_for_peak = wl.to_numpy(dtype=float)
+        int_np_for_peak = rel_int.to_numpy(dtype=float)
+        sort_idx_for_peak = np.argsort(wl_np_for_peak)
+        wl_sorted_for_peak = wl_np_for_peak[sort_idx_for_peak]
+        int_sorted_for_peak = int_np_for_peak[sort_idx_for_peak]
 
-if len(manual_peak_wl) > 0:
-    wl_np_for_peak = wl.to_numpy(dtype=float)
-    int_np_for_peak = rel_int.to_numpy(dtype=float)
-    sort_idx_for_peak = np.argsort(wl_np_for_peak)
-    wl_sorted_for_peak = wl_np_for_peak[sort_idx_for_peak]
-    int_sorted_for_peak = int_np_for_peak[sort_idx_for_peak]
+        manual_peak_wl_np = np.asarray(manual_peak_wl, dtype=float)
+        in_range_mask = (
+            (manual_peak_wl_np >= wl_sorted_for_peak[0])
+            & (manual_peak_wl_np <= wl_sorted_for_peak[-1])
+        )
+        if not np.all(in_range_mask):
+            skipped_peak_wl = manual_peak_wl_np[~in_range_mask]
+            print(f"跳过超出截取窗口、无法插值的手动峰位: {skipped_peak_wl.tolist()}")
 
-    manual_peak_wl_np = np.asarray(manual_peak_wl, dtype=float)
-    in_range_mask = (
-        (manual_peak_wl_np >= wl_sorted_for_peak[0])
-        & (manual_peak_wl_np <= wl_sorted_for_peak[-1])
+        #插值部分
+        manual_peak_wl_np = np.sort(manual_peak_wl_np[in_range_mask])
+        peak_wl = pd.Series(manual_peak_wl_np)
+        peak_int = pd.Series(np.interp(manual_peak_wl_np, wl_sorted_for_peak, int_sorted_for_peak))
+
+        # FWHM 估计仍基于离散 CWT 结果，这里只保留最近采样点索引用于估计峰宽。
+        extrema_idx = sorted(int(np.argmin(np.abs(wl_np_for_peak - target_mu))) for target_mu in manual_peak_wl_np)
+
+    if len(extrema_idx) == 0:
+        raise ValueError('未找到可用峰位，请检查数据或 manual_peak_wl 设置。')
+
+    if len(manual_peak_wl) == 0:
+        peak_wl = wl.iloc[extrema_idx]
+        peak_int = rel_int.iloc[extrema_idx]
+
+
+    #估计所有选中峰的FWHM
+    estimator = CWTPeakFWHMEstimator(wl, rel_int, scale=0.48, threshold=0.01)
+    cwt_peaks, cwt_fwhm, cwt_data = estimator.cwt_peak_detection()
+
+    wl_np = np.asarray(wl, dtype=float)
+    peak_indices = np.asarray(extrema_idx, dtype=int)
+    peak_indices = peak_indices[(peak_indices >= 0) & (peak_indices < len(wl_np))]
+
+    selected_idx = np.sort(peak_indices)
+    fwhm_selected = estimator.estimate_fwhm(np.asarray(cwt_data, dtype=float), selected_idx, wl_np)
+    print(f"Estimated FWHM for selected peaks: {fwhm_selected}")
+
+    fitter = GaussMultiPeakFitter(
+        wl=wl,
+        rel_int=rel_int,
+        extrema_idx=extrema_idx,
+        fwhm_selected=fwhm_selected,
+        wl_np=wl_np,
+        selected_idx=selected_idx,
+        peak_mu=peak_wl.to_numpy(dtype=float),
+        peak_height_upper=peak_int.to_numpy(dtype=float),
     )
-    if not np.all(in_range_mask):
-        skipped_peak_wl = manual_peak_wl_np[~in_range_mask]
-        print(f"跳过超出截取窗口、无法插值的手动峰位: {skipped_peak_wl.tolist()}")
+    fitter.fit()
+    fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
+    
+    # print(fitter.wl)
+    # print(fitter.rel_int)
+    # print(fitter.fitted_params)
+    # print(fitter.total_fit)
 
-    #插值部分
-    manual_peak_wl_np = np.sort(manual_peak_wl_np[in_range_mask])
-    peak_wl = pd.Series(manual_peak_wl_np)
-    peak_int = pd.Series(np.interp(manual_peak_wl_np, wl_sorted_for_peak, int_sorted_for_peak))
-
-    # FWHM 估计仍基于离散 CWT 结果，这里只保留最近采样点索引用于估计峰宽。
-    extrema_idx = sorted(int(np.argmin(np.abs(wl_np_for_peak - target_mu))) for target_mu in manual_peak_wl_np)
-
-if len(extrema_idx) == 0:
-    raise ValueError('未找到可用峰位，请检查数据或 manual_peak_wl 设置。')
-
-if len(manual_peak_wl) == 0:
-    peak_wl = wl.iloc[extrema_idx]
-    peak_int = rel_int.iloc[extrema_idx]
-
-
-#估计所有选中峰的FWHM
-estimator = CWTPeakFWHMEstimator(wl, rel_int, scale=0.48, threshold=0.01)
-cwt_peaks, cwt_fwhm, cwt_data = estimator.cwt_peak_detection()
-
-wl_np = np.asarray(wl, dtype=float)
-peak_indices = np.asarray(extrema_idx, dtype=int)
-peak_indices = peak_indices[(peak_indices >= 0) & (peak_indices < len(wl_np))]
-
-selected_idx = np.sort(peak_indices)
-fwhm_selected = estimator.estimate_fwhm(np.asarray(cwt_data, dtype=float), selected_idx, wl_np)
-print(f"Estimated FWHM for selected peaks: {fwhm_selected}")
-
-fitter = GaussMultiPeakFitter(
-    wl=wl,
-    rel_int=rel_int,
-    extrema_idx=extrema_idx,
-    fwhm_selected=fwhm_selected,
-    wl_np=wl_np,
-    selected_idx=selected_idx,
-    peak_mu=peak_wl.to_numpy(dtype=float),
-    peak_height_upper=peak_int.to_numpy(dtype=float),
-)
-# fitter.fit()
-# fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
 
 
 

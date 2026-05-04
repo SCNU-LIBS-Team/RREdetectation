@@ -537,7 +537,7 @@ def compute_element_confidence_shape(
             exp_vec = exp_vec / np.sum(exp_vec)
 
         #此处的ratio改了！
-        O_distance =(np.sqrt(np.sum((theo_vec - exp_vec) ** 2)))/(1)  # 考虑匹配率的影响 0.03防止除0   
+        O_distance =(np.sqrt(np.sum((theo_vec - exp_vec) ** 2)))/(1)  
         if O_distance ==0: #完全没谱线或者只有一条谱线的时候
             O_distance=1e+4
 
@@ -1109,12 +1109,67 @@ def extract_spectrum_between_minima(x, y, wl_a, ratio=1):
     return x_arr[left_idx:right_idx + 1], y_arr[left_idx:right_idx + 1], x_arr[left_idx], x_arr[right_idx]
 
 #选线拟合策略
-def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
+
+#元素名称
+def base_element_name(element_name):
+    return ''.join([c for c in str(element_name) if not c.isdigit() and c not in ["I", "V"]])
+
+#选取置信度为0的元素
+def filter_elements_by_base(elements, target_base_elements):
+    target_base_set = {str(elem).strip().upper() for elem in target_base_elements}
+    return {
+        element_name: element_data
+        for element_name, element_data in elements.items()
+        if base_element_name(element_name).upper() in target_base_set
+    }
+
+#拟合峰加入
+def append_fitted_peak_candidates(peak_wl, peak_int, target_fit_params):
+    peak_wl_arr = pd.to_numeric(pd.Series(peak_wl), errors="coerce").to_numpy(dtype=float)
+    peak_int_arr = pd.to_numeric(pd.Series(peak_int), errors="coerce").to_numpy(dtype=float)
+    valid_peak_mask = np.isfinite(peak_wl_arr) & np.isfinite(peak_int_arr)
+
+    if target_fit_params is None or target_fit_params.empty:
+        return peak_wl_arr[valid_peak_mask], peak_int_arr[valid_peak_mask]
+
+    fit_wl = pd.to_numeric(target_fit_params["TargetWavelength"], errors="coerce").to_numpy(dtype=float)
+    fit_int = pd.to_numeric(target_fit_params["A"], errors="coerce").to_numpy(dtype=float)
+    valid_fit_mask = np.isfinite(fit_wl) & np.isfinite(fit_int) & (fit_int > 0)
+
+    return (
+        np.concatenate([peak_wl_arr[valid_peak_mask], fit_wl[valid_fit_mask]]),
+        np.concatenate([peak_int_arr[valid_peak_mask], fit_int[valid_fit_mask]]),
+    )
+
+
+def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload,target_base_elements=None):
+    target_fit_columns = [
+        "Element",
+        "BaseElement",
+        "SourceElement",
+        "PeakIndex",
+        "TargetWavelength",
+        "A",
+        "mu",
+        "sigma",
+        "MuAbsDiff",
+        "FitComponentCount",
+    ]
+    target_fit_rows = []
+    target_base_set = None
+    if target_base_elements is not None:
+        target_base_set = {str(elem).strip().upper() for elem in target_base_elements}
+        if len(target_base_set) == 0:
+            return pd.DataFrame(target_fit_rows, columns=target_fit_columns)
+
     file_list = glob.glob(os.path.join(folder_path, "*.csv"))
     elements_list = [os.path.splitext(os.path.basename(f))[0] for f in file_list]
     elements = {}
     for element_name in elements_list: 
-        if element_name=='TbII':
+        target_base_elem = base_element_name(element_name)
+        if target_base_set is not None and target_base_elem.upper() not in target_base_set:
+            continue
+        if True:
             file_path = os.path.join(folder_path, element_name + ".csv")
             df = pd.read_csv(file_path, header=0, encoding="gbk")
             if df.shape[1] > 9:
@@ -1226,18 +1281,18 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
                             ))
                         else:
                             lines_in_window = lines_in_window.sort_values(["Element", line_wl_col]).reset_index(drop=True)
-                            print(color_text(
-                                f"所有基体元素在 {line_left:.4f} - {line_right:.4f} nm 范围内的全部谱线:",
-                                GREEN,
-                            ))
-                            print(lines_in_window.to_string(index=False))
+                            # print(color_text(
+                            #     f"所有基体元素在 {line_left:.4f} - {line_right:.4f} nm 范围内的全部谱线:",
+                            #     GREEN,
+                            # ))
+                            # print(lines_in_window.to_string(index=False))
                                 
                                 
                     #拟合选线逻辑
                     strongest_lines = []
                     fit_boundary_line_wl = None
                     if segment_wl.size > 0 and not lines_in_window.empty:
-                        strongest_line_rows = lines_in_window.nlargest(1, "LineIntensity")
+                        strongest_line_rows = lines_in_window.nlargest(2, "LineIntensity")
                         strongest_lines = strongest_line_rows[line_wl_col].astype(float).tolist()
                         fit_boundary_line_wl = float(strongest_line_rows.iloc[0][line_wl_col])
                         strongest_line_summary = ", ".join(
@@ -1250,60 +1305,60 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
                         ))
 
                     #拟合数值显示
-                    if segment_wl.size > 0:
-                        plt.figure(figsize=(7, 5))
-                        plt.plot(
-                            segment_wl,
-                            segment_signal,
-                            color='tab:blue',
-                            linewidth=2.2,
-                            label='Extracted spectrum',
-                        )
-                        plt.axvline(
-                            wl_value,
-                            color='tab:green',
-                            linewidth=2.0,
-                            linestyle='--',
-                            label=f'{element_name}: {wl_value:.4f}',
-                        )
+                    # if segment_wl.size > 0:
+                    #     plt.figure(figsize=(7, 5))
+                    #     plt.plot(
+                    #         segment_wl,
+                    #         segment_signal,
+                    #         color='tab:blue',
+                    #         linewidth=2.2,
+                    #         label='Extracted spectrum',
+                    #     )
+                    #     plt.axvline(
+                    #         wl_value,
+                    #         color='tab:green',
+                    #         linewidth=2.0,
+                    #         linestyle='--',
+                    #         label=f'{element_name}: {wl_value:.4f}',
+                    #     )
                                     
-                        for line_element, line_wavelength, line_intensity, line_type in lines_in_window[
-                            ["Element", line_wl_col, "LineIntensity", "LineType"]
-                        ].itertuples(index=False, name=None):
-                            line_wavelength = float(line_wavelength)
-                            is_selected_line = any(
-                                np.isclose(line_wavelength, selected_line)
-                                for selected_line in strongest_lines
-                            )
-                            plt.axvline(
-                                line_wavelength,
-                                color='tab:orange' if is_selected_line else 'tab:red',
-                                linewidth=2.0,
-                                linestyle='--',
-                            )
+                    #     for line_element, line_wavelength, line_intensity, line_type in lines_in_window[
+                    #         ["Element", line_wl_col, "LineIntensity", "LineType"]
+                    #     ].itertuples(index=False, name=None):
+                    #         line_wavelength = float(line_wavelength)
+                    #         is_selected_line = any(
+                    #             np.isclose(line_wavelength, selected_line)
+                    #             for selected_line in strongest_lines
+                    #         )
+                    #         plt.axvline(
+                    #             line_wavelength,
+                    #             color='tab:orange' if is_selected_line else 'tab:red',
+                    #             linewidth=2.0,
+                    #             linestyle='--',
+                    #         )
 
 
-                        ax = plt.gca()
-                        for spine in ax.spines.values():
-                            spine.set_linewidth(1.8)
-                        for label in ax.get_xticklabels():
-                            label.set_fontweight("semibold")
-                        for label in ax.get_yticklabels():
-                            label.set_fontweight("semibold")
+                    #     ax = plt.gca()
+                    #     for spine in ax.spines.values():
+                    #         spine.set_linewidth(1.8)
+                    #     for label in ax.get_xticklabels():
+                    #         label.set_fontweight("semibold")
+                    #     for label in ax.get_yticklabels():
+                    #         label.set_fontweight("semibold")
 
-                        plt.xlabel('Wavelength', fontsize=15, fontweight="semibold")
-                        plt.ylabel('Intensity', fontsize=15, fontweight="semibold")
-                        plt.title(
-                            f'{element_name} vs All Rock Main Elements Spectrum Window',
-                            fontsize=15,
-                            fontweight="semibold",
-                        )
+                    #     plt.xlabel('Wavelength', fontsize=15, fontweight="semibold")
+                    #     plt.ylabel('Intensity', fontsize=15, fontweight="semibold")
+                    #     plt.title(
+                    #         f'{element_name} vs All Rock Main Elements Spectrum Window',
+                    #         fontsize=15,
+                    #         fontweight="semibold",
+                    #     )
 
-                        plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
-                        plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
-                        plt.grid(alpha=0.3)
-                        plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
-                        plt.tight_layout()
+                    #     plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
+                    #     plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
+                    #     plt.grid(alpha=0.3)
+                    #     plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
+                    #     plt.tight_layout()
                         #plt.show()
                                 
                     segment_wl = pd.Series(pd.to_numeric(segment_wl, errors='coerce'))
@@ -1389,7 +1444,51 @@ def MultiPeakFit(folder_path,elements_rockmain,spectrum_payload):
                         fit_right_mu=fit_right_mu,
                     )
                     fitter.fit()
-                    fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
+                    # fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
+
+                    #拟合数据传回处理
+                    fitted_params_arr = np.asarray(fitter.fitted_params, dtype=float)
+                    
+                    if fitted_params_arr.size == 0:
+                        print(color_text(
+                            f"拟合波长 {float(wl_value):.4f} 未得到 fitted_params",
+                            YELLOW,
+                        ))
+                        continue
+
+                    
+                    mu_diff = np.abs(fitted_params_arr[:, 1] - float(wl_value))
+                    target_fit_idx = int(np.argmin(mu_diff))
+                    target_A, target_mu, target_sigma = fitted_params_arr[target_fit_idx]
+
+                    target_fit_rows.append({
+                        "Element": element_name,
+                        "BaseElement": target_base_elem,
+                        "SourceElement": source_elem,
+                        "PeakIndex": int(peak_index),
+                        "TargetWavelength": float(wl_value),
+                        "A": float(target_A),
+                        "mu": float(target_mu),
+                        "sigma": float(target_sigma),
+                        "MuAbsDiff": float(mu_diff[target_fit_idx]),
+                        "FitComponentCount": int(fitted_params_arr.shape[0]),
+                    })
+
+                    print(color_text(
+                        (
+                            f"目标峰 fitted_params: "
+                            f"wl_tofit={float(wl_value):.4f}, "
+                            f"A={float(target_A):.6g}, "
+                            f"mu={float(target_mu):.6f}, "
+                            f"sigma={float(target_sigma):.6g}"
+                        ),
+                        GREEN,
+                    ))
+                    
+
+
+
+    return pd.DataFrame(target_fit_rows, columns=target_fit_columns)
 
 
 ###数据库导入
@@ -1615,10 +1714,15 @@ if __name__ == '__main__':
             particle_result,elements_result,elements_T,elements_R2,elements_confidence=compute_element_confidence_shape(elements_rareearth, peak_wl, peak_int,x,intensity_sum,
                                                                                                         scope=0.2,plot=plotbotton,target=plottarget)
             elements_line_payload = {}
+            
+        #置信度0元素筛选
+        coarse_elements_confidence = elements_confidence.copy()
+        zero_conf_elements = [
+            elem
+            for elem, conf in coarse_elements_confidence.items()
+            if float(conf) == 0.0
+        ]
         
-        
-        #MultiPeakFit 开发阶段
-        #仅仅对单个元素Sm进行，而且是没检测出来Sm的
         
   
         allowed_main_elements = {"TI", "K", "NA", "MG", "CA", "SI", "FE", "AL"}
@@ -1632,8 +1736,88 @@ if __name__ == '__main__':
 
 
 
-        #拟合调用
-        MultiPeakFit(folder_path2,main_elements_normalized,elements_line_payload)
+        #多峰拟合调用
+        target_fit_params = MultiPeakFit(
+            folder_path2,
+            main_elements_normalized,
+            elements_line_payload,
+            target_base_elements=zero_conf_elements,
+        )
+        
+        if not target_fit_params.empty:
+            print(color_text("\nwl_tofit 目标峰拟合结果:", GREEN))
+            print(target_fit_params.to_string(index=False))
+
+            elements_rareearth_refit, _ = elements_database_lineswitch(
+                folder_path2,
+                db_temperature,
+                elements_rockmain,
+                LineSwitchMode=False,
+            )
+            rescue_rows = []
+            
+            
+            #rescue_elem为代拟合元素
+            for rescue_elem in zero_conf_elements:
+                rescue_fit_params = target_fit_params.loc[
+                    target_fit_params["BaseElement"].astype(str).str.upper() == str(rescue_elem).upper()
+                ].copy()
+                if rescue_fit_params.empty:
+                    continue
+
+                rescue_elements = filter_elements_by_base(elements_rareearth_refit, [rescue_elem])
+                if not rescue_elements:
+                    continue
+
+                corrected_peak_wl, corrected_peak_int = append_fitted_peak_candidates(
+                    peak_wl,
+                    peak_int,
+                    rescue_fit_params,
+                )
+                (
+                    _rescue_match_results,
+                    rescue_results,
+                    rescue_T,
+                    rescue_R2,
+                    rescue_confidence,
+                ) = compute_element_confidence_shape(
+                    rescue_elements,
+                    corrected_peak_wl,
+                    corrected_peak_int,
+                    x,
+                    intensity_sum,
+                    scope=0.2,
+                    plot=True,
+                    target=plottarget,
+                )
+
+                if rescue_elem not in rescue_confidence:
+                    continue
+
+                old_conf = float(coarse_elements_confidence.get(rescue_elem, 0.0))
+                new_conf = float(rescue_confidence.get(rescue_elem, 0.0))
+                elements_confidence[rescue_elem] = new_conf
+                if rescue_elem in rescue_results:
+                    elements_result[rescue_elem] = rescue_results[rescue_elem]
+                if rescue_elem in rescue_T:
+                    elements_T[rescue_elem] = rescue_T[rescue_elem]
+                if rescue_elem in rescue_R2:
+                    elements_R2[rescue_elem] = rescue_R2[rescue_elem]
+
+                rescue_rows.append({
+                    "Element": rescue_elem,
+                    "CoarseConfidence": old_conf,
+                    "RefitConfidence": new_conf,
+                    "RefitT": float(rescue_T.get(rescue_elem, 0.0)),
+                    "RefitR2": float(rescue_R2.get(rescue_elem, 0.0)),
+                    "FitPeakCount": int(len(rescue_fit_params)),
+                })
+
+            if rescue_rows:
+                rescue_df = pd.DataFrame(rescue_rows)
+                print(color_text("\n粗置信度为 0 的元素多峰拟合补救结果:", GREEN))
+                print(rescue_df.to_string(index=False))
+            
 
 
 
