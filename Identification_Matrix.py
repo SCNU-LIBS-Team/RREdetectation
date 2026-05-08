@@ -288,11 +288,11 @@ def generate_identification_matrix(
 
 
 #整套模式
-filepath = r'D:\LIBS\RREdetectation\Confidence_debug\T_scanoff\Pt1'
-filepath = r'D:\LIBS\RREdetectation\T_scanon\Pt1'
+filepath = r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt2'
+# filepath = r'D:\LIBS\RREdetectation\T_scanon\Pt1'
 fakebotton = False
 fake_seed = 42
-confidence_path=os.path.join(filepath,'rareearth_confidence_results.csv')
+confidence_path=os.path.join(filepath,'rareearth_confidence_results_with_fit.csv')
 contents_path=os.path.join(filepath,'Randomrareearth_contents.csv')
 confidence=pd.read_csv(confidence_path)
 contents=pd.read_csv(contents_path)

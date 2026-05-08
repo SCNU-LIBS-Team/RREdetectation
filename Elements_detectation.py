@@ -1134,7 +1134,7 @@ def extract_spectrum_between_minima(x, y, wl_a, ratio=1):
     peak_region = np.arange(peak_left_idx, peak_right_idx + 1)
     peak_idx = int(peak_region[np.argmax(y_arr[peak_region])])
     peak_y = float(y_arr[peak_idx])
-    print(f"中心波长: {center_wl}, 峰顶波长: {x_arr[peak_idx]}, 峰值强度: {peak_y}")
+    # print(f"中心波长: {center_wl}, 峰顶波长: {x_arr[peak_idx]}, 峰值强度: {peak_y}")
     valley_limit = peak_y * float(ratio)
 
     left_idx = 0
@@ -1231,7 +1231,6 @@ def append_fitted_peak_candidates(peak_wl, peak_int, target_fit_params):
 def MultiPeakFit(
     folder_path,
     elements_rockmain,
-    spectrum_payload,
     target_base_elements=None,
     target_fit_lines=None,
     plot_fit_windows=False,
@@ -1378,15 +1377,15 @@ def MultiPeakFit(
                 if coarse_target_rows.empty:
                     fit_line_source = "normalized_pure_element"
 
-                if wl_tofit.empty:
-                    print(color_text(f"{element_name} No conflict elements", YELLOW))
+                # if wl_tofit.empty:
+                #     print(color_text(f"{element_name} No conflict elements", YELLOW))
 
                 wl_tofit_count = len(wl_tofit)
-                if wl_tofit_count > 0:
-                    print(color_text(
-                        f"{element_name} 需要多峰拟合处理的谱线数量: {wl_tofit_count}",
-                        BLUE,
-                    ))
+                # if wl_tofit_count > 0:
+                #     print(color_text(
+                #         f"{element_name} 需要多峰拟合处理的谱线数量: {wl_tofit_count}",
+                #         BLUE,
+                #     ))
 
                 for fit_count, (peak_index, wl_value) in enumerate(wl_tofit.items(), start=1):
                     if fit_line_source == "coarse_matched":
@@ -1395,16 +1394,16 @@ def MultiPeakFit(
                     else:
                         source_elem = normalized_pure_element.loc[peak_index]
                         output_peak_index = int(peak_index)
-                    print(color_text(
-                        (
-                            f"[{fit_count}/{wl_tofit_count}] 正在处理多峰拟合谱线: "
-                            f"目标元素={element_name}, "
-                            f"重叠基体元素={source_elem}, "
-                            f"PeakIndex={output_peak_index}, "
-                            f"Wavelength={float(wl_value):.4f} nm"
-                        ),
-                        BLUE,
-                    ))
+                    # print(color_text(
+                    #     (
+                    #         f"[{fit_count}/{wl_tofit_count}] 正在处理多峰拟合谱线: "
+                    #         f"目标元素={element_name}, "
+                    #         f"重叠基体元素={source_elem}, "
+                    #         f"PeakIndex={output_peak_index}, "
+                    #         f"Wavelength={float(wl_value):.4f} nm"
+                    #     ),
+                    #     BLUE,
+                    # ))
                     #回到原始光谱寻找峰值极小值
                     segment_wl, segment_signal, left_min_wl, right_min_wl = extract_spectrum_between_minima(
                         x,
@@ -1413,18 +1412,18 @@ def MultiPeakFit(
                     )
                     lines_in_window = pd.DataFrame(columns=rock_line_columns)
 
-                    if segment_wl.size == 0:
-                        print(color_text(
-                            f"拟合波长 {wl_value:.4f} 未截取到有效原始光谱窗口，跳过该峰位",
-                            YELLOW,
-                        ))
-                        continue
+                    # if segment_wl.size == 0:
+                    #     print(color_text(
+                    #         f"拟合波长 {wl_value:.4f} 未截取到有效原始光谱窗口，跳过该峰位",
+                    #         YELLOW,
+                    #     ))
+                    #     continue
                                 
                     if segment_wl.size > 0:
-                        print(
-                            f"原始光谱截取窗口: {left_min_wl:.4f} - {right_min_wl:.4f}, 点数: {segment_wl.size},拟合波长 {wl_value:.4f}",
+                        # print(
+                        #     f"原始光谱截取窗口: {left_min_wl:.4f} - {right_min_wl:.4f}, 点数: {segment_wl.size},拟合波长 {wl_value:.4f}",
 
-                        )
+                        # )
                         line_left = min(float(left_min_wl), float(right_min_wl))
                         line_right = max(float(left_min_wl), float(right_min_wl))
                                     
@@ -1459,10 +1458,10 @@ def MultiPeakFit(
                             f"{row['Element']} {float(row[line_wl_col]):.4f} nm, intensity={float(row['LineIntensity']):.4e}"
                             for _, row in strongest_line_rows.iterrows()
                         )
-                        print(color_text(
-                            f"选中用于拟合的所有基体元素最强前 {len(strongest_lines)} 条谱线: {strongest_line_summary}",
-                            GREEN,
-                        ))
+                        # print(color_text(
+                        #     f"选中用于拟合的所有基体元素最强前 {len(strongest_lines)} 条谱线: {strongest_line_summary}",
+                        #     GREEN,
+                        # ))
 
                     #拟合数值显示
                     if plot_fit_windows and segment_wl.size > 0:
@@ -1541,7 +1540,7 @@ def MultiPeakFit(
 
                     manual_peak_wl = [float(wl_value)]
                     manual_peak_wl.extend(float(line_wavelength) for line_wavelength in strongest_lines)
-                    print(color_text(f"手动峰位列表: {manual_peak_wl}", BLUE))
+                    # print(color_text(f"手动峰位列表: {manual_peak_wl}", BLUE))
                                 
                     if len(manual_peak_wl) > 0:
                         wl_np_for_peak = segment_wl.to_numpy(dtype=float)
@@ -1584,8 +1583,7 @@ def MultiPeakFit(
 
                     selected_idx = np.sort(peak_indices)
                     fwhm_selected = estimator.estimate_fwhm(np.asarray(cwt_data, dtype=float), selected_idx, wl_np)
-                    print(color_text(f"Fitted FWHM: {fwhm_selected}", RED))
-                                
+            
                     fit_left_mu = None
                     fit_right_mu = None
                     # if fit_boundary_line_wl is not None and np.isfinite(fit_boundary_line_wl):
@@ -1636,17 +1634,17 @@ def MultiPeakFit(
                         "FitLineSource": fit_line_source,
                     })
 
-                    print(color_text(
-                        (
-                            f"目标峰 fitted_params: "
-                            f"wl_tofit={float(wl_value):.4f}, "
-                            f"A={float(target_A):.6g}, "
-                            f"mu={float(target_mu):.6f}, "
-                            f"sigma={float(target_sigma):.6g}"
-                        ),
-                        GREEN,
-                    ))
-                    print()
+                    # print(color_text(
+                    #     (
+                    #         f"目标峰 fitted_params: "
+                    #         f"wl_tofit={float(wl_value):.4f}, "
+                    #         f"A={float(target_A):.6g}, "
+                    #         f"mu={float(target_mu):.6f}, "
+                    #         f"sigma={float(target_sigma):.6g}"
+                    #     ),
+                    #     GREEN,
+                    # ))
+                    # print()
                     
 
 
@@ -1670,8 +1668,8 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt1' #随机光谱测试
-RandPerfOPbotton=False #随机光谱性能测试模式
+signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt2' #随机光谱测试
+RandPerfOPbotton=True #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
@@ -1689,17 +1687,13 @@ scan_t_min=3000
 scan_t_max=25000
 scan_t_step=100
 
-AutoElemTempMarkMode=False #自动扫描有置信度稀土元素并在输出中标注温度敏感性
-auto_mark_conf_min=0.05 #参与扫描的最小置信度阈值
-auto_mark_delta_threshold=0.5 #最大-最小置信度差值超过该阈值则标注
-
+AutoElemTempMarkMode=True #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=False#是否检测文件内的全部光谱 （全文件）
+checkallbutton=True#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
-save2csvbotton=False #是否保存稀土元素置信度结果到CSV
+save2csvbotton=True #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
-Titerationbotton=False #是否启用温度迭代算法
-ReturnRawLinePayloadMode=False #是否返回每个元素的原始谱线参数( wl/intensity/A/E/g/matched_* )
+Titerationbotton=True #是否启用温度迭代算法
 
 
 
@@ -1733,6 +1727,8 @@ if __name__ == '__main__':
     RAREEARTH_FIXED_ORDER = ['Y', 'Eu', 'Lu', 'Er', 'Ho', 'Yb', 'La', 'Tm','Tb', 'Sm', 'Pr', 'Ce', 'Nd', 'Dy', 'Gd']
     confidence_csv_path = os.path.join(target_path, 'rareearth_confidence_results.csv')
     confidence_rows = []
+    confidence_fitappend_csv_path = os.path.join(target_path, 'rareearth_confidence_results_with_fit.csv')
+    confidence_fitappend_rows = []
 
     #文件选择
     if not files_to_process:
@@ -1872,7 +1868,51 @@ if __name__ == '__main__':
         particle_result,elements_result,elements_T,elements_R2,elements_confidence,elements_line_payload=compute_element_confidence_shape(elements_rareearth, peak_wl, peak_int,x,intensity_sum,
                                                                                                     scope=0.2,plot=plotbotton,target=plottarget,
                                                                                                     return_line_payload=True)
+        
+        # 对有置信度的元素做温度扫描，若置信度波动超过阈值则在最终输出中标注
+        temp_sensitive_marks = {}
+        if AutoElemTempMarkMode:
+
+
             
+            allowed_elems = {"La", "Yb", "Tb", "Eu", "Er"}
+            candidate_scan_elems = [
+                elem for elem, conf in elements_confidence.items()
+                if elem in allowed_elems and float(elements_R2.get(elem, 0.0)) == 1.0
+            ]
+            for scan_elem in candidate_scan_elems:
+                scan_T_elem, scan_conf_elem = scan_target_element_confidence(
+                    peak_wl,
+                    peak_int,
+                    x,
+                    intensity_sum,
+                    scan_elem,
+                    elements_confidence_main=elements_confidence_main,
+                    t_min=scan_t_min,
+                    t_max=scan_t_max,
+                    t_step=scan_t_step,
+                )
+                if scan_conf_elem.size == 0:
+                    continue
+
+                best_idx_elem = int(np.argmax(scan_conf_elem))
+                min_idx_elem = int(np.argmin(scan_conf_elem))
+                
+                
+            #极值勘误部分
+                best_t = float(scan_T_elem[best_idx_elem])
+                if best_t < 7450 or best_t > 12100:
+                    temp_sensitive_marks[scan_elem] = {
+                        'delta_conf': 1,
+                        'best_t': best_t,
+                        'min_t': float(scan_T_elem[min_idx_elem]),
+                        'delta_p': float(1),
+                        'delta_conf_cal': float(1)
+                    }
+                    elements_confidence[scan_elem] = 0.0
+         
+        
+        
         #置信度0元素筛选
         coarse_elements_result = elements_result.copy()
         coarse_elements_T = elements_T.copy()
@@ -1902,12 +1942,12 @@ if __name__ == '__main__':
             elements_line_payload,
             coarse_matched_refit_elements,
         )
-        if not coarse_matched_fit_lines.empty:
-            print(color_text(
-                "粗检测有有效 T/R2 但置信度为 0 的元素，将使用粗检测已匹配谱线进行多峰拟合:",
-                GREEN,
-            ))
-            print(coarse_matched_fit_lines.to_string(index=False))
+        # if not coarse_matched_fit_lines.empty:
+        #     print(color_text(
+        #         "粗检测有有效 T/R2 但置信度为 0 的元素，将使用粗检测已匹配谱线进行多峰拟合:",
+        #         GREEN,
+        #     ))
+        #     print(coarse_matched_fit_lines.to_string(index=False))
 
         allowed_main_elements = {"TI", "K", "NA", "MG", "CA", "SI", "FE", "AL","MN"}
         main_elements_normalized = {
@@ -1924,14 +1964,13 @@ if __name__ == '__main__':
         target_fit_params = MultiPeakFit(
             folder_path2,
             main_elements_normalized,
-            elements_line_payload,
             target_base_elements=zero_conf_elements,
             target_fit_lines=coarse_matched_fit_lines,
         )
         
         if not target_fit_params.empty:
-            print(color_text("\nwl_tofit 目标峰拟合结果:", GREEN))
-            print(target_fit_params.to_string(index=False))
+            # print(color_text("\nwl_tofit 目标峰拟合结果:", GREEN))
+            # print(target_fit_params.to_string(index=False))
 
             elements_rareearth_refit, _ = elements_database_lineswitch(
                 folder_path2,
@@ -2005,128 +2044,26 @@ if __name__ == '__main__':
 
             if rescue_rows:
                 rescue_df = pd.DataFrame(rescue_rows)
-                print(color_text("\n粗置信度为 0 的元素多峰拟合补救结果:", GREEN))
-                print(rescue_df.to_string(index=False))
+                # print(color_text("\n粗置信度为 0 的元素多峰拟合补救结果:", GREEN))
+                # print(rescue_df.to_string(index=False))
             
-
-
-
-        # 对有置信度的元素做温度扫描，若置信度波动超过阈值则在最终输出中标注
-        temp_sensitive_marks = {}
-        if AutoElemTempMarkMode:
-            print(color_text(f"\n[{I_element_name}] 启动自动温度敏感元素标注算法，扫描置信度≥{auto_mark_conf_min}的R2=1的特殊元素", BLUE))
-            # candidate_scan_elems = [
-            #     elem for elem, conf in elements_confidence.items()
-            #     if float(conf) >= auto_mark_conf_min and float(elements_R2.get(elem, 0.0)) == 1.0
-            # ]
-            # print(f"候选扫描元素: {candidate_scan_elems}")
-            allowed_elems = {"La", "Yb", "Tb", "Eu", "Er"}
-            candidate_scan_elems = [
-                elem for elem, conf in elements_confidence.items()
-                if elem in allowed_elems and float(elements_R2.get(elem, 0.0)) == 1.0
-            ]
-            for scan_elem in candidate_scan_elems:
-                scan_T_elem, scan_conf_elem = scan_target_element_confidence(
-                    peak_wl,
-                    peak_int,
-                    x,
-                    intensity_sum,
-                    scan_elem,
-                    elements_confidence_main=elements_confidence_main,
-                    t_min=scan_t_min,
-                    t_max=scan_t_max,
-                    t_step=scan_t_step,
-                )
-                if scan_conf_elem.size == 0:
-                    continue
-
-                best_idx_elem = int(np.argmax(scan_conf_elem))
-                min_idx_elem = int(np.argmin(scan_conf_elem))
-                
-                
-            #极值勘误部分
-                best_t = float(scan_T_elem[best_idx_elem])
-                if best_t < 7450 or best_t > 12100:
-                    temp_sensitive_marks[scan_elem] = {
-                        'delta_conf': 1,
-                        'best_t': best_t,
-                        'min_t': float(scan_T_elem[min_idx_elem]),
-                        'delta_p': float(1),
-                        'delta_conf_cal': float(1)
-                    }
-                    
-            # #浮动阈值勘误部分-----施工中
-            #     payload_key = f"{scan_elem}II"
-            #     payload = elements_line_payload.get(payload_key, {})
-            #     # print(payload)
-                
-            #     wl_sel = np.asarray(payload.get('wl', []), dtype=float)
-            #     A_sel = np.asarray(payload.get('A', []), dtype=float)
-            #     E_sel = np.asarray(payload.get('E', []), dtype=float)
-            #     g_sel = np.asarray(payload.get('g', []), dtype=float)
-            #     matched_idx_sel = np.asarray(payload.get('matched_theo_idx', []), dtype=int)
-            #     # if scan_elem=='Yb':
-            #     #     print(wl_sel, A_sel, E_sel, g_sel, matched_idx_sel)
-
-            #     if wl_sel.size == 0 or A_sel.size == 0 or E_sel.size == 0 or g_sel.size == 0:
-            #         continue
-
-            #     p_best = rel_intensity(wl_sel, A_sel, E_sel, g_sel, float(scan_T_elem[best_idx_elem]))
-            #     p_min = rel_intensity(wl_sel, A_sel, E_sel, g_sel, float(scan_T_elem[min_idx_elem]))
-                
-            #     delta_conf = float(np.max(scan_conf_elem) - np.min(scan_conf_elem))
-                
-            #     if matched_idx_sel.size > 0:
-            #         # delta_p = float(np.sum(np.abs(p_best[matched_idx_sel] - p_min[matched_idx_sel])))
-            #         delta_p = float(np.max(np.abs(p_best - p_min)))
-            #         delta_conf_cal=1-np.exp(-(np.sum((p_best-p_min)**2))*len(matched_idx_sel)*4.5) #根据概率差值计算置信度差值
-            #     else:
-            #         delta_p = 0.0
-            #         delta_conf_cal = 0.0
-                    
-            #     if delta_conf >=0.8:
-            #         temp_sensitive_marks[scan_elem] = {
-            #             'delta_conf': delta_conf,
-            #             'best_t': float(scan_T_elem[best_idx_elem]),
-            #             'min_t': float(scan_T_elem[min_idx_elem]),
-            #             'delta_p': float(delta_p),
-            #             'delta_conf_cal': float(delta_conf_cal)
-            #         }
-            #     else:
-            #         if delta_conf>(delta_conf_cal*1.3):
-            #             temp_sensitive_marks[scan_elem] = {
-            #                 'delta_conf': delta_conf,
-            #                 'best_t': float(scan_T_elem[best_idx_elem]),
-            #                 'min_t': float(scan_T_elem[min_idx_elem]),
-            #                 'delta_p': float(delta_p),
-            #                 'delta_conf_cal': float(delta_conf_cal)
-            #             }
-
-                # #固定阈值0.8勘误
-                # #计算置信度delta
-                # delta_conf = float(np.max(scan_conf_elem) - np.min(scan_conf_elem))
-                # # if delta_conf >= auto_mark_delta_threshold:
-                # if delta_conf >= 0.8:
-                #     temp_sensitive_marks[scan_elem] = {
-                #         'delta_conf': delta_conf,
-                #         'best_t': float(scan_T_elem[best_idx_elem]),
-                #         'min_t': float(scan_T_elem[min_idx_elem]),
-                #         'delta_p': float(delta_conf),
-                #         'delta_conf_cal': 0
-                #     }
-
 
         # 记录当前光谱的稀土元素置信度（固定列顺序）
         if save2csvbotton:
             row = {'spectrum_name': I_element_name}
+            fitappend_row = {'spectrum_name': I_element_name}
             for elem in RAREEARTH_FIXED_ORDER:
-                conf_value = float(elements_confidence.get(elem, 0.0))
+                conf_value = float(coarse_elements_confidence.get(elem, 0.0))
+                fitappend_conf_value = float(elements_confidence.get(elem, 0.0))
                 # 如果元素被标记为温度敏感，则将其置信度设为0以突出显示（或根据需要调整）
-                if elem in temp_sensitive_marks:
-                    conf_value = 0.0
+
+                
                 row[elem] = round(conf_value, 4)
+                fitappend_row[elem] = round(fitappend_conf_value, 4)
             row['iter_temperature'] = round(float(db_temperature), 4)
+            fitappend_row['iter_temperature'] = round(float(db_temperature), 4)
             confidence_rows.append(row)
+            confidence_fitappend_rows.append(fitappend_row)
 
         #print结果展示
         if printbotton:
@@ -2209,6 +2146,13 @@ if __name__ == '__main__':
         confidence_df = pd.DataFrame(confidence_rows, columns=output_columns)
         confidence_df.to_csv(confidence_csv_path, index=False, encoding='utf-8-sig', float_format='%.4f')
         print(color_text(f"\n已导出稀土元素置信度到 CSV: {confidence_csv_path}", GREEN))
+
+    # 批量导出多峰拟合补救后的置信度 CSV
+    if confidence_fitappend_rows:
+        output_columns = ['spectrum_name'] + RAREEARTH_FIXED_ORDER + ['iter_temperature']
+        confidence_fitappend_df = pd.DataFrame(confidence_fitappend_rows, columns=output_columns)
+        confidence_fitappend_df.to_csv(confidence_fitappend_csv_path, index=False, encoding='utf-8-sig', float_format='%.4f')
+        print(color_text(f"\n已导出多峰拟合补救后的稀土元素置信度到 CSV: {confidence_fitappend_csv_path}", GREEN))
 
     #随机光谱性能测试，在随机光谱路径处设置(target_path)
     if RandPerfOPbotton:
