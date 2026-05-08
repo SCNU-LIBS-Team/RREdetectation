@@ -13,7 +13,7 @@ if str(project_root) not in sys.path:
 from Wavelet_peakfinding import find_peaks_ridge,peak_correction,wavelet_peak_detection #寻峰
 
 file_path = Path(r'D:\LIBS\RREdetectation\Broaden_research\PureSample_Spectrum')
-df = pd.read_csv(os.path.join(file_path, 'Y1.asc'), header=None)
+df = pd.read_csv(os.path.join(file_path, 'Fe1.asc'), header=None)
 
 wavelengths = pd.to_numeric(df.iloc[:, 0], errors='coerce').to_numpy()
 intensities = df.iloc[:, 1:4].apply(pd.to_numeric, errors='coerce').mean(axis=1).to_numpy()

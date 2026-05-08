@@ -558,9 +558,9 @@ if __name__ == '__main__':
             extrema_idx.append(i)
 
     manual_peak_wl = [
-        #  275.43, 275.57,275.70
+        #  275.43, 275.57
 
-        305.85,306.20
+        # 305.85,306.20
     ]
 
     if len(manual_peak_wl) > 0:
