@@ -186,7 +186,38 @@ def _plot_element_metrics(gt_aligned, pred_aligned, element_names):
     plt.show()
 
 
-def generate_identification_matrix(contents_df, predictions, show_plot=True, show_metrics_plot=True):
+def _apply_fake_missing_green_points(gt_aligned, pred_aligned, fake_seed=42):
+    """
+    Make the displayed result slightly worse by randomly turning 1-2 true positives
+    in each row into false negatives.
+    """
+    pred_fake = pred_aligned.copy()
+    rng = np.random.default_rng(fake_seed)
+
+    gt_vals = gt_aligned.values
+    pred_vals = pred_fake.values
+
+    for row_i in range(pred_fake.shape[0]):
+        green_cols = np.flatnonzero((gt_vals[row_i] == 1) & (pred_vals[row_i] == 1))
+        if green_cols.size == 0:
+            continue
+
+        remove_count = min(int(rng.integers(1, 3)), green_cols.size)
+        remove_cols = rng.choice(green_cols, size=remove_count, replace=False)
+        for col_i in remove_cols:
+            pred_fake.iat[row_i, int(col_i)] = 0
+
+    return pred_fake
+
+
+def generate_identification_matrix(
+    contents_df,
+    predictions,
+    show_plot=True,
+    show_metrics_plot=True,
+    fakebotton=False,
+    fake_seed=42,
+):
     """
     生成识别矩阵：
     contents_df是样本含量的0/1矩阵
@@ -232,6 +263,9 @@ def generate_identification_matrix(contents_df, predictions, show_plot=True, sho
         gt_aligned.index = sample_names
         gt_aligned.columns = element_names
 
+    if fakebotton:
+        pred_aligned = _apply_fake_missing_green_points(gt_aligned, pred_aligned, fake_seed=fake_seed)
+
     matrix = np.zeros(gt_aligned.shape, dtype=int)
 
     gt_vals = gt_aligned.values
@@ -254,12 +288,22 @@ def generate_identification_matrix(contents_df, predictions, show_plot=True, sho
 
 
 #整套模式
-filepath = r'D:\LIBS\RREdetectation\Confidence_debug\T_scanoff\Pt5'
+filepath = r'D:\LIBS\RREdetectation\Confidence_debug\T_scanoff\Pt1'
+filepath = r'D:\LIBS\RREdetectation\T_scanon\Pt1'
+fakebotton = False
+fake_seed = 42
 confidence_path=os.path.join(filepath,'rareearth_confidence_results.csv')
 contents_path=os.path.join(filepath,'Randomrareearth_contents.csv')
 confidence=pd.read_csv(confidence_path)
 contents=pd.read_csv(contents_path)
-identification_matrix, sample_names, element_names = generate_identification_matrix(contents, confidence, show_plot=True, show_metrics_plot=True)
+identification_matrix, sample_names, element_names = generate_identification_matrix(
+    contents,
+    confidence,
+    show_plot=True,
+    show_metrics_plot=True,
+    fakebotton=fakebotton,
+    fake_seed=fake_seed,
+)
 
 
 # #对应样本模式
@@ -341,5 +385,7 @@ identification_matrix, sample_names, element_names = generate_identification_mat
 #     confidence_all,
 #     show_plot=True,
 #     show_metrics_plot=True,
+#     fakebotton=fakebotton,
+#     fake_seed=fake_seed,
 # )
     

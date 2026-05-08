@@ -1679,7 +1679,7 @@ target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['070101_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['03116_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
 plottarget='TbII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
@@ -1695,7 +1695,7 @@ auto_mark_delta_threshold=0.5 #最大-最小置信度差值超过该阈值则标
 
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=False#是否检测文件内的全部光谱 （全文件）
-plotbotton=True#是否绘图展示Boltzmann图
+plotbotton=False#是否绘图展示Boltzmann图
 save2csvbotton=False #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
 Titerationbotton=False #是否启用温度迭代算法
@@ -1886,13 +1886,17 @@ if __name__ == '__main__':
             if float(conf) <=0.01
         ]
         
+        
+        #有选线元素的筛选
         coarse_matched_refit_elements = [
             elem
             for elem in zero_conf_elements
             if float(coarse_elements_T.get(elem, 0.0)) > 0.0
             and float(coarse_elements_R2.get(elem, 0.0)) > 0.0
         ]
-        
+
+
+
         #已经匹配了谱线的元素直接多峰拟合
         coarse_matched_fit_lines = build_coarse_matched_fit_lines(
             elements_line_payload,
@@ -1904,9 +1908,7 @@ if __name__ == '__main__':
                 GREEN,
             ))
             print(coarse_matched_fit_lines.to_string(index=False))
-        
-        
-  
+
         allowed_main_elements = {"TI", "K", "NA", "MG", "CA", "SI", "FE", "AL","MN"}
         main_elements_normalized = {
             normalized
@@ -1974,9 +1976,9 @@ if __name__ == '__main__':
                     corrected_peak_int,
                     x,
                     intensity_sum,
-                    scope=0.2,
-                    plot=plotbotton and str(rescue_elem).strip().upper() == str(target_element).strip().upper(),
-                    target="PrII",
+                    scope=0.05,
+                    plot=plotbotton,
+                    target=plottarget,
                 )
 
                 if rescue_elem not in rescue_confidence:
