@@ -11,10 +11,10 @@ import warnings
 from collections import defaultdict
 from Wavelet_peakfinding import find_peaks_ridge,peak_correction,wavelet_peak_detection #寻峰
 from Elements_Combfact import elements_database, elements_database_pt2,elements_database_lineswitch#元素库制作
-from scipy.optimize import linear_sum_assignment #匈牙利算法
+from scipy.optimize import linear_sum_assignment 
 from RandSpec_PerformanceOP import RandSepc_PerforOP #随机光谱性能评估
 from error_evaluation import U_Calculate, rel_intensity
-from MultiPeakfit.Gaussfit import CWTPeakFWHMEstimator,GaussMultiPeakFitter
+from MultiPeakfit.Gaussfit import CWTPeakFWHMEstimator,GaussMultiPeakFitter,Bilateral_peak_fit
 
 
 #终端颜色设置
@@ -1154,6 +1154,8 @@ def extract_spectrum_between_minima(x, y, wl_a, ratio=1):
 
     return x_arr[left_idx:right_idx + 1], y_arr[left_idx:right_idx + 1], x_arr[left_idx], x_arr[right_idx]
 
+
+
 ###选线拟合策略
 
 #元素名称
@@ -1402,15 +1404,15 @@ def MultiPeakFit(
                     wl_tofit = pd.to_numeric(wl.loc[fit_peak_indices], errors='coerce').dropna() #匹配后存在的基体元素的全部谱线
                     fit_line_source = "normalized_pure_element"
 
-                # if wl_tofit.empty:
-                #     print(color_text(f"{element_name} No conflict elements", YELLOW))
+                if wl_tofit.empty:
+                    print(color_text(f"{element_name} No conflict elements", YELLOW))
 
                 wl_tofit_count = len(wl_tofit)
-                # if wl_tofit_count > 0:
-                #     print(color_text(
-                #         f"{element_name} 需要多峰拟合处理的谱线数量: {wl_tofit_count}",
-                #         BLUE,
-                #     ))
+                if wl_tofit_count > 0:
+                    print(color_text(
+                        f"{element_name} 需要多峰拟合处理的谱线数量: {wl_tofit_count}",
+                        BLUE,
+                    ))
 
                 for fit_count, (peak_index, wl_value) in enumerate(wl_tofit.items(), start=1):
                     if fit_line_source == "coarse_matched":
@@ -1422,36 +1424,46 @@ def MultiPeakFit(
                     else:
                         source_elem = normalized_pure_element.loc[peak_index]
                         output_peak_index = int(peak_index)
-                    # print(color_text(
-                    #     (
-                    #         f"[{fit_count}/{wl_tofit_count}] 正在处理多峰拟合谱线: "
-                    #         f"目标元素={element_name}, "
-                    #         f"重叠基体元素={source_elem}, "
-                    #         f"PeakIndex={output_peak_index}, "
-                    #         f"Wavelength={float(wl_value):.4f} nm"
-                    #     ),
-                    #     BLUE,
-                    # ))
+                    print(color_text(
+                        (
+                            f"[{fit_count}/{wl_tofit_count}] 正在处理多峰拟合谱线: "
+                            f"目标元素={element_name}, "
+                            f"重叠基体元素={source_elem}, "
+                            f"PeakIndex={output_peak_index}, "
+                            f"Wavelength={float(wl_value):.4f} nm"
+                        ),
+                        BLUE,
+                    ))
+                    
                     #回到原始光谱寻找峰值极小值
                     segment_wl, segment_signal, left_min_wl, right_min_wl = extract_spectrum_between_minima(
                         x,
                         signal,
                         wl_value,
                     )
+                    
+                    #找低于阈值的更宽的窗口，辅助判断拟合边界
+                    extra_segment_wl, extra_segment_signal, _, _ = extract_spectrum_between_minima(
+                        x,
+                        signal,
+                        wl_value,
+                        ratio=0.2,
+                    )
+                    
                     lines_in_window = pd.DataFrame(columns=rock_line_columns)
 
-                    # if segment_wl.size == 0:
-                    #     print(color_text(
-                    #         f"拟合波长 {wl_value:.4f} 未截取到有效原始光谱窗口，跳过该峰位",
-                    #         YELLOW,
-                    #     ))
-                    #     continue
+                    if segment_wl.size == 0:
+                        print(color_text(
+                            f"拟合波长 {wl_value:.4f} 未截取到有效原始光谱窗口，跳过该峰位",
+                            YELLOW,
+                        ))
+                        continue
                                 
                     if segment_wl.size > 0:
-                        # print(
-                        #     f"原始光谱截取窗口: {left_min_wl:.4f} - {right_min_wl:.4f}, 点数: {segment_wl.size},拟合波长 {wl_value:.4f}",
+                        print(
+                            f"原始光谱截取窗口: {left_min_wl:.4f} - {right_min_wl:.4f}, 点数: {segment_wl.size},拟合波长 {wl_value:.4f}",
 
-                        # )
+                        )
                         line_left = min(float(left_min_wl), float(right_min_wl))
                         line_right = max(float(left_min_wl), float(right_min_wl))
                                     
@@ -1468,11 +1480,11 @@ def MultiPeakFit(
                             ))
                         else:
                             lines_in_window = lines_in_window.sort_values(["Element", line_wl_col]).reset_index(drop=True)
-                            # print(color_text(
-                            #     f"所有基体元素在 {line_left:.4f} - {line_right:.4f} nm 范围内的全部谱线:",
-                            #     GREEN,
-                            # ))
-                            # print(lines_in_window.to_string(index=False))
+                            print(color_text(
+                                f"所有基体元素在 {line_left:.4f} - {line_right:.4f} nm 范围内的全部谱线:",
+                                GREEN,
+                            ))
+                            print(lines_in_window.to_string(index=False))
                                 
                                 
                     #拟合选线逻辑
@@ -1494,6 +1506,14 @@ def MultiPeakFit(
                     #拟合数值显示
                     if plot_fit_windows and segment_wl.size > 0:
                         plt.figure(figsize=(7, 5))
+                        if extra_segment_wl.size > 0:
+                            plt.plot(
+                                extra_segment_wl,
+                                extra_segment_signal,
+                                color='tab:orange',
+                                linewidth=2.2,
+                                label='Extra spectrum (ratio=0.2)',
+                            )
                         plt.plot(
                             segment_wl,
                             segment_signal,
@@ -1548,6 +1568,11 @@ def MultiPeakFit(
                         plt.tight_layout()
                         plt.show()
                                 
+                    
+                    segment_signal,fit_info=Bilateral_peak_fit(segment_wl,segment_signal, extra_segment_wl,extra_segment_signal,min_points=3,plot=True)
+
+                    
+                    #数据清洗    
                     segment_wl = pd.Series(pd.to_numeric(segment_wl, errors='coerce'))
                     segment_signal = pd.Series(pd.to_numeric(segment_signal, errors='coerce'))
 
@@ -1631,7 +1656,7 @@ def MultiPeakFit(
                     )
                     fitter.fit()
 
-                    # fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
+                    #fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
 
                     #拟合数据传回处理
                     fitted_params_arr = np.asarray(fitter.fitted_params, dtype=float)
@@ -1697,7 +1722,7 @@ signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
 signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt6' #随机光谱测试
-RandPerfOPbotton=True #随机光谱性能测试模式
+RandPerfOPbotton=False #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
@@ -1722,13 +1747,13 @@ scan_t_min=3000
 scan_t_max=25000
 scan_t_step=100
 
-AutoElemTempMarkMode=True #自动扫描有置信度稀土元素并在输出中标注温度敏感性
+AutoElemTempMarkMode=False #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=True#是否检测文件内的全部光谱 （全文件）
+checkallbutton=False#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
-save2csvbotton=True #是否保存稀土元素置信度结果到CSV
+save2csvbotton=False #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
-Titerationbotton=True #是否启用温度迭代算法
+Titerationbotton=False #是否启用温度迭代算法
 
 
 
@@ -1764,10 +1789,6 @@ if __name__ == '__main__':
     confidence_rows = []
     confidence_fitappend_csv_path = os.path.join(target_path, 'rareearth_confidence_results_with_fit.csv')
     confidence_fitappend_rows = []
-
-    #文件选择
-    if not files_to_process:
-        print(f"未找到待处理文件，target_files={target_files}")
 
 
     for I_element_name in files_to_process:
@@ -1907,6 +1928,7 @@ if __name__ == '__main__':
         # 对有置信度的元素做温度扫描，若置信度波动超过阈值则在最终输出中标注
         temp_sensitive_marks = {}
         
+        #极值勘误策略
         if AutoElemTempMarkMode:
             allowed_elems = {"La", "Yb", "Tb", "Eu", "Er"}
             candidate_scan_elems = [
@@ -1977,12 +1999,13 @@ if __name__ == '__main__':
             elements_line_payload,
             coarse_matched_refit_elements,
         )
-        # if not coarse_matched_fit_lines.empty:
-        #     print(color_text(
-        #         "粗检测有有效 T/R2 但置信度为 0 的元素，将使用粗检测已匹配谱线进行多峰拟合:",
-        #         GREEN,
-        #     ))
-        #     print(coarse_matched_fit_lines.to_string(index=False))
+        
+        if not coarse_matched_fit_lines.empty:
+            print(color_text(
+                "粗检测有有效 T/R2 但置信度为 0 的元素，将使用粗检测已匹配谱线进行多峰拟合:",
+                GREEN,
+            ))
+            print(coarse_matched_fit_lines.to_string(index=False))
 
         allowed_main_elements = {"TI", "K", "NA", "MG", "CA", "SI", "FE", "AL","MN"}
         main_elements_normalized = {
@@ -1991,7 +2014,7 @@ if __name__ == '__main__':
             for normalized in [str(m).strip().upper()]
             if normalized in allowed_main_elements
         }
-        # print(main_elements_normalized)
+
 
 
 
@@ -2001,7 +2024,7 @@ if __name__ == '__main__':
             main_elements_normalized,
             target_base_elements=zero_conf_elements,
             target_fit_lines=coarse_matched_fit_lines,
-            plot_fit_windows=False
+            plot_fit_windows=True
         )
         
         if not target_fit_params.empty:
@@ -2037,8 +2060,6 @@ if __name__ == '__main__':
                     rescue_fit_params,
                 )
                 
-                
-
                 (
                     _rescue_match_results,
                     rescue_results,

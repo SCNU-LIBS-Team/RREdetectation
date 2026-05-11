@@ -21,7 +21,325 @@ rel_int=rel_int[valid_mask]
 rel_int = rel_int - rel_int.min()
 
 
+#旁峰拟合
+def Bilateral_peak_fit(
+    segment_wl,
+    segment_signal,
+    extra_segment_wl,
+    extra_segment_signal,
+    min_points=3,
+    plot=False,
+):
 
+    #转化数组
+    seg_x_raw = np.asarray(segment_wl, dtype=float).reshape(-1)
+    seg_y_raw = np.asarray(segment_signal, dtype=float).reshape(-1)
+    extra_x_raw = np.asarray(extra_segment_wl, dtype=float).reshape(-1)
+    extra_y_raw = np.asarray(extra_segment_signal, dtype=float).reshape(-1)
+
+    if seg_x_raw.shape != seg_y_raw.shape:
+        raise ValueError("segment_wl and segment_signal must have the same length.")
+    if extra_x_raw.shape != extra_y_raw.shape:
+        raise ValueError("extra_segment_wl and extra_segment_signal must have the same length.")
+
+    cleaned_signal = seg_y_raw.copy()
+    left_tail = np.zeros_like(seg_y_raw, dtype=float)
+    right_tail = np.zeros_like(seg_y_raw, dtype=float)
+
+    
+    #某侧拟合失败信息结构
+    def _empty_side_info(side, message):
+        return {
+            "side": side,
+            "success": False,
+            "message": message,
+            "peak_wl": None,
+            "peak_int": None,
+            "peak_source": None,
+            "params": None,
+            "rms": None,
+            "fit_wl": np.array([], dtype=float),
+            "fit_signal": np.array([], dtype=float),
+            "tail": np.zeros_like(seg_y_raw, dtype=float),
+        }
+
+    #有效数据筛选和排序
+    valid_seg_mask = np.isfinite(seg_x_raw) & np.isfinite(seg_y_raw)
+    if np.count_nonzero(valid_seg_mask) < 2:
+        fit_info = {
+            "left": _empty_side_info("left", "Not enough valid segment points."),
+            "right": _empty_side_info("right", "Not enough valid segment points."),
+            "left_tail": left_tail,
+            "right_tail": right_tail,
+        }
+        return cleaned_signal, fit_info
+
+    
+    seg_x = seg_x_raw[valid_seg_mask]
+    seg_y = seg_y_raw[valid_seg_mask]
+    seg_order = np.argsort(seg_x)
+    seg_x_sorted = seg_x[seg_order]
+    seg_y_sorted = seg_y[seg_order]
+    #左右界
+    seg_left = float(seg_x_sorted[0])
+    seg_right = float(seg_x_sorted[-1])
+    #左右界对应的信号值
+    seg_left_y = float(seg_y_sorted[0])
+    seg_right_y = float(seg_y_sorted[-1])
+
+    #检查extra数据
+    valid_extra_mask = np.isfinite(extra_x_raw) & np.isfinite(extra_y_raw)
+    extra_x = extra_x_raw[valid_extra_mask]
+    extra_y = extra_y_raw[valid_extra_mask]
+    if extra_x.size < 3:
+        fit_info = {
+            "left": _empty_side_info("left", "Not enough valid extra-segment points."),
+            "right": _empty_side_info("right", "Not enough valid extra-segment points."),
+            "left_tail": left_tail,
+            "right_tail": right_tail,
+        }
+        return cleaned_signal, fit_info
+
+    extra_order = np.argsort(extra_x)
+    extra_x = extra_x[extra_order]
+    extra_y = extra_y[extra_order]
+    unique_extra_x = np.unique(extra_x)
+    
+    if unique_extra_x.size > 1:
+        median_spacing = float(np.median(np.abs(np.diff(unique_extra_x))))
+    else:
+        median_spacing = 1e-4
+    median_spacing = max(median_spacing, 1e-8)
+
+    def _gaussian(x, amp, mu, sigma):
+        sigma = max(float(sigma), 1e-12)
+        return float(amp) * np.exp(-((np.asarray(x, dtype=float) - float(mu)) ** 2) / (2.0 * sigma ** 2))
+
+    def _rms(y_true, y_pred):
+        residual = np.asarray(y_true, dtype=float) - np.asarray(y_pred, dtype=float)
+        return float(np.sqrt(np.mean(residual ** 2)))
+
+    def _local_maxima_indices(y):
+        y = np.asarray(y, dtype=float)
+        if y.size < 3:
+            return np.array([], dtype=int)
+        return np.where((y[1:-1] >= y[:-2]) & (y[1:-1] >= y[2:]))[0] + 1
+
+    def _fit_one_side(side):
+        if side == "left":
+            side_mask = extra_x < seg_left
+            side_x = extra_x[side_mask]
+            side_y = extra_y[side_mask]
+            if side_x.size < 2:
+                return _empty_side_info(side, "No left extra region.")
+
+            local_maxima = _local_maxima_indices(side_y)
+            if local_maxima.size > 0:
+                peak_idx = int(local_maxima[-1])
+                peak_source = "nearest_local_maximum"
+            else:
+                peak_idx = int(np.argmax(side_y))
+                peak_source = "max_fallback"
+
+            fit_x = side_x[peak_idx:]
+            fit_y = side_y[peak_idx:]
+            fit_x = np.concatenate([fit_x, np.array([seg_left], dtype=float)])
+            fit_y = np.concatenate([fit_y, np.array([seg_left_y], dtype=float)])
+            boundary = seg_left
+        else:
+            side_mask = extra_x > seg_right
+            side_x = extra_x[side_mask]
+            side_y = extra_y[side_mask]
+            if side_x.size < 2:
+                return _empty_side_info(side, "No right extra region.")
+
+            local_maxima = _local_maxima_indices(side_y)
+            if local_maxima.size > 0:
+                peak_idx = int(local_maxima[0])
+                peak_source = "nearest_local_maximum"
+            else:
+                peak_idx = int(np.argmax(side_y))
+                peak_source = "max_fallback"
+
+            fit_x = side_x[:peak_idx + 1]
+            fit_y = side_y[:peak_idx + 1]
+            fit_x = np.concatenate([np.array([seg_right], dtype=float), fit_x])
+            fit_y = np.concatenate([np.array([seg_right_y], dtype=float), fit_y])
+            boundary = seg_right
+
+        fit_order = np.argsort(fit_x)
+        fit_x = fit_x[fit_order]
+        fit_y = fit_y[fit_order]
+        if fit_x.size < int(min_points):
+            return _empty_side_info(side, f"Need at least {min_points} points for side fit.")
+
+        peak_x = float(side_x[peak_idx])
+        peak_y = float(side_y[peak_idx])
+        fit_span = float(np.ptp(fit_x))
+        if fit_span <= 0:
+            return _empty_side_info(side, "Side fit window has zero wavelength span.")
+
+        sigma_min = max(median_spacing * 0.25, fit_span / 1000.0, 1e-8)
+        sigma_max = max(0.12,1e-8)
+        sigma_init = float(np.clip(fit_span / 2.0, sigma_min, sigma_max))
+        amp_upper = max(float(np.max(fit_y)) * 2.0, abs(peak_y) * 2.0, 1e-8)
+        amp_init = float(np.clip(max(peak_y, 0.0)*0.8, 0.0, amp_upper))
+
+        mu_pad = max(fit_span, median_spacing)
+        if side == "left":
+            mu_bounds = (peak_x - mu_pad, boundary)
+        else:
+            mu_bounds = (boundary, peak_x + mu_pad)
+
+        bounds = [
+            (0.0, amp_upper),
+            mu_bounds,
+            (sigma_min, sigma_max),
+        ]
+        x0 = np.array([amp_init, peak_x, sigma_init], dtype=float)
+
+        def _objective(params):
+            amp, mu, sigma = params
+            if sigma <= 0 or not np.all(np.isfinite(params)):
+                return np.inf
+            return _rms(fit_y, _gaussian(fit_x, amp, mu, sigma))
+
+        result = minimize(_objective, x0, method="L-BFGS-B", bounds=bounds)
+        if result.x is None or not np.all(np.isfinite(result.x)):
+            return _empty_side_info(side, "Side Gaussian optimization failed.")
+
+        amp_fit, mu_fit, sigma_fit = (float(v) for v in result.x)
+        tail = np.zeros_like(seg_y_raw, dtype=float)
+        tail[valid_seg_mask] = _gaussian(seg_x_raw[valid_seg_mask], amp_fit, mu_fit, sigma_fit)
+        rms_value = _rms(fit_y, _gaussian(fit_x, amp_fit, mu_fit, sigma_fit))
+
+        return {
+            "side": side,
+            "success": bool(result.success),
+            "message": result.message,
+            "peak_wl": peak_x,
+            "peak_int": peak_y,
+            "peak_source": peak_source,
+            "params": {
+                "A": amp_fit,
+                "mu": mu_fit,
+                "sigma": sigma_fit,
+            },
+            "rms": rms_value,
+            "fit_wl": fit_x,
+            "fit_signal": fit_y,
+            "tail": tail,
+        }
+
+    left_info = _fit_one_side("left")
+    right_info = _fit_one_side("right")
+    left_tail = left_info["tail"]
+    right_tail = right_info["tail"]
+
+    cleaned_signal[valid_seg_mask] = (
+        seg_y_raw[valid_seg_mask]
+        - left_tail[valid_seg_mask]
+        - right_tail[valid_seg_mask]
+    )
+
+    fit_info = {
+        "left": left_info,
+        "right": right_info,
+        "left_tail": left_tail,
+        "right_tail": right_tail,
+    }
+
+
+    if plot:
+        plt.figure(figsize=(7, 5))
+
+        left_extra_mask = extra_x < seg_left
+        right_extra_mask = extra_x > seg_right
+        extra_label_used = False
+        if np.any(left_extra_mask):
+            left_extra_x = np.concatenate([extra_x[left_extra_mask], np.array([seg_left], dtype=float)])
+            left_extra_y = np.concatenate([extra_y[left_extra_mask], np.array([seg_left_y], dtype=float)])
+            plt.plot(
+                left_extra_x,
+                left_extra_y,
+                color='tab:orange',
+                linewidth=2.0,
+                label='Extra spectrum',
+            )
+            extra_label_used = True
+        if np.any(right_extra_mask):
+            right_extra_x = np.concatenate([np.array([seg_right], dtype=float), extra_x[right_extra_mask]])
+            right_extra_y = np.concatenate([np.array([seg_right_y], dtype=float), extra_y[right_extra_mask]])
+            plt.plot(
+                right_extra_x,
+                right_extra_y,
+                color='tab:orange',
+                linewidth=2.0,
+                label='Extra spectrum' if not extra_label_used else None,
+            )
+
+        plt.plot(
+            seg_x_sorted,
+            seg_y_sorted,
+            color='tab:blue',
+            linewidth=2.2,
+            label='Segment spectrum',
+        )
+
+        gaussian_label_used = False
+        gaussian_x = np.unique(np.concatenate([extra_x, seg_x_sorted]))
+        gaussian_x = gaussian_x[np.isfinite(gaussian_x)]
+        gaussian_x = np.sort(gaussian_x)
+        for side_info in (left_info, right_info):
+            params = side_info.get("params")
+            if params is None or gaussian_x.size == 0:
+                continue
+
+            gaussian_y = _gaussian(
+                gaussian_x,
+                params["A"],
+                params["mu"],
+                params["sigma"],
+            )
+            plt.plot(
+                gaussian_x,
+                gaussian_y,
+                color='tab:green',
+                linewidth=1.8,
+                linestyle='--',
+                label='Side Gaussian fit' if not gaussian_label_used else None,
+            )
+            gaussian_label_used = True
+
+        cleaned_plot_y = cleaned_signal[valid_seg_mask][seg_order]
+        plt.plot(
+            seg_x_sorted,
+            cleaned_plot_y,
+            color='tab:red',
+            linewidth=2.0,
+            label='Cleaned segment',
+        )
+
+        plt.axvline(seg_left, color='0.35', linewidth=1.2, linestyle=':')
+        plt.axvline(seg_right, color='0.35', linewidth=1.2, linestyle=':')
+        plt.xlabel('Wavelength', fontsize=15, fontweight="semibold")
+        plt.ylabel('Intensity', fontsize=15, fontweight="semibold")
+        plt.title('Bilateral Peak Tail Cleaning', fontsize=20, fontweight="semibold")
+
+        for spine in plt.gca().spines.values():
+            spine.set_linewidth(1.8)
+        for label in plt.gca().get_xticklabels():
+            label.set_fontweight("semibold")
+        for label in plt.gca().get_yticklabels():
+            label.set_fontweight("semibold")
+
+        plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, length=6, width=2.0, labelsize=12)
+        plt.grid(False)
+        plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
+        plt.tight_layout()
+        plt.show()
+
+    return cleaned_signal, fit_info
 
 
 #连续小波（文章复现）
@@ -516,8 +834,6 @@ class GaussMultiPeakFitter:
             refitted_total,
         )
 
-        
-    
     def plot(self, peak_wl, peak_int):
         plt.figure(figsize=(7,5))
         plt.plot(self.wl, self.rel_int, color='tab:blue', linewidth=1.8, label='wl-int')
