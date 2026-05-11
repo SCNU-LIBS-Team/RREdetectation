@@ -225,33 +225,66 @@ def wavelet_peak_detection(signal, wl, wavelet='mexh', scales=np.arange(1, 11),
 #                                                                    neighbor=3, min_length=3, coeffi_threshold=100, window=5)
 # print(len(true_peak_wl))
 # #脊线寻峰结果显示
-# fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(8, 6))
+# fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(7, 7))
+
+# def style_axis(ax):
+#     ax.tick_params(axis='both', which='major', direction='in', top=True, right=True,
+#                    length=6, width=2.0, labelsize=12)
+#     ax.tick_params(axis='both', which='minor', direction='in', top=True, right=True,
+#                    length=4, width=1.8, labelsize=12)
+#     for spine in ax.spines.values():
+#         spine.set_linewidth(1.8)
+#     for label in ax.get_xticklabels():
+#         label.set_fontweight("semibold")
+#     for label in ax.get_yticklabels():
+#         label.set_fontweight("semibold")
 
 # # 原始信号1
-# ax1.plot(x, signal,color='black',lw=1, label="Signal")
-# ax1.scatter(x[true_peak_idx], signal[true_peak_idx], color='red', s=5)
-# ax1.legend()
+# ax1.plot(x, signal, color='black', linewidth=2.2, label="Signal")
+# ax1.scatter(x[true_peak_idx], signal[true_peak_idx], color='tab:red', s=18, label="Detected Peaks", zorder=5)
+# ax1.set_ylabel("Intensity", fontsize=15, fontweight="semibold")
+# ax1.set_title("Wavelet Ridge Peak Detection", fontsize=15, fontweight="semibold", x=0.5)
+# ax1.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
+# style_axis(ax1)
 
 # # 脊线寻峰结果2
 # for ridge in ridges_found:
-#     scales = [p[0] for p in ridge]
+#     ridge_scales = [p[0] for p in ridge]
 #     positions = [p[1] for p in ridge]
 #     positions = np.array(positions, dtype=float)
-#     scales = np.array(scales, dtype=float)
+#     ridge_scales = np.array(ridge_scales, dtype=float)
 #     mask = np.isfinite(positions)
 #     positions = positions[mask].astype(int)
-#     scales = scales[mask]
-#     ax2.scatter(x[positions], scales, color='red', s=2)
-# ax2.set_ylabel("Scale")
+#     ridge_scales = ridge_scales[mask]
+#     ax2.scatter(x[positions], ridge_scales, color='tab:red', s=8)
+# ax2.set_ylabel("Scale", fontsize=15, fontweight="semibold")
+# ax2.set_title("Ridge Lines", fontsize=15, fontweight="semibold", x=0.5)
 # ax2.invert_yaxis()
+# style_axis(ax2)
 
 # # 小波系数图3
-# ax3.imshow(coefficients,
-#            extent=[x.min(), x.max(), scales.max(), scales.min()],
-#            cmap='jet', aspect='auto')
-# ax3.set_xlabel("x")
-# ax3.set_ylabel("Scale")
-# ax3.set_title("CWT Coefficients")
+# im = ax3.imshow(
+#     coefficients,
+#     extent=[x.min(), x.max(), scales.max(), scales.min()],
+#     cmap='jet',
+#     aspect='auto',
+# )
+# ax3.set_xlabel("Wavelength", fontsize=15, fontweight="semibold")
+# ax3.set_ylabel("Scale", fontsize=15, fontweight="semibold")
+# ax3.set_title("CWT Coefficients", fontsize=15, fontweight="semibold", x=0.5)
+# style_axis(ax3)
+# fig.align_ylabels([ax1, ax2, ax3])
+# fig.align_xlabels([ax1, ax2, ax3])
+# fig.tight_layout()
 
-# plt.tight_layout()
+# cax = ax3.inset_axes([0.97, 0.12, 0.01, 0.76])
+# cbar = fig.colorbar(im, cax=cax)
+# cbar.ax.yaxis.set_ticks_position('left')
+# cbar.ax.yaxis.set_label_position('left')
+# cbar.ax.tick_params(direction='in', length=6, width=2.0, labelsize=12)
+# for spine in cbar.ax.spines.values():
+#     spine.set_linewidth(1.8)
+# for label in cbar.ax.get_yticklabels():
+#     label.set_fontweight("semibold")
+
 # plt.show()

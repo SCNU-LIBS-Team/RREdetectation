@@ -1458,10 +1458,10 @@ def MultiPeakFit(
                             f"{row['Element']} {float(row[line_wl_col]):.4f} nm, intensity={float(row['LineIntensity']):.4e}"
                             for _, row in strongest_line_rows.iterrows()
                         )
-                        # print(color_text(
-                        #     f"选中用于拟合的所有基体元素最强前 {len(strongest_lines)} 条谱线: {strongest_line_summary}",
-                        #     GREEN,
-                        # ))
+                        print(color_text(
+                            f"选中用于拟合的所有基体元素最强前 {len(strongest_lines)} 条谱线: {strongest_line_summary}",
+                            GREEN,
+                        ))
 
                     #拟合数值显示
                     if plot_fit_windows and segment_wl.size > 0:
@@ -1518,7 +1518,7 @@ def MultiPeakFit(
                         plt.grid(alpha=0.3)
                         plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
                         plt.tight_layout()
-                        #plt.show()
+                        plt.show()
                                 
                     segment_wl = pd.Series(pd.to_numeric(segment_wl, errors='coerce'))
                     segment_signal = pd.Series(pd.to_numeric(segment_signal, errors='coerce'))
@@ -1540,7 +1540,7 @@ def MultiPeakFit(
 
                     manual_peak_wl = [float(wl_value)]
                     manual_peak_wl.extend(float(line_wavelength) for line_wavelength in strongest_lines)
-                    # print(color_text(f"手动峰位列表: {manual_peak_wl}", BLUE))
+                    print(color_text(f"手动峰位列表: {manual_peak_wl}", BLUE))
                                 
                     if len(manual_peak_wl) > 0:
                         wl_np_for_peak = segment_wl.to_numpy(dtype=float)
@@ -1603,7 +1603,7 @@ def MultiPeakFit(
                     )
                     fitter.fit()
 
-                    #fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
+                    # fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
 
                     #拟合数据传回处理
                     fitted_params_arr = np.asarray(fitter.fitted_params, dtype=float)
@@ -1668,8 +1668,8 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt2' #随机光谱测试
-RandPerfOPbotton=True #随机光谱性能测试模式
+signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt3' #随机光谱测试
+RandPerfOPbotton=False #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
@@ -1677,9 +1677,9 @@ target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['03116_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['07141_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
-plottarget='TbII'#指定绘图元素（仅在 plotbotton=True 时生效）
+plottarget='YII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
 TargetTempScanMode=False #指定元素温度扫描模式（5000-20000 K）
 scan_target_element='Yb' #温度扫描模式下的目标元素
@@ -1689,11 +1689,11 @@ scan_t_step=100
 
 AutoElemTempMarkMode=True #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=True#是否检测文件内的全部光谱 （全文件）
-plotbotton=False#是否绘图展示Boltzmann图
-save2csvbotton=True #是否保存稀土元素置信度结果到CSV
+checkallbutton=False#是否检测文件内的全部光谱 （全文件）
+plotbotton=True#是否绘图展示Boltzmann图
+save2csvbotton=False #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
-Titerationbotton=True #是否启用温度迭代算法
+Titerationbotton=False #是否启用温度迭代算法
 
 
 
@@ -1849,8 +1849,8 @@ if __name__ == '__main__':
             plt.grid(alpha=0.3)
 
             # 温度参考线
-            plt.axvline(7500, color='tab:red', linewidth=2.0, linestyle='--', alpha=0.8, label='7500 K')
-            plt.axvline(12000, color='tab:red', linewidth=2.0, linestyle='-.', alpha=0.8, label='12000 K')
+            plt.axvline(7500, color='tab:orange', linewidth=2.0, linestyle='--', alpha=0.8, label='7500 K')
+            plt.axvline(12000, color='tab:green', linewidth=2.0, linestyle='-.', alpha=0.8, label='12000 K')
 
             plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
             plt.tight_layout()
@@ -1966,6 +1966,7 @@ if __name__ == '__main__':
             main_elements_normalized,
             target_base_elements=zero_conf_elements,
             target_fit_lines=coarse_matched_fit_lines,
+            plot_fit_windows=False
         )
         
         if not target_fit_params.empty:

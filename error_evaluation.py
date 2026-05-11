@@ -22,7 +22,7 @@ def read_csv_with_fallback(file_path, header=0, encodings=None):
 
     raise ValueError(f'无法读取文件: {file_path}。尝试编码: {encodings}。最后错误: {last_error}')
 
-file_path = r'D:\LIBS\RREdetectation\Elements_database\MgI.csv'
+file_path = r'D:\LIBS\RREdetectation\Elements_database\FeI.csv'
 df_raw = read_csv_with_fallback(file_path, header=1)
 # file_path = r'D:\LIBS\RREdetectation\Rareearth_pt3\YII.csv'
 # df_raw = read_csv_with_fallback(file_path, header=0)
@@ -87,7 +87,7 @@ def rel_intensity(wl,A,E,g,T):
 
 def error_evaluation(T_calculated,T_true):
     error = np.abs(rel_intensity(wl,A,E,g,T_calculated) - rel_intensity(wl,A,E,g,T_true))
-    confidence_error=np.exp(-1.5*np.sum(error**2)/0.6)
+    confidence_error=np.exp(-4.5*np.sum(error**2)/0.8)
     return confidence_error
 
 
@@ -109,11 +109,14 @@ def plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500, 
     for label in plt.gca().get_yticklabels():
         label.set_fontweight("semibold")
 
-    plt.axvline(T_true, color='tab:red', linestyle='--', linewidth=2, alpha=0.8, label=f'T-Ref={T_true}')
+
+    plt.axvline(7500, color='tab:orange', linestyle='--', linewidth=2, alpha=0.8, label=f'T-Lower Bound={7500}')
+    plt.axvline(T_true, color='tab:red', linestyle='--', linewidth=2, alpha=0.8, label=f'T-Median={T_true}')
+    plt.axvline(12000, color='tab:green', linestyle='--', linewidth=2, alpha=0.8, label=f'T-Upper Bound={12000}')
 
     plt.xlabel('T', fontsize=15, fontweight="semibold")
     plt.ylabel('Confidence', fontsize=15, fontweight="semibold")
-    plt.title('Confidence-T', fontsize=15, fontweight="semibold")
+    plt.title('Confidence-T Plot', fontsize=15, fontweight="semibold")
 
     plt.grid(alpha=0.3)
     
@@ -133,9 +136,10 @@ def plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500):
         p_T_values[:, i] = rel_intensity(wl, A, E, g, T)
     plt.figure(figsize=(7, 5))
     for i in range(len(wl)):
-        plt.plot(T_values, p_T_values[i, :], label=f'wl={wl[i]:.1f}nm', linewidth=2.2)
-    plt.axvline(T_true, color='tab:red', linestyle='--', linewidth=2,alpha=0.8, label=f'T_true={T_true}')
-
+        plt.plot(T_values, p_T_values[i, :], linewidth=2.2)
+    plt.axvline(7500, color='tab:orange', linestyle='--', linewidth=2, alpha=0.8, label=f'T-Lower Bound={7500}')
+    plt.axvline(T_true, color='tab:red', linestyle='--', linewidth=2, alpha=0.8, label=f'T-Median={T_true}')
+    plt.axvline(12000, color='tab:green', linestyle='--', linewidth=2, alpha=0.8, label=f'T-Upper Bound={12000}')
     plt.tick_params(axis='both', which='major', direction='in', top=True, right=True,length=6, width=2.0, labelsize=12)
 
     for spine in plt.gca().spines.values():
@@ -146,10 +150,10 @@ def plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500):
         label.set_fontweight("semibold")
 
     plt.xlabel('T',fontsize=15, fontweight="semibold")
-    plt.ylabel('P', fontsize=15, fontweight="semibold")
-    plt.title('P-T Curve', fontsize=15, fontweight="semibold")
+    plt.ylabel('I', fontsize=15, fontweight="semibold")
+    plt.title('I-T Plot', fontsize=15, fontweight="semibold")
 
-    # plt.legend(prop={"weight": "semibold", "size": 12},frameon=False)
+    plt.legend(prop={"weight": "semibold", "size": 12},frameon=False,loc="upper right")
     plt.tight_layout()
     plt.show()
 
@@ -190,19 +194,21 @@ def plot_derivative_vs_T(wl,A,E,g,k, T_true, t_min=500, t_max=20000, num=2000, s
             y_values = np.zeros(num, dtype=float)
             for i, T in enumerate(T_values):
                 y_values[i] = derivative_curve_value(wl, A, E, g, line_idx, T)
-            plt.plot(T_values, y_values, linewidth=2, alpha=0.85, label=f'wl={wl[line_idx]:.1f}nm')
+            plt.plot(T_values, y_values, linewidth=2, alpha=0.85)
 
     else:
         raise ValueError("mode 仅支持 'single' 或 'all'。")
 
-    plt.axvline(T_true, color='tab:red', linestyle='--', linewidth=2, label=f'T_true={T_true}')
+    plt.axvline(7500, color='tab:orange', linestyle='--', linewidth=2, alpha=0.8, label=f'T-Lower Bound={7500}')
+    plt.axvline(T_true, color='tab:red', linestyle='--', linewidth=2, alpha=0.8, label=f'T-Median={T_true}')
+    plt.axvline(12000, color='tab:green', linestyle='--', linewidth=2, alpha=0.8, label=f'T-Upper Bound={12000}')
+    
     plt.xlabel('T(K)',fontsize=15, fontweight="semibold")
     plt.ylabel('Derivative Indicator', fontsize=15, fontweight="semibold")
-    # plt.title('Derivative vs Temperature', fontsize=20, fontweight="semibold")
+    plt.title('Derivative vs Temperature', fontsize=20, fontweight="semibold")
 
     for spine in plt.gca().spines.values():
         spine.set_linewidth(1.8)
-
     for label in plt.gca().get_xticklabels():
         label.set_fontweight("semibold")
     for label in plt.gca().get_yticklabels():
@@ -216,7 +222,7 @@ def plot_derivative_vs_T(wl,A,E,g,k, T_true, t_min=500, t_max=20000, num=2000, s
     if mode == 'single' or len(wl) <= 20:
         plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
     plt.tight_layout()
-    plt.savefig(save_path, dpi=300)
+    # plt.savefig(save_path, dpi=300)
     plt.show()
 
 
@@ -308,7 +314,7 @@ def plot_U_sum_vs_T_from_df(
         plt.grid(alpha=0.3)
         plt.legend()
         plt.tight_layout()
-        plt.savefig(save_path, dpi=300)
+        # plt.savefig(save_path, dpi=300)
         plt.show()
 
     if return_values:
