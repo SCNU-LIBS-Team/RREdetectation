@@ -1349,7 +1349,35 @@ def MultiPeakFit(
                 fit_source_lookup = {}
                 fit_peak_index_lookup = {}
 
-                if not coarse_target_rows.empty:
+                manual_peak_values = []
+                manual_refit_peaks_by_base = globals().get("MANUAL_REFIT_PEAKS_BY_BASE", {})
+                if isinstance(manual_refit_peaks_by_base, dict):
+                    manual_key_candidates = {
+                        str(element_name).strip().upper(),
+                        str(target_base_elem).strip().upper(),
+                    }
+                    for manual_elem, manual_wls in manual_refit_peaks_by_base.items():
+                        manual_elem_key = str(manual_elem).strip().upper()
+                        manual_base_key = base_element_name(manual_elem).strip().upper()
+                        if manual_elem_key in manual_key_candidates or manual_base_key in manual_key_candidates:
+                            manual_peak_values = manual_wls
+                            break
+                if manual_peak_values is None:
+                    manual_peak_values = []
+
+                manual_wl_tofit = pd.to_numeric(
+                    pd.Series(manual_peak_values, dtype="object"),
+                    errors='coerce',
+                ).dropna()
+
+                if not manual_wl_tofit.empty:
+                    wl_tofit = manual_wl_tofit.reset_index(drop=True)
+                    fit_line_source = f"manual_{str(element_name).strip().upper()}"
+                    print(color_text(
+                        f"{element_name} 使用手动峰位进行多峰拟合，覆盖粗检测/normalized_pure_element 选线: {wl_tofit.astype(float).round(4).tolist()}",
+                        BLUE,
+                    ))
+                elif not coarse_target_rows.empty:
                     wl_tofit = pd.Series(
                         pd.to_numeric(coarse_target_rows["TargetWavelength"], errors="coerce").to_numpy(dtype=float),
                         index=coarse_target_rows.index,
@@ -1374,9 +1402,6 @@ def MultiPeakFit(
                     wl_tofit = pd.to_numeric(wl.loc[fit_peak_indices], errors='coerce').dropna() #匹配后存在的基体元素的全部谱线
                     fit_line_source = "normalized_pure_element"
 
-                if coarse_target_rows.empty:
-                    fit_line_source = "normalized_pure_element"
-
                 # if wl_tofit.empty:
                 #     print(color_text(f"{element_name} No conflict elements", YELLOW))
 
@@ -1391,6 +1416,9 @@ def MultiPeakFit(
                     if fit_line_source == "coarse_matched":
                         source_elem = fit_source_lookup.get(peak_index, "COARSE_MATCHED")
                         output_peak_index = int(fit_peak_index_lookup.get(peak_index, -1))
+                    elif str(fit_line_source).startswith("manual_"):
+                        source_elem = "MANUAL_PEAK"
+                        output_peak_index = int(peak_index)
                     else:
                         source_elem = normalized_pure_element.loc[peak_index]
                         output_peak_index = int(peak_index)
@@ -1668,8 +1696,8 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt3' #随机光谱测试
-RandPerfOPbotton=False #随机光谱性能测试模式
+signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt6' #随机光谱测试
+RandPerfOPbotton=True #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
@@ -1677,9 +1705,16 @@ target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['07141_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['07840_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
-plottarget='YII'#指定绘图元素（仅在 plotbotton=True 时生效）
+plottarget='EuII'#指定绘图元素（仅在 plotbotton=True 时生效）
+
+# 手动多峰补救峰位：命中元素后优先使用，覆盖粗检测已匹配谱线和 normalized_pure_element 自动选线，单位 nm。
+# key 可写完整谱线名如 "YbII"，也可写基元素名如 "Yb"。
+MANUAL_REFIT_PEAKS_BY_BASE = {
+    # "YbII": [328.937, 369.419,289.139,275.048,265.375],
+    # "EuII": [381.967,412.973,397.197,420.504,393.050],
+}
 
 TargetTempScanMode=False #指定元素温度扫描模式（5000-20000 K）
 scan_target_element='Yb' #温度扫描模式下的目标元素
@@ -1689,11 +1724,11 @@ scan_t_step=100
 
 AutoElemTempMarkMode=True #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=False#是否检测文件内的全部光谱 （全文件）
-plotbotton=True#是否绘图展示Boltzmann图
-save2csvbotton=False #是否保存稀土元素置信度结果到CSV
+checkallbutton=True#是否检测文件内的全部光谱 （全文件）
+plotbotton=False#是否绘图展示Boltzmann图
+save2csvbotton=True #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
-Titerationbotton=False #是否启用温度迭代算法
+Titerationbotton=True #是否启用温度迭代算法
 
 
 
@@ -1871,10 +1906,8 @@ if __name__ == '__main__':
         
         # 对有置信度的元素做温度扫描，若置信度波动超过阈值则在最终输出中标注
         temp_sensitive_marks = {}
+        
         if AutoElemTempMarkMode:
-
-
-            
             allowed_elems = {"La", "Yb", "Tb", "Eu", "Er"}
             candidate_scan_elems = [
                 elem for elem, conf in elements_confidence.items()
@@ -1910,6 +1943,8 @@ if __name__ == '__main__':
                         'delta_conf_cal': float(1)
                     }
                     elements_confidence[scan_elem] = 0.0
+                    # elements_T[scan_elem] = 0.0
+                    # elements_R2[scan_elem] = 0.0
          
         
         

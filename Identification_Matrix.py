@@ -288,7 +288,7 @@ def generate_identification_matrix(
 
 
 #整套模式
-filepath = r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt3'
+filepath = r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt5'
 # filepath = r'D:\LIBS\RREdetectation\T_scanon\Pt1'
 fakebotton = False
 fake_seed = 42
