@@ -1503,73 +1503,73 @@ def MultiPeakFit(
                             GREEN,
                         ))
 
-                    #拟合数值显示
-                    if plot_fit_windows and segment_wl.size > 0:
-                        plt.figure(figsize=(7, 5))
-                        if extra_segment_wl.size > 0:
-                            plt.plot(
-                                extra_segment_wl,
-                                extra_segment_signal,
-                                color='tab:orange',
-                                linewidth=2.2,
-                                label='Extra spectrum (ratio=0.2)',
-                            )
-                        plt.plot(
-                            segment_wl,
-                            segment_signal,
-                            color='tab:blue',
-                            linewidth=2.2,
-                            label='Extracted spectrum',
-                        )
-                        plt.axvline(
-                            wl_value,
-                            color='tab:green',
-                            linewidth=2.0,
-                            linestyle='--',
-                            label=f'{element_name}: {wl_value:.4f}',
-                        )
+                    # #拟合数值显示
+                    # if plot_fit_windows and segment_wl.size > 0:
+                    #     plt.figure(figsize=(7, 5))
+                    #     if extra_segment_wl.size > 0:
+                    #         plt.plot(
+                    #             extra_segment_wl,
+                    #             extra_segment_signal,
+                    #             color='tab:orange',
+                    #             linewidth=2.2,
+                    #             label='Extra spectrum (ratio=0.2)',
+                    #         )
+                    #     plt.plot(
+                    #         segment_wl,
+                    #         segment_signal,
+                    #         color='tab:blue',
+                    #         linewidth=2.2,
+                    #         label='Extracted spectrum',
+                    #     )
+                    #     plt.axvline(
+                    #         wl_value,
+                    #         color='tab:green',
+                    #         linewidth=2.0,
+                    #         linestyle='--',
+                    #         label=f'{element_name}: {wl_value:.4f}',
+                    #     )
                                     
-                        for line_element, line_wavelength, line_intensity, line_type in lines_in_window[
-                            ["Element", line_wl_col, "LineIntensity", "LineType"]
-                        ].itertuples(index=False, name=None):
-                            line_wavelength = float(line_wavelength)
-                            is_selected_line = any(
-                                np.isclose(line_wavelength, selected_line)
-                                for selected_line in strongest_lines
-                            )
-                            plt.axvline(
-                                line_wavelength,
-                                color='tab:orange' if is_selected_line else 'tab:red',
-                                linewidth=2.0,
-                                linestyle='--',
-                            )
+                    #     for line_element, line_wavelength, line_intensity, line_type in lines_in_window[
+                    #         ["Element", line_wl_col, "LineIntensity", "LineType"]
+                    #     ].itertuples(index=False, name=None):
+                    #         line_wavelength = float(line_wavelength)
+                    #         is_selected_line = any(
+                    #             np.isclose(line_wavelength, selected_line)
+                    #             for selected_line in strongest_lines
+                    #         )
+                    #         plt.axvline(
+                    #             line_wavelength,
+                    #             color='tab:orange' if is_selected_line else 'tab:red',
+                    #             linewidth=2.0,
+                    #             linestyle='--',
+                    #         )
 
 
-                        ax = plt.gca()
-                        for spine in ax.spines.values():
-                            spine.set_linewidth(1.8)
-                        for label in ax.get_xticklabels():
-                            label.set_fontweight("semibold")
-                        for label in ax.get_yticklabels():
-                            label.set_fontweight("semibold")
+                    #     ax = plt.gca()
+                    #     for spine in ax.spines.values():
+                    #         spine.set_linewidth(1.8)
+                    #     for label in ax.get_xticklabels():
+                    #         label.set_fontweight("semibold")
+                    #     for label in ax.get_yticklabels():
+                    #         label.set_fontweight("semibold")
 
-                        plt.xlabel('Wavelength', fontsize=15, fontweight="semibold")
-                        plt.ylabel('Intensity', fontsize=15, fontweight="semibold")
-                        plt.title(
-                            f'{element_name} vs All Rock Main Elements Spectrum Window',
-                            fontsize=15,
-                            fontweight="semibold",
-                        )
+                    #     plt.xlabel('Wavelength', fontsize=15, fontweight="semibold")
+                    #     plt.ylabel('Intensity', fontsize=15, fontweight="semibold")
+                    #     plt.title(
+                    #         f'{element_name} vs All Rock Main Elements Spectrum Window',
+                    #         fontsize=15,
+                    #         fontweight="semibold",
+                    #     )
 
-                        plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
-                        plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
-                        plt.grid(alpha=0.3)
-                        plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
-                        plt.tight_layout()
-                        plt.show()
+                    #     plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
+                    #     plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
+                    #     plt.grid(alpha=0.3)
+                    #     plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
+                    #     plt.tight_layout()
+                    #     plt.show()
                                 
                     
-                    segment_signal,fit_info=Bilateral_peak_fit(segment_wl,segment_signal, extra_segment_wl,extra_segment_signal,min_points=3,plot=True)
+                    segment_signal,fit_info=Bilateral_peak_fit(segment_wl,segment_signal, extra_segment_wl,extra_segment_signal,min_points=3,plot=False)
 
                     
                     #数据清洗    
@@ -1722,7 +1722,7 @@ signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
 signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt6' #随机光谱测试
-RandPerfOPbotton=False #随机光谱性能测试模式
+RandPerfOPbotton=True #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
@@ -1747,13 +1747,13 @@ scan_t_min=3000
 scan_t_max=25000
 scan_t_step=100
 
-AutoElemTempMarkMode=False #自动扫描有置信度稀土元素并在输出中标注温度敏感性
+AutoElemTempMarkMode=True #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=False#是否检测文件内的全部光谱 （全文件）
+checkallbutton=True#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
-save2csvbotton=False #是否保存稀土元素置信度结果到CSV
+save2csvbotton=True #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
-Titerationbotton=False #是否启用温度迭代算法
+Titerationbotton=True #是否启用温度迭代算法
 
 
 
@@ -2115,8 +2115,8 @@ if __name__ == '__main__':
                 # 如果元素被标记为温度敏感，则将其置信度设为0以突出显示（或根据需要调整）
 
                 
-                row[elem] = round(conf_value, 4)
-                fitappend_row[elem] = round(fitappend_conf_value, 4)
+                row[elem] = round(conf_value, 4) if conf_value >= 0.01 else 0.0
+                fitappend_row[elem] = round(fitappend_conf_value, 4) if fitappend_conf_value >= 0.01 else 0.0
             row['iter_temperature'] = round(float(db_temperature), 4)
             fitappend_row['iter_temperature'] = round(float(db_temperature), 4)
             confidence_rows.append(row)
