@@ -630,12 +630,24 @@ def compute_element_confidence_shape(
             plt.plot(global_wl, global_intensity, color='black', linewidth=2.2, label='Original Spectrum')
 
             # 标出所有理论谱线位置（浅蓝色线）
-            for wl in element_wl:
-                plt.axvline(wl, color='cyan', alpha=0.3)
+            for line_idx, wl in enumerate(element_wl):
+                plt.axvline(
+                    wl,
+                    color='cyan',
+                    linewidth=2,
+                    alpha=0.8,
+                    label='Theoretical Lines' if line_idx == 0 else None,
+                )
 
             # 标出匹配到的实验峰（红色点）
-            for wl, inten in matched_exp:
-                plt.scatter(wl, inten, color='tab:red', s=35)
+            for peak_idx, (wl, inten) in enumerate(matched_exp):
+                plt.scatter(
+                    wl,
+                    inten,
+                    color='tab:red',
+                    s=35,
+                    label='Matched Experimental' if peak_idx == 0 else None,
+                )
 
             for spine in plt.gca().spines.values():
                 spine.set_linewidth(1.8)
@@ -644,14 +656,11 @@ def compute_element_confidence_shape(
             for label in plt.gca().get_yticklabels():
                 label.set_fontweight("semibold")
 
-            plt.title(f'Original Spectrum with {element_name} Peaks Marked', fontsize=15, fontweight="semibold")
+            plt.title(f'Original Spectrum with {element_name} Peaks Marked', fontsize=20, fontweight="semibold")
             plt.xlabel('Wavelength (nm)', fontsize=15, fontweight="semibold")
             plt.ylabel('Intensity', fontsize=15, fontweight="semibold")
-            plt.tick_params(axis='both', which='major', direction='in', top=True, right=True,
-                            width=2.0, length=6, labelsize=12)
-            plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True,
-                            width=2.0, length=6, labelsize=12)
-            plt.grid(alpha=0.3)
+            plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, length=6, width=2.0, labelsize=12)
+            plt.grid(False)
             plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
             plt.tight_layout()
 
@@ -1372,13 +1381,17 @@ def MultiPeakFit(
                     errors='coerce',
                 ).dropna()
 
+                
+                #手动设置优先级最高
                 if not manual_wl_tofit.empty:
                     wl_tofit = manual_wl_tofit.reset_index(drop=True)
                     fit_line_source = f"manual_{str(element_name).strip().upper()}"
-                    print(color_text(
-                        f"{element_name} 使用手动峰位进行多峰拟合，覆盖粗检测/normalized_pure_element 选线: {wl_tofit.astype(float).round(4).tolist()}",
-                        BLUE,
-                    ))
+                    # print(color_text(
+                    #     f"{element_name} 使用手动峰位进行多峰拟合，覆盖粗检测/normalized_pure_element 选线: {wl_tofit.astype(float).round(4).tolist()}",
+                    #     BLUE,
+                    # ))
+                    
+                #Payload的谱线次之
                 elif not coarse_target_rows.empty:
                     wl_tofit = pd.Series(
                         pd.to_numeric(coarse_target_rows["TargetWavelength"], errors="coerce").to_numpy(dtype=float),
@@ -1393,16 +1406,34 @@ def MultiPeakFit(
                         errors="coerce",
                     ).fillna(-1).astype(int).to_dict()
                     fit_line_source = "coarse_matched"
-                    print(color_text(
-                        f"{element_name} 使用粗检测已匹配谱线进行多峰拟合，不再按 normalized_pure_element 筛选",
-                        GREEN,
-                    ))
+                    # print(color_text(
+                    #     f"{element_name} 使用粗检测已匹配谱线进行多峰拟合，不再按 normalized_pure_element 筛选",
+                    #     GREEN,
+                    # ))
+                    
+                #使用相对强度前五的谱线
                 else:
-                    fit_peak_indices = normalized_pure_element[
-                        normalized_pure_element.isin(elements_rockmain)
-                    ].index
-                    wl_tofit = pd.to_numeric(wl.loc[fit_peak_indices], errors='coerce').dropna() #匹配后存在的基体元素的全部谱线
-                    fit_line_source = "normalized_pure_element"
+                    relative_intensity = pd.to_numeric(df.iloc[:, 0], errors='coerce').replace([np.inf, -np.inf], np.nan)
+                    wl_candidate = (pd.to_numeric(df.iloc[:, 1], errors='coerce') * 0.1).replace([np.inf, -np.inf], np.nan)
+                    required_col_not_empty = df.iloc[:, 3].notna() & df.iloc[:, 3].astype(str).str.strip().ne("")
+                    top_line_candidates = pd.DataFrame(
+                        {
+                            "RelativeIntensity": relative_intensity,
+                            "TargetWavelength": wl_candidate,
+                        },
+                        index=df.index,
+                    )
+                    top_line_candidates = (
+                        top_line_candidates.loc[
+                            top_line_candidates["RelativeIntensity"].notna()
+                            & top_line_candidates["TargetWavelength"].notna()
+                            & required_col_not_empty
+                        ]
+                        .sort_values("RelativeIntensity", ascending=False, kind="mergesort")
+                        .head(5)
+                    )
+                    wl_tofit = top_line_candidates["TargetWavelength"]
+                    fit_line_source = "top5_relative_intensity"
 
                 if wl_tofit.empty:
                     print(color_text(f"{element_name} No conflict elements", YELLOW))
@@ -1414,6 +1445,9 @@ def MultiPeakFit(
                         BLUE,
                     ))
 
+                element_fit_rows_before = len(target_fit_rows)
+                window_range_skipped_count = 0
+
                 for fit_count, (peak_index, wl_value) in enumerate(wl_tofit.items(), start=1):
                     if fit_line_source == "coarse_matched":
                         source_elem = fit_source_lookup.get(peak_index, "COARSE_MATCHED")
@@ -1421,19 +1455,22 @@ def MultiPeakFit(
                     elif str(fit_line_source).startswith("manual_"):
                         source_elem = "MANUAL_PEAK"
                         output_peak_index = int(peak_index)
+                    elif fit_line_source == "top5_relative_intensity":
+                        source_elem = "TOP5_RELATIVE_INTENSITY"
+                        output_peak_index = int(peak_index)
                     else:
                         source_elem = normalized_pure_element.loc[peak_index]
                         output_peak_index = int(peak_index)
-                    print(color_text(
-                        (
-                            f"[{fit_count}/{wl_tofit_count}] 正在处理多峰拟合谱线: "
-                            f"目标元素={element_name}, "
-                            f"重叠基体元素={source_elem}, "
-                            f"PeakIndex={output_peak_index}, "
-                            f"Wavelength={float(wl_value):.4f} nm"
-                        ),
-                        BLUE,
-                    ))
+                    # print(color_text(
+                    #     (
+                    #         f"[{fit_count}/{wl_tofit_count}] 正在处理多峰拟合谱线: "
+                    #         f"目标元素={element_name}, "
+                    #         f"重叠基体元素={source_elem}, "
+                    #         f"PeakIndex={output_peak_index}, "
+                    #         f"Wavelength={float(wl_value):.4f} nm"
+                    #     ),
+                    #     BLUE,
+                    # ))
                     
                     #回到原始光谱寻找峰值极小值
                     segment_wl, segment_signal, left_min_wl, right_min_wl = extract_spectrum_between_minima(
@@ -1458,6 +1495,26 @@ def MultiPeakFit(
                             YELLOW,
                         ))
                         continue
+
+                    if extra_segment_wl.size > 1:
+                        segment_range = float(np.nanmax(segment_wl) - np.nanmin(segment_wl))
+                        extra_segment_range = float(np.nanmax(extra_segment_wl) - np.nanmin(extra_segment_wl))
+                        min_segment_range = extra_segment_range / 3.0
+                        if (
+                            np.isfinite(segment_range)
+                            and np.isfinite(extra_segment_range)
+                            and extra_segment_range > 0
+                            and segment_range <= min_segment_range
+                        ):
+                            window_range_skipped_count += 1
+                            print(color_text(
+                                (
+                                    f"拟合波长 {wl_value:.4f} 初始拟合窗口范围 {segment_range:.4f} nm "
+                                    f"小于等于扩展拟合窗口范围的 1/3 ({min_segment_range:.4f} nm)，跳过该峰位"
+                                ),
+                                YELLOW,
+                            ))
+                            continue
                                 
                     if segment_wl.size > 0:
                         print(
@@ -1503,70 +1560,70 @@ def MultiPeakFit(
                             GREEN,
                         ))
 
-                    # #拟合数值显示
-                    # if plot_fit_windows and segment_wl.size > 0:
-                    #     plt.figure(figsize=(7, 5))
-                    #     if extra_segment_wl.size > 0:
-                    #         plt.plot(
-                    #             extra_segment_wl,
-                    #             extra_segment_signal,
-                    #             color='tab:orange',
-                    #             linewidth=2.2,
-                    #             label='Extra spectrum (ratio=0.2)',
-                    #         )
-                    #     plt.plot(
-                    #         segment_wl,
-                    #         segment_signal,
-                    #         color='tab:blue',
-                    #         linewidth=2.2,
-                    #         label='Extracted spectrum',
-                    #     )
-                    #     plt.axvline(
-                    #         wl_value,
-                    #         color='tab:green',
-                    #         linewidth=2.0,
-                    #         linestyle='--',
-                    #         label=f'{element_name}: {wl_value:.4f}',
-                    #     )
+                    #拟合数值显示
+                    if plot_fit_windows and segment_wl.size > 0 and element_name==plottarget:
+                        plt.figure(figsize=(7, 5))
+                        if extra_segment_wl.size > 0:
+                            plt.plot(
+                                extra_segment_wl,
+                                extra_segment_signal,
+                                color='tab:orange',
+                                linewidth=2.2,
+                                label='Extra spectrum (ratio=0.2)',
+                            )
+                        plt.plot(
+                            segment_wl,
+                            segment_signal,
+                            color='tab:blue',
+                            linewidth=2.2,
+                            label='Extracted spectrum',
+                        )
+                        plt.axvline(
+                            wl_value,
+                            color='tab:green',
+                            linewidth=2.0,
+                            linestyle='--',
+                            label=f'{element_name}: {wl_value:.4f}',
+                        )
                                     
-                    #     for line_element, line_wavelength, line_intensity, line_type in lines_in_window[
-                    #         ["Element", line_wl_col, "LineIntensity", "LineType"]
-                    #     ].itertuples(index=False, name=None):
-                    #         line_wavelength = float(line_wavelength)
-                    #         is_selected_line = any(
-                    #             np.isclose(line_wavelength, selected_line)
-                    #             for selected_line in strongest_lines
-                    #         )
-                    #         plt.axvline(
-                    #             line_wavelength,
-                    #             color='tab:orange' if is_selected_line else 'tab:red',
-                    #             linewidth=2.0,
-                    #             linestyle='--',
-                    #         )
+                        for line_element, line_wavelength, line_intensity, line_type in lines_in_window[
+                            ["Element", line_wl_col, "LineIntensity", "LineType"]
+                        ].itertuples(index=False, name=None):
+                            line_wavelength = float(line_wavelength)
+                            is_selected_line = any(
+                                np.isclose(line_wavelength, selected_line)
+                                for selected_line in strongest_lines
+                            )
+                            plt.axvline(
+                                line_wavelength,
+                                color='tab:orange' if is_selected_line else 'tab:red',
+                                linewidth=2.0,
+                                linestyle='--',
+                            )
 
 
-                    #     ax = plt.gca()
-                    #     for spine in ax.spines.values():
-                    #         spine.set_linewidth(1.8)
-                    #     for label in ax.get_xticklabels():
-                    #         label.set_fontweight("semibold")
-                    #     for label in ax.get_yticklabels():
-                    #         label.set_fontweight("semibold")
+                        ax = plt.gca()
+                        for spine in ax.spines.values():
+                            spine.set_linewidth(1.8)
+                        for label in ax.get_xticklabels():
+                            label.set_fontweight("semibold")
+                        for label in ax.get_yticklabels():
+                            label.set_fontweight("semibold")
 
-                    #     plt.xlabel('Wavelength', fontsize=15, fontweight="semibold")
-                    #     plt.ylabel('Intensity', fontsize=15, fontweight="semibold")
-                    #     plt.title(
-                    #         f'{element_name} vs All Rock Main Elements Spectrum Window',
-                    #         fontsize=15,
-                    #         fontweight="semibold",
-                    #     )
+                        plt.xlabel('Wavelength', fontsize=15, fontweight="semibold")
+                        plt.ylabel('Intensity', fontsize=15, fontweight="semibold")
+                        plt.title(
+                            f'{element_name} vs All Rock Main Elements Spectrum Window',
+                            fontsize=15,
+                            fontweight="semibold",
+                        )
 
-                    #     plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
-                    #     plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
-                    #     plt.grid(alpha=0.3)
-                    #     plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
-                    #     plt.tight_layout()
-                    #     plt.show()
+                        plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
+                        plt.tick_params(axis='both', which='minor', direction='in', top=True, right=True, width=2.0, length=6, labelsize=12)
+                        plt.grid(alpha=0.3)
+                        plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
+                        plt.tight_layout()
+                        plt.show()
                                 
                     
                     segment_signal,fit_info=Bilateral_peak_fit(segment_wl,segment_signal, extra_segment_wl,extra_segment_signal,min_points=3,plot=False)
@@ -1655,8 +1712,8 @@ def MultiPeakFit(
                         fit_right_mu=fit_right_mu,
                     )
                     fitter.fit()
-
-                    #fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
+                    if element_name==plottarget and plot_fit_windows:
+                        fitter.plot(peak_wl=peak_wl.to_numpy(dtype=float), peak_int=peak_int.to_numpy(dtype=float))
 
                     #拟合数据传回处理
                     fitted_params_arr = np.asarray(fitter.fitted_params, dtype=float)
@@ -1698,7 +1755,18 @@ def MultiPeakFit(
                     #     GREEN,
                     # ))
                     # print()
-                    
+
+                if wl_tofit_count > 0:
+                    element_fit_rows_after = len(target_fit_rows)
+                    kept_fit_count = element_fit_rows_after - element_fit_rows_before
+                    print(color_text(
+                        (
+                            f"{element_name} 多峰拟合窗口筛选完成: "
+                            f"候选 {wl_tofit_count} 条，窗口范围不满足剔除 {window_range_skipped_count} 条，"
+                            f"最终进入后续拟合 {kept_fit_count} 条"
+                        ),
+                        BLUE,
+                    ))
 
 
 
@@ -1722,7 +1790,7 @@ signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
 signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt6' #随机光谱测试
-RandPerfOPbotton=True #随机光谱性能测试模式
+RandPerfOPbotton=False #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
@@ -1730,15 +1798,15 @@ target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['07840_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['07103_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
-plottarget='EuII'#指定绘图元素（仅在 plotbotton=True 时生效）
+plottarget='YbII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
 # 手动多峰补救峰位：命中元素后优先使用，覆盖粗检测已匹配谱线和 normalized_pure_element 自动选线，单位 nm。
 # key 可写完整谱线名如 "YbII"，也可写基元素名如 "Yb"。
 MANUAL_REFIT_PEAKS_BY_BASE = {
-    # "YbII": [328.937, 369.419,289.139,275.048,265.375],
-    # "EuII": [381.967,412.973,397.197,420.504,393.050],
+#     "YbII": [328.937, 369.419,289.139,275.048,265.375],
+#     "EuII": [381.967,412.973,397.197,420.504,393.050],
 }
 
 TargetTempScanMode=False #指定元素温度扫描模式（5000-20000 K）
@@ -1749,9 +1817,9 @@ scan_t_step=100
 
 AutoElemTempMarkMode=True #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=True#是否检测文件内的全部光谱 （全文件）
+checkallbutton=False#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
-save2csvbotton=True #是否保存稀土元素置信度结果到CSV
+save2csvbotton=False #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
 Titerationbotton=True #是否启用温度迭代算法
 
@@ -2024,7 +2092,7 @@ if __name__ == '__main__':
             main_elements_normalized,
             target_base_elements=zero_conf_elements,
             target_fit_lines=coarse_matched_fit_lines,
-            plot_fit_windows=True
+            plot_fit_windows=False
         )
         
         if not target_fit_params.empty:
