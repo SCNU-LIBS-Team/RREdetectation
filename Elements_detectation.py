@@ -1181,6 +1181,131 @@ def filter_elements_by_base(elements, target_base_elements):
     }
 
 #拟合峰加入
+def _line_switch_candidate_mask(df):
+    if df.shape[1] <= 8:
+        return pd.Series(True, index=df.index)
+
+    enable_flag = df.iloc[:, 8]
+    base_mask = ~enable_flag.astype(str).str.strip().str.upper().eq("N")
+
+    if df.shape[1] <= 9:
+        return base_mask
+
+    conflict_flag = df.iloc[:, 9]
+    has_conflict_flag = conflict_flag.notna() & conflict_flag.astype(str).str.strip().ne("")
+    return base_mask | has_conflict_flag
+
+#强度选线逻辑
+def _build_relative_intensity_fit_candidates(df, limit=None):
+    columns = ["RelativeIntensity", "TargetWavelength"]
+    if df.shape[1] <= 2:
+        return pd.DataFrame(columns=columns)
+
+    relative_intensity = pd.to_numeric(df.iloc[:, 0], errors='coerce').replace([np.inf, -np.inf], np.nan)
+    wl_candidate = (pd.to_numeric(df.iloc[:, 1], errors='coerce') * 0.1).replace([np.inf, -np.inf], np.nan)
+    required_col_not_empty = df.iloc[:, 2].notna() & df.iloc[:, 2].astype(str).str.strip().ne("")
+    candidates = pd.DataFrame(
+        {
+            "RelativeIntensity": relative_intensity,
+            "TargetWavelength": wl_candidate,
+        },
+        index=df.index,
+    )
+    candidates = candidates.loc[
+        candidates["RelativeIntensity"].notna()
+        & candidates["TargetWavelength"].notna()
+        & required_col_not_empty
+        & _line_switch_candidate_mask(df)
+    ].sort_values("RelativeIntensity", ascending=False, kind="mergesort")
+
+    if limit is not None:
+        candidates = candidates.head(int(limit))
+
+    return candidates
+
+#构建拟合谱线列表，优先payload匹配谱线，不足部分补充强度选线
+def _build_coarse_payload_wl_tofit(coarse_target_rows, df, max_total=5):
+    wl_values = []
+    wl_index = []
+    fit_source_lookup = {}
+    fit_peak_index_lookup = {}
+    fit_line_source_lookup = {}
+    selected_wavelengths = []
+
+    if coarse_target_rows is None:
+        coarse_target_rows = pd.DataFrame()
+
+    coarse_wl = pd.to_numeric(
+        coarse_target_rows.get("TargetWavelength", pd.Series(dtype=float)),
+        errors="coerce",
+    )
+    coarse_source = coarse_target_rows.get(
+        "SourceElement",
+        pd.Series("COARSE_MATCHED", index=coarse_target_rows.index),
+    ).astype(str)
+    coarse_peak_index = pd.to_numeric(
+        coarse_target_rows.get("PeakIndex", pd.Series(-1, index=coarse_target_rows.index)),
+        errors="coerce",
+    ).fillna(-1).astype(int)
+
+    for pos, original_index in enumerate(coarse_target_rows.index):
+        wl_value = coarse_wl.iloc[pos]
+        if not np.isfinite(wl_value):
+            continue
+
+        lookup_key = f"coarse_{pos}_{original_index}"
+        wl_values.append(float(wl_value))
+        wl_index.append(lookup_key)
+        selected_wavelengths.append(float(wl_value))
+        fit_source_lookup[lookup_key] = str(coarse_source.iloc[pos])
+        fit_peak_index_lookup[lookup_key] = int(coarse_peak_index.iloc[pos])
+        fit_line_source_lookup[lookup_key] = "coarse_matched"
+
+    if len(wl_values) < int(max_total):
+        top_line_candidates = _build_relative_intensity_fit_candidates(df, limit=None)
+
+        for original_index, candidate in top_line_candidates.iterrows():
+            if len(wl_values) >= int(max_total):
+                break
+
+            wl_value = float(candidate["TargetWavelength"])
+            if any(np.isclose(wl_value, selected_wl, rtol=0.0, atol=1e-6) for selected_wl in selected_wavelengths):
+                continue
+
+            lookup_key = f"top_{original_index}"
+            if lookup_key in fit_source_lookup:
+                lookup_key = f"top_{len(wl_index)}_{original_index}"
+
+            wl_values.append(wl_value)
+            wl_index.append(lookup_key)
+            selected_wavelengths.append(wl_value)
+            fit_source_lookup[lookup_key] = "TOP_RELATIVE_INTENSITY_SUPPLEMENT"
+            fit_peak_index_lookup[lookup_key] = int(original_index)
+            fit_line_source_lookup[lookup_key] = "top_relative_intensity_supplement"
+
+    wl_tofit = pd.Series(wl_values, index=wl_index, dtype=float)
+    return wl_tofit, fit_source_lookup, fit_peak_index_lookup, fit_line_source_lookup
+
+#防止拟合谱线跳出光谱窗口报错
+def _target_wavelength_in_segment_window(wl_value, segment_wl):
+    target_wl_series = pd.to_numeric(pd.Series([wl_value]), errors="coerce").dropna()
+    segment_wl_series = pd.to_numeric(pd.Series(segment_wl), errors="coerce").dropna()
+
+    if target_wl_series.empty or segment_wl_series.empty:
+        return False, None, None
+
+    target_wl = float(target_wl_series.iloc[0])
+    segment_wl_arr = segment_wl_series.to_numpy(dtype=float)
+    finite_mask = np.isfinite(segment_wl_arr)
+    if not np.isfinite(target_wl) or not np.any(finite_mask):
+        return False, None, None
+
+    finite_segment_wl = segment_wl_arr[finite_mask]
+    window_left = float(np.nanmin(finite_segment_wl))
+    window_right = float(np.nanmax(finite_segment_wl))
+    return window_left <= target_wl <= window_right, window_left, window_right
+
+#构建初始拟合谱线列表，包含payload匹配的谱线和强度选线补充的谱线
 def build_coarse_matched_fit_lines(element_line_payload, target_base_elements):
     columns = ["Element", "BaseElement", "PeakIndex", "TargetWavelength", "SourceElement"]
     target_base_set = {str(elem).strip().upper() for elem in target_base_elements}
@@ -1359,6 +1484,7 @@ def MultiPeakFit(
                 ].copy()
                 fit_source_lookup = {}
                 fit_peak_index_lookup = {}
+                fit_line_source_lookup = {}
 
                 manual_peak_values = []
                 manual_refit_peaks_by_base = globals().get("MANUAL_REFIT_PEAKS_BY_BASE", {})
@@ -1392,46 +1518,22 @@ def MultiPeakFit(
                     # ))
                     
                 #Payload的谱线次之
-                elif not coarse_target_rows.empty:
-                    wl_tofit = pd.Series(
-                        pd.to_numeric(coarse_target_rows["TargetWavelength"], errors="coerce").to_numpy(dtype=float),
-                        index=coarse_target_rows.index,
-                    ).dropna()
-                    fit_source_lookup = coarse_target_rows.get(
-                        "SourceElement",
-                        pd.Series("COARSE_MATCHED", index=coarse_target_rows.index),
-                    ).astype(str).to_dict()
-                    fit_peak_index_lookup = pd.to_numeric(
-                        coarse_target_rows.get("PeakIndex", pd.Series(-1, index=coarse_target_rows.index)),
-                        errors="coerce",
-                    ).fillna(-1).astype(int).to_dict()
-                    fit_line_source = "coarse_matched"
-                    # print(color_text(
-                    #     f"{element_name} 使用粗检测已匹配谱线进行多峰拟合，不再按 normalized_pure_element 筛选",
-                    #     GREEN,
+                # elif not coarse_target_rows.empty:
+                #     (
+                #         wl_tofit,
+                #         fit_source_lookup,
+                #         fit_peak_index_lookup,
+                #         fit_line_source_lookup,
+                #     ) = _build_coarse_payload_wl_tofit(coarse_target_rows, df, max_total=5)
+                #     fit_line_source = "coarse_matched_with_top_relative_supplement"
+                #     # print(color_text(
+                #     #     f"{element_name} 使用粗检测已匹配谱线进行多峰拟合，不再按 normalized_pure_element 筛选",
+                #     #     GREEN,
                     # ))
                     
                 #使用相对强度前五的谱线
                 else:
-                    relative_intensity = pd.to_numeric(df.iloc[:, 0], errors='coerce').replace([np.inf, -np.inf], np.nan)
-                    wl_candidate = (pd.to_numeric(df.iloc[:, 1], errors='coerce') * 0.1).replace([np.inf, -np.inf], np.nan)
-                    required_col_not_empty = df.iloc[:, 3].notna() & df.iloc[:, 3].astype(str).str.strip().ne("")
-                    top_line_candidates = pd.DataFrame(
-                        {
-                            "RelativeIntensity": relative_intensity,
-                            "TargetWavelength": wl_candidate,
-                        },
-                        index=df.index,
-                    )
-                    top_line_candidates = (
-                        top_line_candidates.loc[
-                            top_line_candidates["RelativeIntensity"].notna()
-                            & top_line_candidates["TargetWavelength"].notna()
-                            & required_col_not_empty
-                        ]
-                        .sort_values("RelativeIntensity", ascending=False, kind="mergesort")
-                        .head(5)
-                    )
+                    top_line_candidates = _build_relative_intensity_fit_candidates(df, limit=5)
                     wl_tofit = top_line_candidates["TargetWavelength"]
                     fit_line_source = "top5_relative_intensity"
 
@@ -1449,15 +1551,19 @@ def MultiPeakFit(
                 window_range_skipped_count = 0
 
                 for fit_count, (peak_index, wl_value) in enumerate(wl_tofit.items(), start=1):
-                    if fit_line_source == "coarse_matched":
+                    line_fit_source = fit_line_source_lookup.get(peak_index, fit_line_source)
+                    if line_fit_source == "coarse_matched":
                         source_elem = fit_source_lookup.get(peak_index, "COARSE_MATCHED")
                         output_peak_index = int(fit_peak_index_lookup.get(peak_index, -1))
-                    elif str(fit_line_source).startswith("manual_"):
+                    elif str(line_fit_source).startswith("manual_"):
                         source_elem = "MANUAL_PEAK"
                         output_peak_index = int(peak_index)
-                    elif fit_line_source == "top5_relative_intensity":
+                    elif line_fit_source == "top5_relative_intensity":
                         source_elem = "TOP5_RELATIVE_INTENSITY"
-                        output_peak_index = int(peak_index)
+                        output_peak_index = int(fit_peak_index_lookup.get(peak_index, peak_index))
+                    elif line_fit_source == "top_relative_intensity_supplement":
+                        source_elem = fit_source_lookup.get(peak_index, "TOP_RELATIVE_INTENSITY_SUPPLEMENT")
+                        output_peak_index = int(fit_peak_index_lookup.get(peak_index, peak_index))
                     else:
                         source_elem = normalized_pure_element.loc[peak_index]
                         output_peak_index = int(peak_index)
@@ -1494,6 +1600,25 @@ def MultiPeakFit(
                             f"拟合波长 {wl_value:.4f} 未截取到有效原始光谱窗口，跳过该峰位",
                             YELLOW,
                         ))
+                        continue
+
+                    target_in_segment_window, segment_window_left, segment_window_right = (
+                        _target_wavelength_in_segment_window(wl_value, segment_wl)
+                    )
+                    if not target_in_segment_window:
+                        if segment_window_left is None or segment_window_right is None:
+                            print(color_text(
+                                f"拟合波长 {float(wl_value):.4f} 未得到有效截取窗口，跳过该峰位",
+                                YELLOW,
+                            ))
+                        else:
+                            print(color_text(
+                                (
+                                    f"拟合波长 {float(wl_value):.4f} 不在实际截取窗口 "
+                                    f"{segment_window_left:.4f} - {segment_window_right:.4f} nm 内，跳过该峰位"
+                                ),
+                                YELLOW,
+                            ))
                         continue
 
                     if extra_segment_wl.size > 1:
@@ -1741,7 +1866,7 @@ def MultiPeakFit(
                         "sigma": float(target_sigma),
                         "MuAbsDiff": float(mu_diff[target_fit_idx]),
                         "FitComponentCount": int(fitted_params_arr.shape[0]),
-                        "FitLineSource": fit_line_source,
+                        "FitLineSource": line_fit_source,
                     })
 
                     # print(color_text(
@@ -1789,8 +1914,8 @@ signal_path7= r'D:\LIBS\RREdetectation\Rockbasespectral_11_10e16' #普通元素�
 signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温度（低多普勒展宽）测试
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
-signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt6' #随机光谱测试
-RandPerfOPbotton=False #随机光谱性能测试模式
+signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt5' #随机光谱测试
+RandPerfOPbotton=True #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
@@ -1798,7 +1923,7 @@ target_path=signal_path10 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['07103_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['070036_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
 plottarget='YbII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
@@ -1817,9 +1942,9 @@ scan_t_step=100
 
 AutoElemTempMarkMode=True #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=False#是否检测文件内的全部光谱 （全文件）
+checkallbutton=True#是否检测文件内的全部光谱 （全文件）
 plotbotton=False#是否绘图展示Boltzmann图
-save2csvbotton=False #是否保存稀土元素置信度结果到CSV
+save2csvbotton=True #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
 Titerationbotton=True #是否启用温度迭代算法
 
