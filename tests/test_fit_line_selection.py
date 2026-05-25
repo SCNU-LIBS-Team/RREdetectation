@@ -17,6 +17,17 @@ import Elements_detectation as ed
 
 
 class FitLineSelectionTests(unittest.TestCase):
+    def test_matplotlib_prefers_chinese_font_candidates(self):
+        import matplotlib
+
+        sans_serif_fonts = list(matplotlib.rcParams["font.sans-serif"])
+
+        self.assertEqual(
+            sans_serif_fonts[:4],
+            ["Microsoft YaHei", "SimHei", "SimSun", "Arial Unicode MS"],
+        )
+        self.assertFalse(matplotlib.rcParams["axes.unicode_minus"])
+
     def test_coarse_payload_under_five_gets_top_valid_non_duplicate_lines_until_five(self):
         coarse_target_rows = pd.DataFrame(
             {

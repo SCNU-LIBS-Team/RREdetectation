@@ -24,6 +24,29 @@ GREEN = "\033[32m"
 YELLOW = "\033[33m"
 RED = "\033[31m"
 
+#中文绘图输出
+_CHINESE_FONT_CANDIDATES = [
+    "Microsoft YaHei",
+    "SimHei",
+    "SimSun",
+    "Arial Unicode MS",
+    "Noto Sans CJK SC",
+    "Source Han Sans SC",
+]
+
+
+def _configure_matplotlib_chinese_fonts():
+    existing_fonts = list(plt.rcParams.get("font.sans-serif", []))
+    plt.rcParams["font.family"] = "sans-serif"
+    plt.rcParams["font.sans-serif"] = _CHINESE_FONT_CANDIDATES + [
+        font for font in existing_fonts if font not in _CHINESE_FONT_CANDIDATES
+    ]
+    plt.rcParams["axes.unicode_minus"] = False
+
+
+_configure_matplotlib_chinese_fonts()
+
+
 
 def _enable_windows_ansi():
     if os.name != "nt":

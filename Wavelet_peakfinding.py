@@ -10,6 +10,28 @@ import pandas as pd
 import pywt
 
 
+_CHINESE_FONT_CANDIDATES = [
+    "Microsoft YaHei",
+    "SimHei",
+    "SimSun",
+    "Arial Unicode MS",
+    "Noto Sans CJK SC",
+    "Source Han Sans SC",
+]
+
+
+def _configure_matplotlib_chinese_fonts():
+    existing_fonts = list(plt.rcParams.get("font.sans-serif", []))
+    plt.rcParams["font.family"] = "sans-serif"
+    plt.rcParams["font.sans-serif"] = _CHINESE_FONT_CANDIDATES + [
+        font for font in existing_fonts if font not in _CHINESE_FONT_CANDIDATES
+    ]
+    plt.rcParams["axes.unicode_minus"] = False
+
+
+_configure_matplotlib_chinese_fonts()
+
+
 
 data=pd.read_csv(r'D:\LIBS\RREdetectation\RREs\03116_95.csv',header=0,skipinitialspace=True)
 data = data.fillna(0).to_numpy()
