@@ -1,54 +1,149 @@
 """
 全球稀土储量分布饼图
 """
+from pathlib import Path
+
 import matplotlib.pyplot as plt
+from matplotlib import font_manager
 
-# 设置中文字体
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']
-plt.rcParams['axes.unicode_minus'] = False
 
-# 数据
-countries = ['中国', '巴西', '印度', '澳大利亚', '俄罗斯', '越南', '美国', '其他']
-reserves = [4400, 2100, 690, 570, 380, 350, 190, 520]  # 万吨
-# 其他 = 总量约9200 - 已知国家总和
+OUTPUT_DIR = Path(__file__).resolve().parent
 
-# 颜色
-colors = ['#E53935', '#43A047', '#FF9800', '#1565C0', '#8E24AA', '#00897B', '#F44336', '#9E9E9E']
+COLORS = {
+    "text": "#1F2933",
+    "muted": "#52616B",
+    "grid": "#D9E2EC",
+    "canvas": "#FFFFFF",
+    "china": "#D6604D",
+    "brazil": "#67A961",
+    "india": "#E6A23C",
+    "australia": "#4F86C6",
+    "russia": "#8D6FB7",
+    "vietnam": "#2F9C95",
+    "usa": "#F08A5D",
+    "other": "#7D8790",
+}
 
-# 突出显示中国
-explode = [0.05, 0, 0, 0, 0, 0, 0, 0]
 
-fig, ax = plt.subplots(figsize=(10, 8))
+def configure_chinese_font() -> None:
+    """Prefer Microsoft YaHei/SimHei so Chinese labels render cleanly."""
+    font_candidates = [
+        r"C:\Windows\Fonts\msyh.ttc",
+        r"C:\Windows\Fonts\msyhbd.ttc",
+        r"C:\Windows\Fonts\simhei.ttf",
+        r"C:\Windows\Fonts\simsun.ttc",
+    ]
 
-wedges, texts, autotexts = ax.pie(
-    reserves,
-    labels=countries,
-    autopct=lambda pct: f'{pct:.1f}%\n({int(pct/100*sum(reserves))}万吨)',
-    explode=explode,
-    colors=colors,
-    startangle=90,
-    textprops={'fontsize': 11},
-    pctdistance=0.75
-)
+    for font_path in font_candidates:
+        path = Path(font_path)
+        if path.exists():
+            font_manager.fontManager.addfont(str(path))
+            plt.rcParams["font.family"] = font_manager.FontProperties(fname=str(path)).get_name()
+            break
 
-# 设置百分比文字样式
-for autotext in autotexts:
-    autotext.set_fontsize(9)
-    autotext.set_color('white')
-    autotext.set_fontweight('bold')
+    plt.rcParams.update(
+        {
+            "axes.unicode_minus": False,
+            "figure.facecolor": COLORS["canvas"],
+            "axes.facecolor": COLORS["canvas"],
+            "text.color": COLORS["text"],
+            "font.weight": "bold",
+            "savefig.facecolor": COLORS["canvas"],
+        }
+    )
 
-ax.set_title('全球稀土储量分布\n(数据来源: USGS)', fontsize=16, fontweight='bold', pad=20)
 
-# 添加图例
-ax.legend(
-    wedges, [f'{c} - {r}万吨' for c, r in zip(countries, reserves)],
-    title="国家 - 储量",
-    loc="center left",
-    bbox_to_anchor=(1, 0, 0.5, 1),
-    fontsize=10
-)
+def autopct_with_threshold(total: int):
+    def _format(pct: float) -> str:
+        if pct < 3.0:
+            return ""
+        value = int(round(pct / 100 * total))
+        return f"{pct:.1f}%\n({value}万吨)"
 
-plt.tight_layout()
-plt.savefig('REE_Market_Data/全球稀土储量分布饼图.png', dpi=150, bbox_inches='tight')
-plt.show()
-print("饼图已保存至: REE_Market_Data/全球稀土储量分布饼图.png")
+    return _format
+
+
+def main() -> None:
+    configure_chinese_font()
+
+    countries = ["中国", "巴西", "印度", "澳大利亚", "俄罗斯", "越南", "美国", "其他"]
+    reserves = [4400, 2100, 690, 570, 380, 350, 190, 520]  # 万吨
+    total = sum(reserves)
+    colors = [
+        COLORS["china"],
+        COLORS["brazil"],
+        COLORS["india"],
+        COLORS["australia"],
+        COLORS["russia"],
+        COLORS["vietnam"],
+        COLORS["usa"],
+        COLORS["other"],
+    ]
+    explode = [0.035, 0.015, 0.01, 0.01, 0.01, 0.01, 0.012, 0.01]
+
+    fig, ax = plt.subplots(figsize=(12.5, 8), dpi=300)
+    wedges, texts, autotexts = ax.pie(
+        reserves,
+        labels=countries,
+        autopct=autopct_with_threshold(total),
+        explode=explode,
+        colors=colors,
+        startangle=92,
+        counterclock=True,
+        pctdistance=0.66,
+        labeldistance=1.08,
+        textprops={"fontsize": 14, "fontweight": "bold", "color": COLORS["text"]},
+        wedgeprops={"linewidth": 2.4, "edgecolor": COLORS["canvas"]},
+    )
+
+    for text in texts:
+        text.set_fontsize(14)
+        text.set_fontweight("bold")
+
+    for autotext in autotexts:
+        autotext.set_fontsize(11)
+        autotext.set_fontweight("bold")
+        autotext.set_color("white")
+
+    ax.set_title(
+        "全球稀土储量分布\n（数据来源：USGS）",
+        fontsize=24,
+        fontweight="bold",
+        pad=26,
+        color=COLORS["text"],
+    )
+    ax.axis("equal")
+
+    legend_labels = [
+        f"{country}  -  {reserve}万吨（{reserve / total * 100:.1f}%）"
+        for country, reserve in zip(countries, reserves)
+    ]
+    legend = ax.legend(
+        wedges,
+        legend_labels,
+        title="国家 - 储量",
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5),
+        fontsize=13,
+        title_fontsize=14,
+        frameon=True,
+        framealpha=1,
+        facecolor="white",
+        edgecolor=COLORS["grid"],
+        borderpad=0.9,
+        labelspacing=0.8,
+        handlelength=1.3,
+        handletextpad=0.8,
+    )
+    legend.get_title().set_fontweight("bold")
+    for label in legend.get_texts():
+        label.set_fontweight("bold")
+
+    fig.tight_layout(pad=1.5)
+    fig.savefig(OUTPUT_DIR / "全球稀土储量分布饼图.png", bbox_inches="tight", pad_inches=0.18)
+    plt.close(fig)
+    print(f"饼图已保存至: {OUTPUT_DIR / '全球稀土储量分布饼图.png'}")
+
+
+if __name__ == "__main__":
+    main()

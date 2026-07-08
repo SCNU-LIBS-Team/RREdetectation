@@ -633,9 +633,11 @@ def compute_element_confidence_shape(
             plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
             plt.tight_layout()
                     
-            ### --- 新增波形标注逻辑 --- ###
-            plt.figure(figsize=(7, 5))
-            plt.plot(global_wl, global_intensity, color='black', linewidth=2.2, label='Original Spectrum')
+          ### --- 新增波形标注逻辑 --- ###
+            plt.figure(figsize=(7, 5), facecolor='black')
+            ax = plt.gca()
+            ax.set_facecolor('black')
+            plt.plot(global_wl, global_intensity, color='white', linewidth=4, label='Original Spectrum')
 
             # 标出所有理论谱线位置（浅蓝色线）
             for line_idx, wl in enumerate(element_wl):
@@ -657,21 +659,24 @@ def compute_element_confidence_shape(
                     label='Matched Experimental' if peak_idx == 0 else None,
                 )
 
-            for spine in plt.gca().spines.values():
+            for spine in ax.spines.values():
                 spine.set_linewidth(1.8)
-            for label in plt.gca().get_xticklabels():
+                spine.set_color('white')
+            for label in ax.get_xticklabels():
                 label.set_fontweight("semibold")
-            for label in plt.gca().get_yticklabels():
+                label.set_color('white')
+            for label in ax.get_yticklabels():
                 label.set_fontweight("semibold")
+                label.set_color('white')
 
-            plt.title(f'Original Spectrum with {element_name} Peaks Marked', fontsize=20, fontweight="semibold")
-            plt.xlabel('Wavelength (nm)', fontsize=15, fontweight="semibold")
-            plt.ylabel('Intensity', fontsize=15, fontweight="semibold")
-            plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, length=6, width=2.0, labelsize=12)
+            plt.title(f'Original Spectrum with {element_name} Peaks Marked', fontsize=20, fontweight="semibold", color='white')
+            plt.xlabel('Wavelength (nm)', fontsize=15, fontweight="semibold", color='white')
+            plt.ylabel('Intensity', fontsize=15, fontweight="semibold", color='white')
+            plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, length=6, width=2.0, labelsize=12, colors='white')
             plt.grid(False)
-            plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
+            # plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
             plt.tight_layout()
-
+  
             Boltzmann_plot(matched_exp, matched_theo, element_A, element_E, element_g, element_wl,element_name,mode='normal')
             iterative_combined = np.column_stack((wl_iterative, I_iterative))
             Boltzmann_plot(iterative_combined, iterative_combined, A_iterative, E_iterative, g_iterative, wl_iterative,element_name+"_iterative", mode='iterative')
@@ -1948,10 +1953,10 @@ scan_t_min=3000
 scan_t_max=25000
 scan_t_step=100
 
-AutoElemTempMarkMode=True #自动扫描有置信度稀土元素并在输出中标注温度敏感性
+AutoElemTempMarkMode=False #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=False#是否检测文件内的全部光谱 （全文件）
-plotbotton=False#是否绘图展示Boltzmann图
+plotbotton=True#是否绘图展示Boltzmann图
 save2csvbotton=False #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
 Titerationbotton=False #是否启用温度迭代算法

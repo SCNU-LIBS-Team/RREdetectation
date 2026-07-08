@@ -836,17 +836,20 @@ class GaussMultiPeakFitter:
 
     def plot(self, peak_wl, peak_int):
         plt.figure(figsize=(7,5))
-        plt.plot(self.wl, self.rel_int, color='tab:blue', linewidth=1.8, label='wl-int')
+        plt.fill_between(self.wl, 0, self.rel_int, color='tab:blue', alpha=0.5, linewidth=0, zorder=1)
+        plt.plot(self.wl, self.rel_int, color='tab:blue', linewidth=4.2, label='wl-int', zorder=2)
 
         if self.component_fits:
             for idx, y_comp in enumerate(self.component_fits):
+                plt.fill_between(self.wl, 0, y_comp, color='tab:green', alpha=0.5, linewidth=0, zorder=1)
                 if idx == 0:
-                    plt.plot(self.wl, y_comp, color='tab:green', linewidth=1.2, alpha=0.85, label='Gaussian Components')
+                    plt.plot(self.wl, y_comp, color='tab:green', linewidth=4.2, alpha=0.85, label='Gaussian Components', zorder=3)
                 else:
-                    plt.plot(self.wl, y_comp, color='tab:green', linewidth=1.2, alpha=0.85)
+                    plt.plot(self.wl, y_comp, color='tab:green', linewidth=4.2, alpha=0.85, zorder=3)
 
         if self.fitted_params:
-            plt.plot(self.wl, self.total_fit, color='tab:orange', linewidth=1.8, linestyle='--', label='Gaussian Sum Fit')
+            plt.fill_between(self.wl, 0, self.total_fit, color='tab:orange', alpha=0.5, linewidth=0, zorder=1)
+            plt.plot(self.wl, self.total_fit, color='tab:orange', linewidth=4.2, linestyle='--', label='Gaussian Sum Fit', zorder=4)
             plt.scatter(self.fitted_mu, self.fitted_amp, color='tab:green', s=28, label='Fitted Peaks', zorder=6)
 
         plt.xlabel('Wavelength (nm)', fontsize=15, fontweight="semibold")
@@ -858,10 +861,11 @@ class GaussMultiPeakFitter:
             label.set_fontweight("semibold")
         for label in plt.gca().get_yticklabels():
             label.set_fontweight("semibold")
+        plt.vlines(peak_wl, ymin=0, ymax=peak_int, colors='tab:red', linestyles='--', linewidth=4.2, zorder=4)
         plt.scatter(peak_wl, peak_int, color='tab:red', s=36, label='Local Extrema', zorder=5)
 
-        plt.grid(alpha=0.3)
-        plt.legend(loc='upper right', prop={"weight": "semibold", "size": 12}, frameon=False)
+        # plt.grid(alpha=0.3)
+        # plt.legend(loc='upper right', prop={"weight": "semibold", "size": 12}, frameon=False)
         plt.tight_layout()
         plt.show()
 
