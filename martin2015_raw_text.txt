@@ -1,0 +1,68 @@
+Measured Eu (%)
+020406080100
+Predicted Europium (%)
+020406080100
+Measured Eu
+Predicted Eu
+r2 = 0.97
+r2 = 0.95
+Measured Gd (%)
+020406080100
+Predicted Gd (%)
+020406080100
+Measured Gd
+Pridicted Gd
+r2 = 0.95
+r2 = 0.91
+Measured La (%)
+020406080100120
+Predicted La (%)
+020406080100120
+Measured La
+Predicted La
+r2 = 0.97
+r2 = 0.93
+Measured Nd (%)
+020406080100120
+Predicted Nd (%)
+020406080100120
+Measured Nd
+Predicted Nd
+r2 = 0.98
+r2 = 0.97
+Measured Pr (%)
+020406080100120
+Predicted Pr (%)
+020406080100120
+Measured Pr   
+Predicted Pr 
+r2 = 0.99
+r2 = 0.87
+Measured Sm (%)
+020406080100120
+Predicted Sm (%)
+020406080100120
+Measured Sm
+Predicted Sm
+r2 = 0.97
+r2 = 0.89
+Measured Y (%)
+020406080100120
+Predicted Y (%)
+020406080100120
+Measured Y
+Predicted Y
+r2 = 0.99
+r2 = 0.97
+ab
+68M.Martinetal./SpectrochimicaActaPartB114(2015)6573
+2.1.InstrumentationThemaincomponentsoftheexperimentalsystemareapulsedBigSkylasermodelCFR-UltrawhichisaQ-switchedNd:YAGlaserwithfrequencydoubledoutputwavelengthof532nm[28].Laserenergyof45mJwasusedtoobtainallthesamplespectra.Theexperi-mentalsetupalsohasanXYZstagetoprovidecapabilityofthree-dimensionalmovements.Adisplacementlaser(650nm)isemployedtocontroltheverticalpositionofthesampleuppersurface,makingsurethatthelaserbeamwhichisexcitingthesamplesurfaceremainsfocusedandthattheplasmaisoptimallylocatedwithrespecttothecollectionoptics.ThelightemittedbytheplasmaatthefocalvolumewascollectedbyasetofcollectionopticsandfocusedintoalowO\\Hsilicaber.TheopticalberisusedtodeliverthelighttoanEchellespectrometerfromCatalinaScienticmodelSE200spectrometerthatresolveslightintodifferentwavelengthsbyahigh-orderdispersionmodule(190800nmrange),followedbydetectionusinga2-D1024×1024pixelintensiedcharge-coupleddetector(ICCD)madebyAndorTechnologies.TheadvantageofusinganICCDisthatthedetectioncanbedelayedwithrespecttoplasmaformation.Thedatawerecollectedbyusingadelayof1microsecond,agatewidthof10mi-croseconds,andtherepetitionrateatwhichthelaserwasoperatedwas10Hz.Thewholeprocessofsampleexcitation,plasmaformation,lightcollection,andoptical-to-digitalconversionofthesignaltakesatmostasecondtoafewsecondsdependingonthenumberofshotsthatareav-eragedtogetagoodsignal-to-noiseratio.Table1summarizesthelaseranddetector/spectrometercharacteristics.2.2.ReagentsAlltherareearthoxidepowders(Eu2O3,Gd2O3,La2O3,Nd2O3,Pr6O11,Sm2O3,andthetransitionmetaloxideY2O3),wereobtainedfromAlphaAesar,WardHill,Massachusetts(USA).Thepurityoftheoxidepowdersthatwereusedinthisresearchwas99.99%.Thegraphitepowderthatwasanatural,microcrystalgrade,of99.9995%puritywasalsoobtainedfromAlphaAesar,WardHill,Massachusetts(USA).Thepolyvinylacetate(PVA)was99100%hydrolyzedandwasobtainedfromAcrosOrganics,NewJersey,USA.2.3.PreparationofsamplesThepowdersoftherareearthoxidesEu2O3,Gd2O3,La2O3,Nd2O3,Pr6O11,Sm2O3,andthetransitionmetaloxideY2O3wereusedinmakingthepellets.Thesepowderswereweighedalongwithabalancingamountofgraphitepowderdiluent.Thetotalweightoftheoxidematerialandgraphitemixturewas75mg.Thesecomponentswerecombinedinabottleandthemixturevortexedandstirred.Aquantityof300Lof0.5%PVAsolutionwaspipettedintoaglasstubeandre-mixedasecondtimeasinthepreviousstep.AheatingblockwasusedtodrythemixedpowderscontainingPVA.Thecontentsofthebottlewereemptiedintoa1/4dieandpressedat15001bforatleast1minute.ThepelletswereplacedinalabeledplasticbaguntilsubsequentLIBSmeasurements.
+Fig.3.(a)r2coefcientofdeterminationforcalibrationandfullcross-validationsamplesetsforEu,Gd,La,andNd.(b)r2coefcientofdeterminationforcalibrationandfullcross-validationsamplesetsforPr,Sm,andY.
+Table2Regressioncoefcients,offsets,androotmeansquareerror(RMSE)forbothcalibrationandvalidationsetsforEu,Gd,La,Nd,Pr,Sm,andY.ElementSlopeOffsetRMSER2Eu(calibration)0.9730.875.730.973Eu(validation)0.9332.378.090.951Gd(calibration)0.9541.477.430.954Gd(validation)0.9671.0610.40.913La(calibration)0.9880.685.170.979La(validation)0.9642.0510.060.929Nd(calibration)0.9850.484.270.985Nd(validation)0.9581.276.040.973Pr(calibration)0.9920.263.140.992Pr(validation)0.8243.8812.160.875Sm(calibration)0.9691.026.300.968Sm(validation)0.9201.9712.250.896Y(calibration)0.9930.222.880.993Y(validation)0.9441.626.750.969
+Wavelength (nm)
+230330430530630
+Loading Values (A. U.)
+0.00.30.60.91.21.51.8
+EuGdLaNdPrSmY
+Fig.4.TheloadingparametersforEu,Gd,La,Nd,Pr,Sm,andY.
+Table3Loadingparametersforthedifferentelementsidentiedbythecalibrationvalidationmethodologyinthewavelengthrange390430nm.ElementObservedwavelength(nm)ElementObservedwavelength(nm)ElementObservedwavelength(nm)Eu(II)390.71La(I)416.026Pr(II)422.293Eu(II)392.887La(II)419.655Sm(II)392.828Eu(II)393.048La(II)423.838Sm(II)411.019Eu(II)397.196Nd(II)392.710Sm(II)411.855Eu(II)397.963Nd(II)395.745Sm(II)415.221Eu(II)412.97Nd(II)397.330Sm(II)419.945Eu(I)413.707Nd(II)397.949Sm(II)428.079Eu(II)420.505Nd(II)399.010Y(II)393.066Gd((II)396.929Nd(II)401.225Y(II)395.036Gd(II)404.684Nd(II)402.478Y(II)398.260Gd(I)405.364Nd(II)404.080Y(I)407.735Gd(I)405.822Nd(II)407.762Y(I)410.236GdI)407.870Nd(II)410.946Y(I)412.830Gd(I)409.372Nd(II)415.626Y(I)414.284Gd(II)418.425Nd(II)417.732Y(II)417.754Gd(I)419.078Pr(II)391.885Y(II)419.928Gd(I)422.585Pr(II)396.426La(II)392.922Pr(III)398.051La(II)394.91Pr(II)398.968La(II)398.852Pr(II)399.585La(II)399.575Pr(II)405.880La(II)403.169Pr(II)410.072La(II)404.291Pr(II)411.389La(II)407.735Pr(II)414.311La(II)408.672Pr(II)416.804La((II)412.323Pr(II)417.225La(II)415.197Pr(II)417.93969M.Martinetal./SpectrochimicaActaPartB114(2015)6573

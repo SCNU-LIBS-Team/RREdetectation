@@ -86,16 +86,16 @@ def _plot_identification_matrix(matrix, sample_names, element_names, save_path=N
 
     #表头和标签
     ax.set_xticks(np.arange(len(element_names)))
-    ax.set_xticklabels(element_names, fontsize=15, fontweight="semibold")
+    ax.set_xticklabels(element_names, fontsize=22, fontweight="semibold")
     ax.set_yticks(np.arange(len(sample_names)))
     display_sample_labels = [f"{i + 1}" for i in range(len(sample_names))]
-    ax.set_yticklabels(display_sample_labels, fontsize=15, fontweight="semibold")
+    ax.set_yticklabels(display_sample_labels, fontsize=22, fontweight="semibold")
     ax.tick_params(axis="both", which="major", length=0)
 
     #标签
-    ax.set_xlabel("Element", fontsize=15, fontweight="semibold")
-    ax.set_ylabel("Sample", fontsize=15, fontweight="semibold")
-    ax.set_title("Identification Matrix", fontsize=20, fontweight="semibold")
+    ax.set_xlabel("Element", fontsize=22, fontweight="semibold")
+    ax.set_ylabel("Sample", fontsize=22, fontweight="semibold")
+    ax.set_title("Identification Matrix", fontsize=30, fontweight="semibold")
 
     # 表格样式：实线单元格边界，圆点位于单元格中心
     ax.set_xlim(-0.5, len(element_names) - 0.5)
@@ -116,7 +116,7 @@ def _plot_identification_matrix(matrix, sample_names, element_names, save_path=N
         plt.Line2D([0], [0], marker="o", color="w", markerfacecolor="red", markeredgecolor="black", markersize=8, label="False"),
     ]
 
-    ax.legend(handles=handles, loc="upper right",  prop={"weight": "semibold", "size": 12})
+    ax.legend(handles=handles, loc="upper right",  prop={"weight": "semibold", "size": 20})
     for spine in ax.spines.values():
         spine.set_linewidth(2.0)
     plt.tight_layout()
@@ -321,7 +321,7 @@ def generate_identification_matrix(
 
 #整套模式
 if __name__ == "__main__":
-    filepath = r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt6_T_iterationoff'
+    filepath = r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt5'
     # filepath = r'D:\LIBS\RREdetectation\T_scanon\Pt1'
     fakebotton = False
     fake_seed = 42

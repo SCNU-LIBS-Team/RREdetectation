@@ -24,7 +24,7 @@ GREEN = "\033[32m"
 YELLOW = "\033[33m"
 RED = "\033[31m"
 
-#中文绘图输出
+#中文输出
 _CHINESE_FONT_CANDIDATES = [
     "Microsoft YaHei",
     "SimHei",
@@ -1946,7 +1946,7 @@ signal_path8= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.75eV' #低电子温
 signal_path9= r'D:\LIBS\RREdetectation\Rockbasespectral_11_0.5eV' #高电子温度（高多普勒展宽）测试
 
 signal_path10= r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt6_T_scanoff' #随机光谱测试
-RandPerfOPbotton=True #随机光谱性能测试模式
+RandPerfOPbotton=False #随机光谱性能测试模式
 
 ###每次运行前均需调整下列参数！！！
 T_initial=10000
@@ -1956,7 +1956,7 @@ I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list
 # print(I_elements_list)
 target_files=['070036_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
-plottarget='YbII'#指定绘图元素（仅在 plotbotton=True 时生效）
+plottarget='LuII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
 # 手动多峰补救峰位：命中元素后优先使用，覆盖粗检测已匹配谱线和 normalized_pure_element 自动选线，单位 nm。
 # key 可写完整谱线名如 "YbII"，也可写基元素名如 "Yb"。
@@ -1973,11 +1973,11 @@ scan_t_step=100
 
 AutoElemTempMarkMode=False #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
-checkallbutton=True#是否检测文件内的全部光谱 （全文件）
-plotbotton=False#是否绘图展示Boltzmann图
-save2csvbotton=True #是否保存稀土元素置信度结果到CSV
+checkallbutton=False#是否检测文件内的全部光谱 （全文件）
+plotbotton=True#是否绘图展示Boltzmann图
+save2csvbotton=False #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
-Titerationbotton=True #是否启用温度迭代算法
+Titerationbotton=False #是否启用温度迭代算法
 
 
 
@@ -2248,7 +2248,7 @@ if __name__ == '__main__':
             main_elements_normalized,
             target_base_elements=zero_conf_elements,
             target_fit_lines=coarse_matched_fit_lines,
-            plot_fit_windows=False
+            plot_fit_windows=True
         )
         
         if not target_fit_params.empty:

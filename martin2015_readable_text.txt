@@ -1,0 +1,1341 @@
+
+--- OBJ 577 ---
+Quanti
+cation of rare earth elements using laser-induced
+breakdown spectroscopy
+Madhavi Martin
+, Rodger C. Martin
+, Steve Allman
+, Deanne Brice
+,AnnWymore
+, Nicolas Andre
+Biological Sciences Division, Oak Ridge, TN 37831, USA
+Fusion and Materials for Nuclear Systems Division, Oak Ridge, TN 37831, USA
+Environmental Sciences Division, Oak Ridge National Laboratory, Oak Ridge, TN 37831, USA
+The University of Tennessee, Center for Renewable Carbon, Knoxville, TN 37996, USA
+abstract
+article info
+
+--- OBJ 578 ---
+Article history:
+Received 20 January 2015
+Accepted 14 October 2015
+Available online 21 October 2015
+Keywords:
+Laser-induced breakdown spectroscopy
+LIBS
+Rare earths
+Multielemental analysis
+A study of the optical emission as a function of concentration of laser-ablated yttrium (Y) and of six rare earth
+elements, europium (Eu), gadolinium (Gd), lanthanum (La), praseodymium (Pr), neodymium (Nd), and samarium
+(Sm), has been evaluated using the laser-induced breakdow
+n spectroscopy (LIBS) technique. Statistical methodol-
+ogy using multivariate analysis has been
+used to obtain the sampling errors, coef
+cient of regression, calibration,
+and cross-validation of measurements as they relate to the LIBS analysis in graphite-matrix pellets that were
+doped with elements at several concentrations. Each element (in oxide form) was mixed in the graphite matrix
+
+--- OBJ 579 ---
+for pure oxide samples. Finally, a single pellet was mixed with all the elements in equal oxide masses to determine
+if we can identify the elemental peaks in a mixed pellet. This dataset is relevant for future application to studies of
+ssion product content and distribution in irradiated nucle
+ar fuels. These results demonstrate that LIBS technique
+is inherently well suited for the future challenge of in situ analysis of nuclear materials. These studies also show
+that LIBS spectral analysis using statistical methodolog
+y can provide quantitative res
+ults and suggest an approach
+in future to the far more challenging multielemental analysis of ~ 20 primary elements in high-burnup nuclear
+reactor fuel.
+© 2015 Elsevier B.V. All rights reserved.
+1. Introduction
+In nuclear fuel
+ssion reactions, each uranium or plutonium atom
+will split into two lighter elements. Rare earth elements are a major
+component of these
+
+--- OBJ 580 ---
+ssion products. Since
+ssion product content in
+nuclear fuels is proportional to the fraction of
+burned
+fuel, it can
+be used to estimate actinide masses (U, Pu, etc.) for nonproliferation
+safeguards
+monitoring. The reprocessing of irradiated fuel must
+remove most
+ssion products prior to reuse as fuel. Therefore, it is
+important to monitor the presence of mixed actinide, rare earths, and
+other
+ssion product elements throughout the separation process.
+Challenges in monitoring
+ssion product content using conventional
+analytical techniques can be signi
+cant,suchasinelectrochemical
+recycling processes
+[1]
+. The emission spectra of rare earths are very
+complex and spectral interferences must be known, so a detailed
+and comprehensive study of the predominant rare earths using
+
+--- OBJ 581 ---
+are a number of detailed research articles that have shown the LIBS
+measurements on actinides, their surrogates,
+7,27]
+and rare
+earth elements
+26]
+. This study is the mos
+t comprehensive LIBS
+analysis of rare earth elements individually and in a mixture.
+Prior research shows that the technique of LIBS has been used in the el-
+emental analysis of the rare earth elements
+27]
+.Amongthose,
+europium has been studied the most. Eu
+has been detected in colloidal so-
+lutions and the technique has been used in the determination of
+solubility data and of concentrations of europium in glass matrices
+13]
+. Another study has determined trace levels of samarium,
+europium, and gadolinium in aqueous samples by LIBS
+[9]
+.Stainless
+
+--- OBJ 582 ---
+ten glass matrices have been studied
+[15,16]
+. LIBS studies of other rare
+earths such as lanthanum
+[14,17]
+, neodymium
+[18
+22]
+,praseodymium,sa-
+marium
+[27,23]
+, and yttrium
+[24
+27]
+have been also been performed.
+The rare earths studied here using the LIBS technique are europium
+(Eu), gadolinium (Gd), lanthanum (La
+), neodymium (Nd), praseodymi-
+um (Pr), samarium (Sm), and the transition metal yttrium (Y). The
+rationale for selecting these particular elements for the LIBS studies in
+this article is given by a typical example: in irradiated nuclear reactor
+fuel, after decay of 150 days, ~ 18% of the
+ssions result in Nd atoms,
+13% in Ce atoms (previously studied using LIBS
+[28]
+), 6% in La and in Pr,
+4% in Y and in Sm, 0.6% in Eu, and 0.3% in Gd
+[29]
+. There are numerous
+dif
+
+--- OBJ 583 ---
+Spectrochimica Acta Part B 114 (2015) 65
+Selected papers presented at the 8th International Conference on Laser-Induced
+Breakdown Spectroscopy (LIBS) in Beijing, China, 8th-12th September, 2014.
+Corresponding author at: Biological Sciences Division, Oak Ridge National Laboratory,
+Oak Ridge, TN 37831, USA.
+http://dx.doi.org/10.1016/j.sab.2015.10.005
+0584-8547/© 2015 Elsevier B.V. All rights reserved.
+Contents lists available at
+ScienceDirect
+Spectrochimica Acta Part B
+journal homepage: www.elsevier.com/locate/sab
+
+--- OBJ 632 ---
+actinides, rare earths, and other
+ssion products, and extremely dense
+and complex spectral features result from the as-produced mixture.
+These dif
+culties are (i) experimental, (ii) operational, and (iii) safety
+related. The technique of choice for measuring the actinide and rare
+earth content in irradiated fuel is ICP-MS or ICP-OES/AES
+[30
+41]
+,but
+the challenge of analyzing concentrated solutions from fuel dissolution
+with very high radiological dose must
+rst be addressed. This creates
+analytical uncertaintie
+s from large dilutions, up to a million-fold, which
+can be costly and time consuming and increase worker hazards in sample
+handling. Furthermore, complex spectral features can create problems in
+identi
+cation,
+ngerprinting, and in the quanti
+cation of these elements.
+Operational dif
+culties often involve burdensome paperwork, approvals,
+and controls that are required when handling even
+1gof
+ssile material
+such as enriched uranium or plutonium. Setting up glove boxes for
+radioanalytical work has signi
+cant operational costs, and hot cell costs
+are even higher. Pre-operational safety analysis of new equipment and
+operations and of radioactive content and its potential for release is far
+more rigorous than typical laser and chemical safety requirements. In
+addition to the experimental and operational dif
+culties, each nuclear
+facility in the U. S. has
+safety basis documents
+that set nuclear safety
+boundaries for experimental activities. Any new hazard introduced into
+a nuclear facility must be analyzed
+and documented. This work must be
+approved prior to beginning new experiments and can take months
+if not routine. For these reasons, LIBS has certain advantages as a
+micro-analytical technique in potentially mitigating some of these
+controls compared to conventional analytical techniques.
+As with all analytical techniques, LIBS has inherent limitations
+that hinder quanti
+cation. Due to the matrix effects, true quantitative
+analyses and calibrations can be a problem. One drawback for the LIBS
+technique is that different matrices for different samples require
+matrix-speci
+c calibration standards. Windom and Hahn have over-
+come the matrix effects for the LIBS technique in their article
+[42]
+and
+also discussions of the challenges for the quantitative analysis for the
+LIBS technique have been shown in the review articles by Hahn and
+Omenetto and other authors
+[43
+45]
+. Certain issues such as sampling
+geometry on elemental emissions and other sampling parameters
+have been clearly addressed
+[46,47]
+For the previously mentioned example of irradiated nuclear reactor
+fuel after decay of 150 days, the estimates of
+ssion product content
+[29]
+indicate that ~ 23% of the
+ssion product mass is represented by the
+seven elements measured in this work, which also provides a spectral
+database of these elements for further LIBS studies. A previous LIBS
+study of Cs, Sr, and Ce in the same matrix as here
+[28]
+covers another
+~18% of this
+ssion product mass and associated LIBS spectra. Separate
+LIBS studies of Mo, Zr (in U
+Zr alloy form), and Pd contribute spectral
+data for another ~ 24% of the
+ssion product mass. Spectral data from
+these separate studies can now be used to plan the LIBS measurement
+of and interpretation of results for nearly two-thirds of the
+ssion
+product content (depending on the time of decay prior to measurement)
+in irradiated fuel samples. Synthesis of these spectral libraries with the
+spectral tabulations from recent mixed actinide studies
+[6]
+of U, Np, Pu,
+and Am now provides a starting point for analysis of complex nuclear
+fuel mixtures, including selection of optimal low-interference identifying
+peaks for each element.
+In 2003, a feasibility experiment demonstrated LIBS analysis of the
+dried residue from 25
+L of concentrated, undiluted radiochemical
+process solution containing signi
+cant masses of americium, curium,
+and rare earth and other
+ssion products
+[48]
+. No ICP-based instrument
+could measure this sample without multiple orders-of-magnitude
+dilution and resultant propagation of analytical uncertainties. Since
+then, no comparable experiment has been reported in the literature,
+but the results clearly indicated the need for an
+a priori
+comprehensive
+Table 1
+Characteristics of laser and detector/spectrometer.
+Laser characteristics
+Wavelength Energy/pulse Rep- rate
+532 nm 45 mJ 10 Hz
+Detector
+spectrometer characteristics Pixel resolution
+FWHM
+Wavelength
+range nm
+Practical
+spectral
+bandwidth
+200
+400 400
+600 600
+800
+190
+800 210
+790 nm 0.06 0.06
+0.08 0.09
+0.12
+Wavelength (nm)
+300 400 500 600 700
+LIBS Intensity (A. U.)
+0.0
+4.0e+4
+8.0e+4
+1.2e+5
+1.6e+5
+Carbon
+C-N band
+Wavelength (nm)
+300 400 500 600 700
+LIBS Intensity (A. U.)
+1e+5
+2e+5
+3e+5
+4e+5
+Wavelength (nm)
+390 400 410 420 430
+LIBS Intensity (A. U.)
+2e+4
+4e+4
+6e+4
+8e+4
+412.97
+397.963
+397.196
+393.048
+390.71
+422.585
+409.372
+414.284
+391.885
+403.169
+416.026
+394.91
+423.838
+408.672
+415.221
+395.036
+410.236
+412.83
+407.762
+417.732
+401.225
+422.293
+428.079
+420.505
+Fig. 1.
+(a) LIBS spectra for 1% concentration of Eu, G
+d, La, Nd, Pr, Sm, and Y oxides individually
+in a graphite matrix. (b) LIBS spectra for 25% concentration of Eu, Gd, La, Nd, Pr, Sm, and Y
+oxides individually in a graphite matrix. (c) LIBS spectra for 25 % concentrations of Eu
+Gd,
+La, Nd, Pr, Sm, and Y oxides in the expanded wavelength window of 390
+430 nm.
+M. Martin et al. / Spectrochimica Acta Part B 114 (2015) 65
+
+--- OBJ 22 ---
+LIBS spectral library to qualitatively predict spectral interferences and
+optimize the selection of microvolume and mass content of the pipetted
+sample to facilitate subsequent data interpretation. Because of the
+proli
+c atomic emission lines from the major rare earth
+ssion products
+(in addition to the even more proli
+c lines from any actinides present),
+this work represents a signi
+cant step toward experimental planning of
+future LIBS analyses of real-world nuclear samples.
+The objectives of this article are as follows:
+To obtain the broadband LIBS emission spectra from single-element
+samples of six rare earth elements Eu, Gd, La, Nd, Pr, and Sm, and one
+transition metal Y, at concentrations of 1% and 50% by weight for each
+element in oxide form within a carbon matrix. This has allowed the
+authors to identify the speci
+c peaks for each element and develop a
+calibration curve for each.
+To develop multivariate calibration and cross-validations for each
+individual element (shown in
+Table 3
+To obtain the broadband LIBS emission spectrum from an equal mixture
+of the rare earth elements, Eu, Gd, L
+a, Nd, Pr, and Sm, and one transition
+metal Y to see if individual emission lines from these can be identi
+ed in
+this mixture.
+2. Experimental
+LIBS is a laser-based technique
+in which, for this study, a laser
+of 532 nm wavelength is focused onto the surface of a sample
+which vaporizes and ionizes a small volume of sample material to
+generate a plasma spark. All states of matter can be analyzed,
+e.g., solid, liquid, gaseous, and aerosol. LIBS vaporizes a small sample
+volume with suf
+cient energy to ionize all elemental components into
+optically excited states in the resultant sample plume. The vaporized
+species then undergo de-excitation and optical emission on a microsec-
+ond time scale, and time-dependent ultraviolet-visible spectroscopy
+ngerprints the elements associated with the spectral peaks. The plasma
+emits light that is collected by an optical
+ber and delivered to a spec-
+trometer. The spectrometer separates out the white light of the plasma
+into different wavelengths, and coupling onto the face of an intensi
+charge-coupled device (ICCD) detector converts the optical signal into
+an electronic signal. Powerful computer software is used to present
+a spectrum (intensity versus wavelength) of the sample under test. The
+process of excitation, light collection, separation into wavelengths,
+and optical signal conversion to electronic signal is completed within
+100 milliseconds. LIBS is typically a surface analytical technique, with
+each laser pulse vaporizing microg
+ram or submicrogram sample masses.
+However, the rapidity of sampling (typically 10 Hz laser repetition
+rate) and ability to scan a sample surface ablate a hole into a solid
+sample with repeated lase
+rpulses(fordepthpro
+ling) or focus
+the laser spark below the surface of a liquid sample permits more
+versatile analyses and provides suf
+cient statistics for bulk sampling.
+The detection limits are often in the parts per million (1
+100 ppm)
+range for most elements in the periodic table (dependent on sample
+matrix). These limits of detection can be reduced when the sample is
+placed under reduced atmospheric pressure or in an inert gaseous
+environment.
+Wavelength (nm)
+300 400 500 600 700
+LIBS Intensity (A. U.)
+1e+4
+2e+4
+3e+4
+4e+4
+5e+4
+6e+4
+Wavelength (nm)
+220 240 260 280 300
+LIBS Intensity (A. U.)
+2x10
+4x10
+6x10
+8x10
+10x10
+12x10
+236.76(Y)
+241.46(Y)
+272.78(Eu)
+281.69(Y)
+288.16(Pr)
+290.67(Eu)
+294.6(Y)
+Wavelen
+th (nm)
+350 360 370 380 390 400
+LIBS Intensity (A. U.)
+10x10
+20x10
+30x10
+40x10
+354.58(Gd)
+358.49(Gd)
+360.15(Sm)
+359.26(Sm)
+363.4(Sm)
+368.8(Eu)
+371.03(Y)
+372.5(Eu)
+374.35(Gd)
+381.96(Eu)
+385.16(Nd)
+386.33(Nd)
+390.7(Eu)
+393.05(Eu)
+364.62(Gd)
+Wavlength (nm)
+400 410 420 430 440 450
+LIBS INtensity (A. U.)
+10x10
+20x10
+30x10
+40x10
+401.23(Nd)
+406.11(Nd)
+411.86(Sm)
+417.73(Nd)
+417.94(Pr)
+420.5(Eu)
+422.29(Pr)
+422.58(Gd)
+430.35 (Nd)
+437.49(Y)
+442.4(Sm)
+403.15(La)
+415.98(La)
+408.67(La)
+Fig. 2.
+(a) LIBS spectrum for a mixture of equal masses of Eu, Gd, La, Nd, Pr, Sm, and Y oxides. (b) LIBS spectrum for a mixture of equal masses of Eu, Gd, La, Nd, Pr, S
+m, and Y oxides expanded
+into wavelength window from 220 to 300 nm. (c) LIBS spectrum for a mixture of equal masses of Eu, Gd, La, Nd, Pr, Sm, and Y oxides expanded into a wavelength
+window from 350 to
+400 nm. (d) LIBS spectrum for a mixture of equal masses of Eu, Gd, La, Nd, Pr, Sm, and Y oxides expanded into a wavelength window from 400 to 450 nm.
+M. Martin et al. / Spectrochimica Acta Part B 114 (2015) 65
+
+--- OBJ 43 ---
+2.1. Instrumentation
+The main components of the experimental system are a pulsed
+Big Sky laser model CFR-Ultra which is a Q-switched Nd:YAG laser
+with frequency doubled output wavelength of 532 nm
+[28]
+.Laser
+energy of 45 mJ was used to obtain all the sample spectra. The experi-
+mental setup also has an X
+Z stage to provide capability of three-
+dimensional movements. A displacement laser (650 nm) is employed
+to control the vertical position of the sample upper surface, making
+sure that the laser beam which is exciting the sample surface remains
+focused and that the plasma is optimally located with respect to the
+collection optics. The light emitted by the plasma at the focal volume
+was collected by a set of collection optics and focused into a low O
+silica
+ber. The optical
+ber is used to deliver the light to an Echelle
+spectrometer from Catalina Scienti
+c model SE 200 spectrometer that
+resolves light into different wavelengths by a high-order dispersion
+module (190
+800 nm range), followed by detection using a 2-D
+1024 × 1024 pixel intensi
+ed charge-coupled detector (ICCD) made
+by Andor Technologies. The advantage of using an ICCD is that the
+detection can be delayed with respect to plasma formation. The data
+were collected by using a delay of 1 microsecond, a gate width of 10 mi-
+croseconds, and the repetition rate at which the laser was operated was
+10 Hz. The whole process of sample excitation, plasma formation, light
+collection, and optical-to-digital conversion of the signal takes at most
+a second to a few seconds depending on the number of shots that are av-
+eraged to get a good signal-to-noise ratio.
+Table 1
+summarizes the laser
+and detector/spectrometer characteristics.
+2.2. Reagents
+All the rare earth oxide powders (Eu
+,Gd
+,La
+,Nd
+,Sm
+, and the transition metal oxide Y
+), were obtained
+from Alpha Aesar, Ward Hill, Massachusetts (USA). The purity of the
+oxide powders that were used in this research was 99.99%. The graphite
+powder that was a natural, microcrystal grade, of 99.9995% purity was
+also obtained from Alpha Aesar, Ward Hill, Massachusetts (USA). The
+polyvinyl acetate (PVA) was 99
+100% hydrolyzed and was obtained
+from Acros Organics, New Jersey, USA.
+2.3. Preparation of samples
+The powders of the rare earth oxides Eu
+,Gd
+,La
+,Nd
+,Sm
+, and the transition metal oxide Y
+were used in making
+the pellets. These powders were weighed along with a balancing
+amount of graphite powder diluent. The total weight of the oxide material
+and graphite mixture was 75 mg. These components were combined in a
+bottle and the mixture vortexed and stirred. A quantity of 300
+Lof0.5%
+PVA solution was pipetted into a glass tube and re-mixed a second time as
+in the previous step. A heating block was used to dry the mixed powders
+containing PVA. The contents of the bottle were emptied into a 1/4
+die
+and pressed at 1500 1b for at least 1 minute. The pellets were placed in
+a labeled plastic bag until subsequent LIBS measurements.
+Fig. 3.
+(a) r
+coef
+cient of determination for calibration and full cross-validation sample sets for Eu, Gd, La, and Nd. (b) r
+coef
+cient of determination for calibration and full cross-
+validation sample sets for Pr, Sm, and Y.
+Table 2
+Regression coef
+cients, offsets, and root mean square error (RMSE) for both calibration
+and validation sets for Eu, Gd, La, Nd, Pr, Sm, and Y.
+Element Slope Offset RMSE R
+Eu (calibration) 0.973 0.87 5.73 0.973
+Eu (validation) 0.933 2.37 8.09 0.951
+Gd (calibration) 0.954 1.47 7.43 0.954
+Gd (validation) 0.967 1.06 10.4 0.913
+La (calibration) 0.988 0.68 5.17 0.979
+La (validation) 0.964 2.05 10.06 0.929
+Nd (calibration) 0.985 0.48 4.27 0.985
+Nd (validation) 0.958 1.27 6.04 0.973
+Pr (calibration) 0.992 0.26 3.14 0.992
+Pr (validation) 0.824 3.88 12.16 0.875
+Sm (calibration) 0.969 1.02 6.30 0.968
+Sm (validation) 0.920 1.97 12.25 0.896
+Y (calibration) 0.993 0.22 2.88 0.993
+Y (validation) 0.944 1.62 6.75 0.969
+Wavelength (nm)
+230 330 430 530 630
+Loading Values (A. U.)
+0.0
+0.3
+0.6
+0.9
+1.2
+1.5
+1.8
+Fig. 4.
+The loading parameters for Eu, Gd, La, Nd, Pr, Sm, and Y.
+Table 3
+Loading parameters for the different elements identi
+ed by the calibration
+validation
+methodology in the wavelength range 390
+430 nm.
+Element Observed
+wavelength
+(nm)
+Element Observed
+wavelength
+(nm)
+Element Observed
+wavelength
+(nm)
+Eu(II) 390.71 La(I) 416.026 Pr(II) 422.293
+Eu(II) 392.887 La(II) 419.655 Sm(II) 392.828
+Eu(II) 393.048 La(II) 423.838 Sm(II) 411.019
+Eu(II) 397.196 Nd(II) 392.710 Sm(II) 411.855
+Eu(II) 397.963 Nd(II) 395.745 Sm(II) 415.221
+Eu(II) 412.97 Nd(II) 397.330 Sm(II) 419.945
+Eu(I) 413.707 Nd(II) 397.949 Sm(II) 428.079
+Eu(II) 420.505 Nd(II) 399.010 Y(II) 393.066
+Gd((II) 396.929 Nd(II) 401.225 Y(II) 395.036
+Gd(II) 404.684 Nd(II) 402.478 Y(II) 398.260
+Gd(I) 405.364 Nd(II) 404.080 Y(I) 407.735
+Gd(I) 405.822 Nd(II) 407.762 Y(I) 410.236
+GdI) 407.870 Nd(II) 410.946 Y(I) 412.830
+Gd(I) 409.372 Nd(II) 415.626 Y(I) 414.284
+Gd(II) 418.425 Nd(II) 417.732 Y(II) 417.754
+Gd(I) 419.078 Pr(II) 391.885 Y(II) 419.928
+Gd(I) 422.585 Pr(II) 396.426
+La(II) 392.922 Pr(III) 398.051
+La(II) 394.91 Pr(II) 398.968
+La(II) 398.852 Pr(II) 399.585
+La(II) 399.575 Pr(II) 405.880
+La(II) 403.169 Pr(II) 410.072
+La(II) 404.291 Pr(II) 411.389
+La(II) 407.735 Pr(II) 414.311
+La(II) 408.672 Pr(II) 416.804
+La((II) 412.323 Pr(II) 417.225
+La(II) 415.197 Pr(II) 417.939
+M. Martin et al. / Spectrochimica Acta Part B 114 (2015) 65
+
+--- OBJ 33 ---
+Measured Eu (%)
+020406080100
+Predicted Europium (%)
+100
+Measured Eu
+Predicted Eu
+= 0.97
+= 0.95
+Measured Gd (%)
+0 20406080100
+Predicted Gd (%)
+100
+Measured Gd
+Pridicted Gd
+= 0.95
+= 0.91
+Measured La (%)
+0 20 40 60 80 100 120
+Predicted La (%)
+100
+120
+Measured La
+Predicted La
+= 0.97
+= 0.93
+Measured Nd (%)
+0 20 40 60 80 100 120
+Predicted Nd (%)
+100
+120
+Measured Nd
+Predicted Nd
+= 0.98
+= 0.97
+Measured Pr (%)
+020406080100120
+Predicted Pr (%)
+100
+120
+Measured Pr
+Predicted Pr
+= 0.99
+= 0.87
+Measured Sm (%)
+0 20 40 60 80 100 120
+Predicted Sm (%)
+100
+120
+Measured Sm
+Predicted Sm
+= 0.97
+= 0.89
+Measured Y (%)
+020406080100120
+Predicted Y (%)
+100
+120
+Measured Y
+Predicted Y
+= 0.99
+= 0.97
+M. Martin et al. / Spectrochimica Acta Part B 114 (2015) 65
+
+--- OBJ 58 ---
+# of PCs
+0246810
+Y-Variance
+200
+400
+600
+800
+1000
+1200
+1400
+1600
+PC = 3
+Europium
+# of PCs
+0246810
+Y-Variance
+200
+400
+600
+800
+1000
+1200
+1400
+1600
+PC = 4
+Lanthanum
+# of PCs
+0246810
+Y-Variance
+200
+400
+600
+800
+1000
+1200
+1400
+1600
+PC = 2
+Neodymium
+# of PCs
+0246810
+Y-Variance
+200
+400
+600
+800
+1000
+1200
+1400
+PC = 3
+Gadolinium
+0246810
+Y-Variance
+200
+400
+600
+800
+1000
+1200
+1400
+1600
+PC = 4
+Yttrium
+# of PCs
+0246810
+Y-Variance
+200
+400
+600
+800
+1000
+1200
+1400
+PC = 6
+Praseodymium
+# of PCs
+# of PCs
+0246810
+Y-Variance
+200
+400
+600
+800
+1000
+1200
+1400
+1600
+Samarium
+PC = 4
+M. Martin et al. / Spectrochimica Acta Part B 114 (2015) 65
+
+--- OBJ 68 ---
+3. Results and discussions
+LIBS spectra obtained using an Echelle spectrometer for 1% by weight
+of each of the rare earth (Eu, Gd, La, Nd, Pr, and Sm) and Y (transition
+metal) oxides, mixed with a 99% balance of graphite powder are shown
+Fig. 1
+(a). The elemental concentrations range from 0.79% for Y to
+0.87% for Gd. The acquired range of the spectra is 200
+800 nm (reduced
+to 250
+700 nm here), obtained under an argon purge atmosphere. The
+spectra are very complex with a dense distribution of spectral features
+that are extremely dif
+cult and tedious to identify individually. Since
+the buildup of
+ssion product elements from nuclear
+ssion reactions
+can be as high as 18% of the total
+ssions for Nd,
+Fig. 1
+(b) shows the
+spectra of 25% by weight of each element's oxide (with elemental concen-
+trations ranging from 19.7% for Y to 21.7% for Gd), in which the complex-
+ity and density of peaks increase rapidly over the 1% spectra shown in
+Fig. 1
+(a). By zooming into the spectral region of interest, the individual
+spectral lines can be clearly observed as shown in
+Fig. 1
+(c). Due to the
+density of the number of spectral lines, some line interferences are
+observed.
+The main neutral and ionic lines of
+the rare earths have been identi
+in the expanded wavelength region (390
+430 nm) in
+Fig. 1
+(c). This
+spectrum shows that multiple signature peaks for
+ngerprinting each
+rare earth element can be used in calibrating these individual elements.
+When we correlate the peaks in the LIBS spectra to the NIST-Atomic
+spectra data baselines, the peaks that were identi
+ed for Y are 393.066,
+395.036, 398.26, 407.735, 410.236, 412.83, 414.284, 417.754, and
+419.928 nm. The peaks identi
+ed for Sm are 392.828, 411.019,
+411.855, 415.221, 419.945, and 428.079 nm. The peaks that were
+identi
+ed for Pr are 391.885, 396.426, 398.051, 398.968, 399.583,
+405.88, 410.073, 411.389, 414.311, 416.804, 417.225, 417.939, and
+422.293 nm. For Nd, the peaks of interests were 392.71, 395.745,
+397.33, 397.949, 399.01, 401.225, 402.478, 404.08, 406.109, 407.762,
+410.946, 415.626, and 417.732 nm. A number of peaks identi
+ed for
+La are 392.922, 394.91, 398.852, 399.575, 403.169, 404.291, 407.735,
+408.672, 412.323, 415.197, 416.026, 419.655, and 423.838 nm. The
+peaks that were identi
+ed for Gd are 396.929, 404.684, 405.364,
+405.822, 407.87, 409.372, 418.425, 419.078, and 422.585 nm; and lastly,
+the peaks correlated to Eu are 390.71, 392.887,393.048, 397.196,
+397.963, 412.97, 420.505 nm (
+Fig. 1
+(c)). All the peaks that are mentioned
+here have not been shown in
+Fig. 1
+(c) because of the scaling for the seven
+spectra it was dif
+cult to label them individually. This shows that even in
+a small wavelength range, we have a cluster of 70 peaks that can be used
+to identify de
+nitively the set of seven elements that have been studied
+for this article.
+Fig. 2
+(a) shows the full broadband spectrum of an equal mixture of
+Eu, Gd, La, Nd, Pr, Sm, and Y oxides. The concentration of each oxide is
+14.3% (elemental concentrations range from 11.3% Y to 12.4% Gd).
+After acquiring the data for this mixture, it was noticed that the
+complexity and richness of the spectral features increased greatly, as
+expected. To see if we can differentiate all seven rare earths within
+this complex mixture, the spectrum is expanded within the wavelength
+region of 220
+300 nm in
+Fig. 2
+(b). After expanding the broadband
+spectrum to focus on a smaller window, it was observed that individual
+peaks of Eu, Pr, and Y could be resolved. Further investigation of the
+wavelength region between 350 and 400 nm (
+Fig. 2
+(c)) demonstrates
+that all seven elements can be identi
+ed in this region. Similarly, all
+seven elements can be identi
+ed in the wavelength region between
+350 and 450 nm (
+Fig. 2
+(c and d)).
+Armed with this information, it was concluded that univariate
+analysis is impractical when analyzing complex mixtures such as those
+reported in this article. Picking the best spectral features from each
+element is a tedious and time-consuming task, especially if developing
+calibration curves for each individual element and then extrapolating
+that information to the entire mixture of rare earths. In the case of each
+of the seven elements, six spectra of concentrations each from 1% to
+50% were obtained for each rare earth oxides mixed with the balance of
+graphite powder. Hence partial least square (PLS) was used for the
+element concentration determination. PLS is a multivariate analysis
+(MVA) technique that provides a model for the relationship between a
+set of predictor variables X (
+objects,
+variables) and a set of response
+variables Y (
+objects,
+responses)
+[49]
+.Inthiscase,
+variables are the
+LIBS wavelengths and
+responses are properties such as the concentra-
+tions for the six rare earths and one transition metal. The
+response
+must be independently measured for each sample. If the spectral data
+contain information about the properties of interest, a reliable calibration
+model can be constructed. Multivaria
+te analysis of the data is performed
+using the Unscrambler (version 9.7) software, CAMO, Corvallis, OR
+[50]
+Three important results in using this approach are (1) the r
+coef
+cient
+of determination for the calibration an
+d validation, (2) the loading param-
+eters for each element which should be examined in detail to verify if the
+features that were selected by the PLS
+model are real peaks attributed to
+the speci
+c elements, and (3) the number of principal components (PCs)
+that the model uses for prediction of those elements. In general, the lower
+the number of PCs, the better is the development/construction of the
+model. If the numbers of PCs are greater than 10
+15, then there is the
+danger of integrating on the features in the noise of the spectra and not
+on the real peaks. A PLS model is used to determine the correlation
+between measured and predicted rare earth content from the laser-
+induced breakdown spectra.
+Fig. 3
+(a) depicts the predicted versus
+measured Eu, Gd, La, and Nd scatter plo
+ts for the calibration (all samples)
+and full cross-validation sample sets. Excellent coef
+cients of determina-
+tion (r
+) were found for the calibration for each element with 0.97, and
+0.95, and 0.97, and 0.98, respectively. Full cross-validation results were
+slightly lower with 0.95, 0.91, 0.93, and 0.97, respectively.
+Fig. 3
+(b) depicts the predicted versus measured multivariate regres-
+sion curves for Pr, Sm, and Y scatter plots for the calibration and full
+cross-validation sample sets. Excellent coef
+cients of determination (r
+were found for the calibration sample set for each element with 0.99,
+0.97, and 0.99, respectively. Full cross-validation results were slightly
+weaker (especially for Pr and Sm), with
+0.87, 0.89, and 0.97, respectively.
+PLS regression models help identify the spectral features present in
+these rare earth oxide mixtures that contribute to the PLS regression
+models, in which case acceptable regression coef
+cients are obtained
+for both calibration and validation models. No pre-treatment of data
+was undertaken. Out of the total six spectra that were acquired for
+each element at each concentration, three were used for calibration
+and the remaining three were used for validation. PLS1 was performed
+along with calibration and full cross-validation. PCA was done to
+nd the outliers for each element and those were eliminated from the
+calibration set. This is shown in
+Table 2
+.below.
+Fig. 4
+shows the loading parameters for all seven rare earth and
+transition elements that have been identi
+ed as the contributing features
+in distinguishing the rare earth and transition elements between each
+other.
+Table 3
+below summarizes the loading parameters for the different
+elements that the calibration
+validation methodology has identi
+ed in
+the wavelength range 390
+430 nm.
+The
+rst observation is that the PLS1 model selected very few
+features in the spectra as compared to the original dense, complex
+features. The prominent loading parameters for these elements are
+shown in
+Fig. 4
+. The spectral features listed in
+Table 3
+are the loading
+parameters picked out by the program to distinguish the seven
+elements from each other. The next parameter to be calculated is the
+total residual variance plot for the seven elements. The total residual
+Fig. 5.
+(a) Distribution of Eu, Gd, La, and Nd variation between the different principal components (PCs). (b) Distribution of Pr, Sm, and Y variation between
+the different principal
+components (PCs).
+M. Martin et al. / Spectrochimica Acta Part B 114 (2015) 65
+
+--- OBJ 90 ---
+variance plot should be a decreasing function of the number of
+components.
+Fig. 5
+(a) presents the total residual variance plots and
+is used to assess where the model structure stops and the noise starts
+for all the correlations. For example, the
+rst graph is the distribution
+of Eu variation between the different PCs. The second graph in
+Fig. 5
+(a) shows the distribution of the variation of Gd data between
+the different PCs, and the third graph is the distribution of the variation
+of La data between the different PCs. All the graphs show that most of
+the variations in the features that contribute to the residual validation
+model lie within the PC1 components and less variation is found between
+PC1 and PC2. Even less variation of the features that contribute to the
+residual validation model is found between PC2 and PC3, and then the
+variation decreases as expected between PC3 and PC4. This continues
+until no variation is observed for higher order PCs. The basic PC selection
+assumes that inclusion of
+small
+variations do not correspond to signi
+cant data structure(s), but rather to noise. That is why it is important to
+have fewer PCs to develop a robust model.
+Similarly in
+Fig. 5
+(b), the
+rst graph depicts the PC variation reduced
+to background for PC = 6, and in the other graphs, the PC number is 4
+for samarium and
+nally for yttrium the PC = 4 at which the variation
+is completely stabilized.
+4. Conclusions
+LIBS was used to obtain the complex emission spectra from single-
+element samples of six rare earth elements Eu, Gd, La, Nd, Pr, and Sm,
+and one transition metal Y, at concentrations of 1% and 50% by weight
+for each element in oxide form. Multivariate calibration and cross-
+validation correlations were developed for each individual element. The
+calibration r
+for each element were very good, with values ranging
+from 0.95 to 0.99. The cross-validation r
+for each element were slightly
+lower, with values ranging from 0.87 to 0.97 which is to be expected. A
+multivariate approach was developed for each element of interest and
+was able to determine those features that were the primary contributors
+to the mixed spectra from each speci
+c element. The variation of all the
+elements between different principal components was found to be
+between 3 and 6 components, hence con
+rming that the statistical
+methodology is very robust and stable. Finally, the loading parameters
+were con
+rmed as picked by the PLS multivariate analysis model.
+Acknowledgements
+This research was supported by the U.S. Department of Energy. This
+manuscript has been authored by UT-Battelle LLC under Contract No.
+DE-AC05-00OR22725 with the U.S. Department of Energy. The United
+States Government retains and the publisher, by accepting the article
+for publication, acknowledges that the United States Government
+retains a non-exclusive, paid-up, irrevocable, worldwide license to
+publish or reproduce the published form of this manuscript, or allow
+others to do so, for United States Government purposes.
+References
+[1]
+S.D. Herrmann, S.X. Li, M.F. Simpson, S. Phongikaroon, Electrolytic reduction of spent
+nuclear oxide fuel as part of an integral process to separate and recover actinides
+from
+ssion products, Sep. Sci. Technol. 41 (2006) 1965
+1983.
+[2]
+Jong-Il Yun, R. Klenze, Jae-Il Kim, Laser-induced breakdown spectroscopy for the
+on-line multielement analysis of highly radioactive glass melt. Part I: characterization
+and evaluation of the method, Appl. Spectrosc. 56 (2002) 437
+448.
+[3]
+Jong-Il Yun, R. Klenze, Jae-Il Kim, Laser-induced breakdown spectroscopy for the
+on-line multielement analysis of highly radioactive glass melt. Part II: analyses of
+molten glass samples, Appl. Spectrosc. 56 (2002) 852
+858.
+[4]
+C.A. Smith, M.A. Martinez, D.K. Veirs, D.A. Cremers, Pu-239/Pu-240 isotope ratios
+determined using high resolution emission spectroscopy in a laser-induced plasma,
+Spectrochim. Acta B57 (2002) 929
+937.
+[5]
+D.A. Cremers, A. Bedding
+eld, R. Smithwick, R. Chinni, C.R. Jones, B. Beardsley, L.
+Karch, Monitoring uranium, hydrogen, and lithium and their isotopes using a
+compact laser-induced breakdown spectroscopy (LIBS) probe high-resolution
+spectrometer, Appl. Spectrosc. 66 (2012) 250
+261.
+[6]
+J.E. Bare
+eld II, E.J. Judge, J.M. Berg, S.P. Willson, L.A. Le, L.N. Lopez, Analysis and
+spectral assignments of mixed actinide oxid
+e samples using laser-induced breakdown
+spectroscopy (LIBS), Appl. Spectrosc. 67 (2013) 433
+440.
+[7]
+E.J. Judge, J.E. Bare
+eld II, J.M. Berg, S.M. Clegg, G.J. Havrilla, V.M. Montoya, L.A. Le,
+L.N. Lopez, Laser-induced breakdown spectroscopy measurements of uranium and
+thorium powders and uranium ore, Spectrochim. Acta Part B 83
+84 (2013) 28
+36.
+[8]
+T. Bundschuh, Jong-Il Yun, R. Knopp, Determination of size, concentration and
+elemental composition of colloids with laser-induced breakdown detection/
+spectroscopy (LIBD/S), Fresenius J. Anal. Chem. 371 (2001) 1063
+1069.
+[9]
+D. Alamelu, A. Sarkar, S.K. Aggarwal, Laser-induced breakdown spectroscopy for
+simultaneous determination of Sm, Eu, and Gd in aqueous solutions, Talanta 77
+(2008) 256
+261.
+[10]
+Jong-Il Yun, T. Bundschuh, V. Neck, Jae-Il Kim, Selective determination of europium
+(III) oxide and hydroxide colloids in aqueous solution by laser-induced breakdown
+spectroscopy, Appl. Spectrosc. 55 (2001) 273
+278.
+[11]
+E.C. Jung, D.H. Lee, J.-I. Yun, J.G. Kim, J.W. Yeon, K. Song, Quantitative determination
+of uranium and europium in glass matrix by laser-induced breakdown spectroscopy,
+Spectrochim. Acta Part B 66 (2011) 761
+764.
+[12]
+H. Hotokezaka, S. Tanaka, A. Suzuki, S. Nagasaki, Speciation analysis on europium (III)
+using laser-induced breakdown spectroscopy, Radiochim. Acta 88 (2000) 645
+648.
+[13]
+D. Menut, P. Mauchien, Y.S. Gif, M. Descostes, P. Meier, J. Radwan, C. Poinssot, Eu
+migrationinCallovo
+Oxfodian argillite: on the use of micro laser-induced breakdown
+spectroscopy(microLIBS)asamicroanalysi
+s tool, Int. conf. on chemistry and migration
+behavior of actinides and
+ssion products in the geosphere, Avignon (France) 38
+(Sept. 2005) 1.
+[14]
+G. Zikratov, R. Vasudev, F.Y. Yueh, J.P. Singh, J.C. Marra, Laser induced breakdown
+spectroscopy of hafnium doped vitri
+ed glass, Glass Technol. 40 (1999) 84
+88.
+[15]
+K. Song, D. Kim, H.K. Cha, Y. Kim, E.C. Jung, I. Choi, H.S. Yoo, S. Oh, Characterization of
+laser-induced plasma in a vacuum using laser ablation mass spectrometry, and
+laser-induced breakdown spectrometry, Microchem. J. 76 (2004) 95
+103.
+[16]
+M.Oba,Y.Maruyama,K.Akaoka,M.Miyabe,I.Wakaida,Double-pulseLIBSof
+gadolinium oxide ablated by femto- and nano-second laser pulses, Appl. Phys.
+A 101 (2010) 545
+549.
+[17]
+V.K. Unnikrishnan, R. Nayak, P. Devangad, M.M. Tamboli, C. Santhosh, G.A. Kumar,
+D.K. Sardar, Calibration based laser-induced breakdown spectroscopy (LIBS) for
+quantitative analysis of doped rare earth elements in phosphors, Mater. Lett. 107
+(2013) 322
+324.
+[18]
+S.H.Kim,J.S.Ju,Y.H.Lee,J.H.Jeong,H.S.Sin,Semi-quantitativeanalysisofthe
+Neodymium binary alloys using Laser induced breakdown spectroscopy,
+Trans. Korean Nucl. Soc., Autumn meeting PueongChang, Korea Oct 30-31, 2008.
+[19]
+S.J. Rehse, C.A. Ryder, Laser-induced breakdown spectroscopy for branching ratio
+and atomic lifetime measurements in singly-ionized neodymium and gallium,
+Spectrochim. Acta Part B 64 (2009) 974
+980.
+[20]
+A.F.M.Y. Haider, M.A. Rony, R.S. Lubna, K.M. Abedin, Detection of multiple elements
+in coal samples from Bangladesh by laser-induced breakdown spectroscopy, Opt.
+Laser Technol. 43 (2011) 1405
+1410.
+[21]
+S.H. Kim, J.S. Hong, J.S. Ju, H.S. Sin, A quantitative analysis for Lanthanum series
+element using Laser induced breakdown spectroscopy, Trans. Korean Nucl. Soc.,
+Spring meeting, Gyeongju, Korea May 29-30, 2008.
+[22]
+A. Ciucci, V. Palleschi, S. Rastelli, R. Barbini, F. Colao, R. Fontini, A. Palucci, S. Ribezzo,
+H.J.L. van der Steen, Trace pollutants anlaysis in soil by a time-resolved laser-
+induced breakdown spectroscopy technique, Appl. Phys. B 63 (1996) 185
+190.
+[23]
+S.H. Kim, J.S. Ju, J.-H. Jeong, H.-S. Sin, H.-D. Kim, Semi- quantitative analysis for Sa-
+marium alloys sample using Laser induced breakdown spectroscopy, Trans. Korean
+Nucl. Soc., Spring meeting, Jeju, Korea May 22, 2009.
+[24]
+J. Pigosova, A. Kilianova, P. Vojtek, M. Kopc
+ok, A. Cigan, Preparation of bismuth-doped
+yttrium iron garnets and their characterization, Proc. SPIE 6609 (2007) M1
+M7.
+[25]
+S.G. Buckley, H.A. Johnson, K.R. Hencken, D.W. Hahn, Implementation of laser-induced
+breakdown spectroscopy as a continuous emissions monitor for toxic metals, Waste
+Manag. 20 (2002) 455
+462.
+[26]
+H. Zhang, F.-Y. Yueh, J.P. Singh, Laser-induced breakdown spectrometry as a
+multimetal continuous-emission monitor, Appl. Opt. 38 (1999) 1459
+1466.
+[27]
+K.M. Abedin, A.F.M.Y. Haider, M.A. Rony, Z.H. Khan, Identi
+cation of multiple rare
+earths and associated elements in raw monazite sands by laser-induced breakdown
+spectroscopy, Opt. Laser Technol. 43 (2011) 45
+49.
+[28]
+Madhavi Z. Martin, Steve Allman, Deanne J. Brice, Rodger C. Martin, Nicolas O. Andre,
+Exploring laser-induced breakdown spectroscopy for nuclear materials analysis and
+in-situ applications, Spectrochim. Acta Part B 74
+75 (2012) 177
+183.
+[29]
+M. Benedict, T.H. Pigford, H.W. Levi, Nuclear Chemical Engineering, 2nd ed., 1981.
+[30]
+P.W.J.M. Boumans, Basic concepts and characteristics of ICP-AES, in: P.W.J.M. Boumans
+(Ed.), Inductively Coupled Plasma Emission Spectroscopy, Part 1, Methodology,
+Instrumentation, and Performance, Wiley, New York 1987, p. 100 (Chap. 4).
+[31]
+P.W.J.M. Boumans, J.A. Tielrooy, F.J.M.J. Maessen, Mutual spectral interferences of rare
+earth elements in inductively coupled plasma atomic emission spectrometry-I. Rational
+line selection and correction procedure, Spectrochim. Acta Part B 43 (1988) 173
+199.
+[32]
+P.W.J.M. Boumans, J.J.A.M. Vrakking, A.H.M. Heijms, Mutual spectral interferences of
+rare earth elements in inductively coupled plasma atomic emission spectrometry-II
+Approach to the compilation and use of pseudo physically resolved spectral data,
+Spectrochim. Acta Part B 43 (1988) 1365
+1488.
+[33]
+P.W.J.M. Boumans, He Zhi Zhuang, J.J.A.M. Vrakking, J.A. Tielrooy, F.J.M.J. Maessen,
+Mutual spectral interferences of rare earth elements in inductively coupled plasma
+atomic emission spectrometry-III. Pseudo ph
+ysically resolved spectral data: complete
+results and evaluation, Spectrochim. Acta Part B 44 (1989) 31
+93.
+[34]
+B. Huang, X. Wang, P. Yang, H. Ying, S. Gu, Z. Zhang, Z. Zhuang, Z. Sun, B. Li, An atlas
+of High Resolution Spectra of Rare Earth Elements for ICP-AES, Royal Society of
+Chemistry, 2000.
+M. Martin et al. / Spectrochimica Acta Part B 114 (2015) 65
+
+--- OBJ 200 ---
+[35]
+N. Daskalova, S. Velichkov, N. Krasnobaeva, P. Slavova, Spectral interferences in the
+determination of traces of scandium, yttrium and rare earth elements in
+pure
+rare
+earth matrices by inductively coupled plasma atomic emission spectrometry. Part I.
+Cerium, neodymium and lanthanum matrices, Spectrochim. Acta Part B 47 (1992)
+E1595
+E1620.
+[36]
+S. Velichkov, N. Daskalova, P. Slavova, Spectral interferences in the determination of
+traces of scandium, yttrium and rare earth elements in
+pure
+rare earth matrices by
+inductively coupled plasma atomic emission spectrometry. Part II. Praseodymium
+and samarium, Spectrochim. Acta Part B 48 (1993) E1743
+E1789.
+[37]
+N. Daskalova, S. Velichkov, P. Slavova, Spectral interferences in the determination of
+traces of scandium, yttrium and rare earth elements in
+pure
+rare earth matrices by
+inductively coupled plasma atomic emission spectrometry. Part III. Europium,
+Spectrochim. Acta Part B 51 (1996) 733
+768.
+[38]
+S. Velichkov, E. Kostadinova, N. Daskalova, Sp
+ectral interferences in the determination
+of traces of scandium, yttrium and rare earth elements in
+pure
+rare earth matrices
+by inductively coupled plasma atomic emission spectrometry, Part IV. Lutetium and
+yttrium, Spectrochim. Acta Part B 53 (1998) 1863
+1888.
+[39]
+E. Kostadinova, L. Aleksieva, S. Velichkov, N. Daskalova, Spectral interferences in the
+determination of traces of scandium, yttrium and rare earth elements in
+pure
+rare
+earth matrices by inductively coupled plasma atomic emission spectrometry, Part V.
+Gadolinium and Erbium, Spectrochim. Acta Part B 55 (2000) 689
+729.
+[40]
+L. Aleksieva, N. Daskalova, S. Velichkov, Spectral interferences in the determination
+of traces of scandium, yttrium and rare earth elements in
+pure
+rare earth matrices
+by inductively coupled plasma atomic emission spectrometry. Part VI. Ytterbium,
+Spectrochim. Acta Part B 57 (2002) 1341
+1350.
+[41]
+I. Kolibarska, S. Velichkov, N. Daskalova, Spectral interferences in the determination
+of traces of scandium, yttrium and rare earth elements in
+pure
+rare earth matrices
+by inductively coupled plasma atomic emission spectrometry. Part VII
+Terbium,
+Dysprosium, Holmium and Thulium, Spectrochim. Acta Part B 63 (2008) 603
+606
+(McGraw-Hill, N.Y., 1981).
+[42]
+B.C. Windom, D.W. Hahn, Laser ablation- laser induced breakdown spectroscopy
+(LA-LIBS): a means for overcoming matrix effects leading to improved analyte
+response, J. Anal. At. Spectrom. 24 (2009) 1665
+1675.
+[43]
+D.W. Hahn, N. Omenetto, Laser-induced breakdown spectroscopy (LIBS), Part I:
+review of basic diagnostics and plasmaparticle interactions: Still-challenging issues
+within the analytical plasma community, Appl. Spectrosc. 64 (2010) 335A (review
+article).
+[44]
+D.W. Hahn, N. Omenetto, Laser-induced breakdown spectroscopy (LIBS), part II:
+review of instrumental and methodological approaches to material analysis and
+applications to different
+elds, Appl. Spectrosc. 66 (2012) 347
+419 (review article).
+[45]
+A. Diamantopoulou Bassiotis, A. Giannoudakos, F. Roubani-Kalantzopoulou, M.
+Kompitsas, Effects of experimental parameters in quantitative analysis of steel
+alloy by laser-induced breakdown spectroscopy, Spectrochim. Acta Part B 56
+(2001) 671
+683.
+[46] F. Anabitarte, A. Cobo, J.M. Lopez-Higuera, Laser-Induced Breakdown Spectroscopy:
+Fundamentals, Applications, and Challenges, International Scholarly Research Network
+ISRN Spectroscopy 2012 (2012) 12,
+http://dx.doi.org/10.5402/2012/285240
+Article ID
+285240 (review article).
+[47]
+R.A. Multari, L.E. Foster, D.A. Cremers, M.J. Ferris, Effect of sampling geometry on
+elemental emissions in laser-induced reakdown spectroscopy, Appl. Spectrosc. 50
+(1996) 1483
+1499.
+[48] L. K. Felker, M. Z. Martin, J. Miller, and R. C. Martin, unpublished data, Oak Ridge
+National Laboratory, 2003.
+[49]
+http://www.camo.com/introducer/see-inside-multivariate-data-analysis.pdf
+[50]
+H. Martens, T. Naes, Multivariate Calibration, First ed. John Wiley and Sons, New
+York, 1989.
+M. Martin et al. / Spectrochimica Acta Part B 114 (2015) 65
