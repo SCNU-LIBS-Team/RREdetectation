@@ -62,13 +62,13 @@ def _table_to_dataframe(table, table_name):
     return df
 
 
-def _plot_identification_matrix(matrix, sample_names, element_names):
+def _plot_identification_matrix(matrix, sample_names, element_names, save_path=None, save_dpi=3000):
     """
     绘制识别矩阵：
     2: 漏检(黄), 1: 正确(绿), -1: 错误(红), 0: 无事件(不画)
     """
     #建立画布
-    fig, ax = plt.subplots(figsize=(max(8, len(element_names) * 0.6), max(5, len(sample_names) * 0.5)))
+    fig, ax = plt.subplots(figsize=(max(16, len(element_names) * 0.6), max(10, len(sample_names) * 0.5)))
 
     #颜色规则
     color_map = {
@@ -86,16 +86,16 @@ def _plot_identification_matrix(matrix, sample_names, element_names):
 
     #表头和标签
     ax.set_xticks(np.arange(len(element_names)))
-    ax.set_xticklabels(element_names, fontsize=15, fontweight="semibold")
+    ax.set_xticklabels(element_names, fontsize=22, fontweight="semibold")
     ax.set_yticks(np.arange(len(sample_names)))
     display_sample_labels = [f"{i + 1}" for i in range(len(sample_names))]
-    ax.set_yticklabels(display_sample_labels, fontsize=15, fontweight="semibold")
+    ax.set_yticklabels(display_sample_labels, fontsize=22, fontweight="semibold")
     ax.tick_params(axis="both", which="major", length=0)
 
     #标签
-    ax.set_xlabel("Element", fontsize=15, fontweight="semibold")
-    ax.set_ylabel("Sample", fontsize=15, fontweight="semibold")
-    ax.set_title("Identification Matrix", fontsize=20, fontweight="semibold")
+    ax.set_xlabel("Element", fontsize=22, fontweight="semibold")
+    ax.set_ylabel("Sample", fontsize=22, fontweight="semibold")
+    ax.set_title("Identification Matrix", fontsize=30, fontweight="semibold")
 
     # 表格样式：实线单元格边界，圆点位于单元格中心
     ax.set_xlim(-0.5, len(element_names) - 0.5)
@@ -116,14 +116,16 @@ def _plot_identification_matrix(matrix, sample_names, element_names):
         plt.Line2D([0], [0], marker="o", color="w", markerfacecolor="red", markeredgecolor="black", markersize=8, label="False"),
     ]
 
-    ax.legend(handles=handles, loc="upper right",  prop={"weight": "semibold", "size": 12})
+    ax.legend(handles=handles, loc="upper right",  prop={"weight": "semibold", "size": 20})
     for spine in ax.spines.values():
         spine.set_linewidth(2.0)
     plt.tight_layout()
+    if save_path:
+        fig.savefig(save_path, dpi=save_dpi, bbox_inches="tight")
     plt.show()
 
 
-def _plot_element_metrics(gt_aligned, pred_aligned, element_names):
+def _plot_element_metrics(gt_aligned, pred_aligned, element_names, save_path=None, save_dpi=3000):
     """
     绘制按元素统计的 Precision / Recall / F1-score 柱状图（百分比）。
     """
@@ -146,6 +148,11 @@ def _plot_element_metrics(gt_aligned, pred_aligned, element_names):
     precision_pct = precision * 100
     recall_pct = recall * 100
     f1_pct = f1 * 100
+
+    average_precision_pct = float(np.mean(precision_pct))
+    average_recall_pct = float(np.mean(recall_pct))
+    print(f"全部元素平均正确率 (Average Precision): {average_precision_pct:.2f}%")
+    print(f"全部元素平均检出率 (Average Recall): {average_recall_pct:.2f}%")
 
 
     #柱状图图形设置
@@ -183,6 +190,8 @@ def _plot_element_metrics(gt_aligned, pred_aligned, element_names):
     ax.legend(loc="upper right",  prop={"weight": "semibold", "size": 12})
 
     plt.tight_layout()
+    if save_path:
+        fig.savefig(save_path, dpi=save_dpi, bbox_inches="tight")
     plt.show()
 
 
@@ -215,6 +224,10 @@ def generate_identification_matrix(
     predictions,
     show_plot=True,
     show_metrics_plot=True,
+    save_dir=None,
+    save_dpi=3000,
+    identification_plot_name="identification_matrix.png",
+    metrics_plot_name="element_metrics.png",
     fakebotton=False,
     fake_seed=42,
 ):
@@ -278,32 +291,54 @@ def generate_identification_matrix(
     # 错误识别: 真=0, 预测=1
     matrix[(gt_vals == 0) & (pred_vals == 1)] = -1
 
+    identification_save_path = None
+    metrics_save_path = None
+    if save_dir is not None:
+        os.makedirs(save_dir, exist_ok=True)
+        identification_save_path = os.path.join(save_dir, identification_plot_name)
+        metrics_save_path = os.path.join(save_dir, metrics_plot_name)
+
     if show_plot:
-        _plot_identification_matrix(matrix, sample_names, element_names)
+        _plot_identification_matrix(
+            matrix,
+            sample_names,
+            element_names,
+            save_path=identification_save_path,
+            save_dpi=save_dpi,
+        )
 
     if show_metrics_plot:
-        _plot_element_metrics(gt_aligned, pred_aligned, element_names)
+        _plot_element_metrics(
+            gt_aligned,
+            pred_aligned,
+            element_names,
+            save_path=metrics_save_path,
+            save_dpi=save_dpi,
+        )
 
     return matrix, sample_names, element_names
 
 
 #整套模式
-filepath = r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt6'
-# filepath = r'D:\LIBS\RREdetectation\T_scanon\Pt1'
-fakebotton = False
-fake_seed = 42
-confidence_path=os.path.join(filepath,'rareearth_confidence_results_with_fit.csv')
-contents_path=os.path.join(filepath,'Randomrareearth_contents.csv')
-confidence=pd.read_csv(confidence_path)
-contents=pd.read_csv(contents_path)
-identification_matrix, sample_names, element_names = generate_identification_matrix(
-    contents,
-    confidence,
-    show_plot=True,
-    show_metrics_plot=True,
-    fakebotton=fakebotton,
-    fake_seed=fake_seed,
-)
+if __name__ == "__main__":
+    filepath = r'D:\LIBS\RREdetectation\RandomSpectrum_av2\Pt5'
+    # filepath = r'D:\LIBS\RREdetectation\T_scanon\Pt1'
+    fakebotton = False
+    fake_seed = 42
+    confidence_path=os.path.join(filepath,'rareearth_confidence_results_with_fit.csv')
+    contents_path=os.path.join(filepath,'Randomrareearth_contents.csv')
+    confidence=pd.read_csv(confidence_path)
+    contents=pd.read_csv(contents_path)
+    identification_matrix, sample_names, element_names = generate_identification_matrix(
+        contents,
+        confidence,
+        show_plot=True,
+        show_metrics_plot=True,
+        fakebotton=fakebotton,
+        fake_seed=fake_seed,
+        save_dir=filepath,
+        save_dpi=3000,
+    )
 
 
 # #对应样本模式

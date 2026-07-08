@@ -5,6 +5,28 @@ from scipy.optimize import minimize
 import scipy.signal as signal
 import pywt
 
+#中文输出
+_CHINESE_FONT_CANDIDATES = [
+    "Microsoft YaHei",
+    "SimHei",
+    "SimSun",
+    "Arial Unicode MS",
+    "Noto Sans CJK SC",
+    "Source Han Sans SC",
+]
+
+
+def _configure_matplotlib_chinese_fonts():
+    existing_fonts = list(plt.rcParams.get("font.sans-serif", []))
+    plt.rcParams["font.family"] = "sans-serif"
+    plt.rcParams["font.sans-serif"] = _CHINESE_FONT_CANDIDATES + [
+        font for font in existing_fonts if font not in _CHINESE_FONT_CANDIDATES
+    ]
+    plt.rcParams["axes.unicode_minus"] = False
+
+
+_configure_matplotlib_chinese_fonts()
+
 
 #数据导入部分
 signal_path=r'D:\LIBS\RREdetectation\MultiPeakfit\4_24data.csv'
