@@ -399,9 +399,9 @@ def Intensity_Factor(A,g,E,T):
 # print(E[1])
 # print(derivative_P_T(1, 10000))
 
-# plot_derivative_vs_T(wl, A, E, g, 0, T_true=10000, t_min=1000, t_max=20000, num=2000, mode='all')
-# plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
-# plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
+plot_derivative_vs_T(wl, A, E, g, 0, T_true=10000, t_min=1000, t_max=20000, num=2000, mode='all')
+plot_confidence_error_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
+plot_p_T_curve(T_true=10000, t_min=5000, t_max=20000, num=500)
 
 
 
