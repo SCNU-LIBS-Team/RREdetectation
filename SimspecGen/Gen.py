@@ -59,7 +59,7 @@ def generate_spectra(mode,file_name,resolution=3000,Te=0.5,Ne=1e17,low_w=200,upp
                 low_w=low_w,
                 upper_w=upper_w,
                 max_ion_charge=2,
-                webscraping='dynamic',
+                webscraping='static',
                 headless=True,
                 keep_browser_open=False,
                 detach_browser=False
@@ -108,7 +108,7 @@ def generate_spectra(mode,file_name,resolution=3000,Te=0.5,Ne=1e17,low_w=200,upp
             low_w=low_w,
             upper_w=upper_w,
             max_ion_charge=2,
-            webscraping='dynamic',
+            webscraping='static',
             headless=False,
             keep_browser_open=True,
             detach_browser=True
@@ -167,7 +167,7 @@ def generate_spectra(mode,file_name,resolution=3000,Te=0.5,Ne=1e17,low_w=200,upp
                 low_w=low_w,
                 upper_w=upper_w,
                 max_ion_charge=2,
-                webscraping='dynamic',
+                webscraping='static',
                 headless=True,
                 keep_browser_open=False,
                 detach_browser=False
@@ -228,4 +228,4 @@ def run_generate_with_auto_restart(retry_wait_seconds=10,mode='generate',file_na
 
 
 generate_spectra(mode='random',file_name="07840",resolution=3000,Te=0.86,Ne=1e17,low_w=200,upper_w=700)
-# run_generate_with_auto_restart(retry_wait_seconds=10,mode='debug',file_name="070099")
+run_generate_with_auto_restart(retry_wait_seconds=10,mode='debug',file_name="070099")

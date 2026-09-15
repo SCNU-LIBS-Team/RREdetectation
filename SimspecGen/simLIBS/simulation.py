@@ -1,4 +1,9 @@
+import json
+import shutil
+import subprocess
 import sys
+import threading
+from pathlib import Path
 from typing import List
 
 from bs4 import BeautifulSoup
@@ -13,19 +18,18 @@ import os
 from scipy.interpolate import CubicSpline
 from concurrent.futures import ThreadPoolExecutor
 import math
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium import webdriver
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from webdriver_manager.chrome import ChromeDriverManager
 import urllib3
 
 urllib3.disable_warnings()
 
 BROWSER_TIMEOUT_SECONDS = 420
 CHROMEDRIVER_TRANSPORT_TIMEOUT_SECONDS = 540
+STATIC_REQUEST_TIMEOUT_SECONDS = 180
+STATIC_CALCULATION_TIMEOUT_SECONDS = 420
+NIST_LTE_JAVASCRIPT_URL = (
+    "https://physics.nist.gov/PhysRefData/ASD/LIBS/js/saha_lte.js"
+)
+NIST_LTE_RUNNER = Path(__file__).with_name("nist_lte_runner.js")
 
 
 class CompositionError(Exception):
@@ -61,6 +65,9 @@ def validate_simulated_libs(
 
 
 class SimulatedLIBS(object):
+
+    _nist_lte_javascript = None
+    _nist_lte_javascript_lock = threading.Lock()
 
     def __init__(
         self,
@@ -130,8 +137,15 @@ class SimulatedLIBS(object):
         match webscraping:
             case "static":
                 self.retrieve_data_static()
-                self.interpolate()
             case "dynamic":
+                from selenium import webdriver
+                from selenium.webdriver.common.by import By
+                from selenium.webdriver.chrome.options import Options
+                from selenium.webdriver.chrome.service import Service
+                from selenium.webdriver.support import expected_conditions as EC
+                from selenium.webdriver.support.ui import WebDriverWait
+                from webdriver_manager.chrome import ChromeDriverManager
+
                 self.ion_spectra = None
                 options = Options()
                 options.add_argument("--disable-notifications")
@@ -242,26 +256,247 @@ class SimulatedLIBS(object):
         self.driver.switch_to.window((self.driver.window_handles[1]))
 
         soup = BeautifulSoup(self.driver.page_source, "html.parser")
-        self.ion_spectra = pd.read_csv(io.StringIO(soup.pre.text), sep=",").fillna(0)
-        self.raw_spectrum["wavelength"] = self.ion_spectra["Wavelength (nm)"]
-        self.raw_spectrum["intensity"] = self.ion_spectra["Sum(calc)"]
-
-        self.interpolated_spectrum["wavelength"] = self.ion_spectra["Wavelength (nm)"]
-        self.interpolated_spectrum["intensity"] = self.ion_spectra["Sum(calc)"]
+        self.nist_csv_text = soup.pre.text.strip("\r\n")
+        self.ion_spectra = pd.read_csv(io.StringIO(self.nist_csv_text), sep=",")
+        self._set_spectrum_from_nist_csv()
 
     def retrieve_data_static(self):
-        """
+        """Retrieve the same recalculated CSV as NIST without using Chrome."""
+        session = self._new_static_session()
+        response = session.get(
+            self.get_site(), timeout=STATIC_REQUEST_TIMEOUT_SECONDS
+        )
+        response.raise_for_status()
 
-        Returns
-        -------
+        soup = BeautifulSoup(response.content, "html.parser")
+        page_scripts = [
+            script.string or script.get_text()
+            for script in soup.find_all("script")
+            if "var dataDopplerArray" in str(script)
+        ]
+        if not page_scripts:
+            raise ValueError(
+                "NIST response did not contain LIBS spectrum data. "
+                "Check the requested composition and wavelength range."
+            )
 
-        """
-        site = self.get_site()
-        respond = requests.get(site, verify=False)
-        soup = BeautifulSoup(respond.content, "html.parser")
-        html_data = soup.find_all("script")
-        html_data = list(filter(lambda t: "var dataDopplerArray" in str(t), html_data))
-        self.retrieve_spectrum_from_html(str(html_data[0]))
+        page_script = page_scripts[0]
+        data_source = self._extract_nist_lte_data_source(page_script)
+        recalculation_inputs = self._extract_recalculation_inputs(soup)
+        lte_source = self._get_nist_lte_javascript(session)
+        csv_text = self._run_nist_lte_javascript(
+            data_source, lte_source, recalculation_inputs
+        )
+        self.nist_csv_text = csv_text.strip("\r\n")
+        self.ion_spectra = pd.read_csv(io.StringIO(self.nist_csv_text), sep=",")
+        self._set_spectrum_from_nist_csv()
+
+    @staticmethod
+    def _new_static_session():
+        # The current project environment points requests at a flaky localhost
+        # proxy. NIST is directly reachable, so static mode must not inherit it.
+        session = requests.Session()
+        session.trust_env = False
+        return session
+
+    @classmethod
+    def _get_nist_lte_javascript(cls, session):
+        if cls._nist_lte_javascript is not None:
+            return cls._nist_lte_javascript
+
+        with cls._nist_lte_javascript_lock:
+            if cls._nist_lte_javascript is None:
+                response = session.get(
+                    NIST_LTE_JAVASCRIPT_URL,
+                    timeout=STATIC_REQUEST_TIMEOUT_SECONDS,
+                )
+                response.raise_for_status()
+                if "function lte_spectrum_js" not in response.text:
+                    raise ValueError(
+                        "NIST Saha/LTE JavaScript response is incomplete."
+                    )
+                cls._nist_lte_javascript = response.text
+        return cls._nist_lte_javascript
+
+    @staticmethod
+    def _extract_javascript_statement(source: str, variable: str) -> str:
+        match = re.search(rf"\bvar\s+{re.escape(variable)}\s*=", source)
+        if match is None:
+            raise ValueError(f"NIST response is missing JavaScript variable {variable}.")
+
+        quote = None
+        escaped = False
+        bracket_depth = 0
+        brace_depth = 0
+        parenthesis_depth = 0
+        for index in range(match.end(), len(source)):
+            char = source[index]
+            if quote is not None:
+                if escaped:
+                    escaped = False
+                elif char == "\\":
+                    escaped = True
+                elif char == quote:
+                    quote = None
+                continue
+
+            if char in {"'", '"', "`"}:
+                quote = char
+            elif char == "[":
+                bracket_depth += 1
+            elif char == "]":
+                bracket_depth -= 1
+            elif char == "{":
+                brace_depth += 1
+            elif char == "}":
+                brace_depth -= 1
+            elif char == "(":
+                parenthesis_depth += 1
+            elif char == ")":
+                parenthesis_depth -= 1
+            elif (
+                char == ";"
+                and bracket_depth == 0
+                and brace_depth == 0
+                and parenthesis_depth == 0
+            ):
+                return source[match.start() : index + 1]
+
+        raise ValueError(
+            f"NIST JavaScript variable {variable} has no terminating semicolon."
+        )
+
+    @staticmethod
+    def _extract_javascript_block(source: str, start_variable: str, end_variable: str):
+        start = re.search(rf"\bvar\s+{re.escape(start_variable)}\s*=", source)
+        end = re.search(rf"\bvar\s+{re.escape(end_variable)}\s*=", source)
+        if start is None or end is None or start.start() >= end.start():
+            raise ValueError(
+                "NIST response has an unexpected LIBS data layout: "
+                f"{start_variable}..{end_variable}."
+            )
+        return source[start.start() : end.start()]
+
+    @classmethod
+    def _extract_nist_lte_data_source(cls, page_script: str) -> str:
+        statements = [
+            cls._extract_javascript_statement(page_script, "composition"),
+            cls._extract_javascript_statement(page_script, "koeff"),
+            cls._extract_javascript_statement(page_script, "cmeV"),
+            cls._extract_javascript_statement(page_script, "resolution"),
+            cls._extract_javascript_statement(page_script, "temp"),
+            cls._extract_javascript_statement(page_script, "eden"),
+            cls._extract_javascript_statement(page_script, "IscaleType"),
+            cls._extract_javascript_statement(page_script, "lines"),
+            cls._extract_javascript_block(page_script, "spectra", "ips"),
+            cls._extract_javascript_block(page_script, "ips", "gValues"),
+            cls._extract_javascript_block(page_script, "gValues", "levels"),
+            cls._extract_javascript_block(
+                page_script, "levels", "dataDopplerArray"
+            ),
+            cls._extract_javascript_statement(page_script, "dataDopplerArray"),
+        ]
+        return "\n".join(statements)
+
+    @staticmethod
+    def _extract_recalculation_inputs(soup: BeautifulSoup) -> dict:
+        composition_parts = []
+        for percentage_input in soup.find_all("input", attrs={"name": "perc"}):
+            input_id = percentage_input.get("id", "")
+            element_label = soup.find(id="elem" + input_id.removeprefix("perc"))
+            percentage = percentage_input.get("value")
+            if element_label is None or percentage is None:
+                raise ValueError(
+                    "NIST response contains an incomplete composition form."
+                )
+            composition_parts.append(
+                f"{element_label.get_text(strip=True)}:{percentage}"
+            )
+
+        def input_value(name):
+            input_element = soup.find("input", attrs={"name": name})
+            if input_element is None or input_element.get("value") is None:
+                raise ValueError(f"NIST response is missing form value {name}.")
+            return input_element["value"]
+
+        if not composition_parts:
+            raise ValueError("NIST response contains no composition form values.")
+        return {
+            "composition": ";".join(composition_parts),
+            "temperature": input_value("temp"),
+            "electron_density": input_value("eden"),
+        }
+
+    def _run_nist_lte_javascript(
+        self,
+        data_source: str,
+        lte_source: str,
+        recalculation_inputs: dict,
+    ) -> str:
+        node_executable = shutil.which("node")
+        if node_executable is None:
+            raise RuntimeError(
+                "Static LIBS generation requires Node.js, but 'node' was not found "
+                "on PATH. Install Node.js or use webscraping='dynamic'."
+            )
+        if not NIST_LTE_RUNNER.is_file():
+            raise RuntimeError(f"Static LIBS runner is missing: {NIST_LTE_RUNNER}")
+
+        payload = json.dumps(
+            {
+                "lteSource": lte_source,
+                "dataSource": data_source,
+                "resolution": self.resolution,
+                "composition": recalculation_inputs["composition"],
+                "temperature": recalculation_inputs["temperature"],
+                "electronDensity": recalculation_inputs["electron_density"],
+                "timeoutMilliseconds": STATIC_CALCULATION_TIMEOUT_SECONDS * 1000,
+            }
+        )
+        try:
+            completed = subprocess.run(
+                [node_executable, str(NIST_LTE_RUNNER)],
+                input=payload,
+                text=True,
+                encoding="utf-8",
+                capture_output=True,
+                check=False,
+                timeout=STATIC_CALCULATION_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired as error:
+            raise TimeoutError(
+                "Static NIST Saha/LTE calculation timed out after "
+                f"{STATIC_CALCULATION_TIMEOUT_SECONDS} seconds."
+            ) from error
+
+        if completed.returncode != 0:
+            detail = completed.stderr.strip() or "unknown Node.js error"
+            raise RuntimeError(detail)
+        header = completed.stdout.partition("\n")[0]
+        if not (
+            header == "Wavelength (nm),Sum(calc)"
+            or header.startswith("Wavelength (nm),Sum(calc),")
+        ):
+            raise ValueError("Static NIST calculation returned invalid CSV data.")
+        return completed.stdout
+
+    def _set_spectrum_from_nist_csv(self):
+        required_columns = {"Wavelength (nm)", "Sum(calc)"}
+        missing_columns = required_columns.difference(self.ion_spectra.columns)
+        if missing_columns:
+            raise ValueError(
+                "NIST CSV is missing required columns: "
+                + ", ".join(sorted(missing_columns))
+            )
+
+        spectrum = pd.DataFrame(
+            {
+                "wavelength": self.ion_spectra["Wavelength (nm)"],
+                "intensity": self.ion_spectra["Sum(calc)"],
+            }
+        ).reset_index(drop=True)
+        self.raw_spectrum = spectrum.copy()
+        self.interpolated_spectrum = spectrum.copy()
 
     def retrieve_spectrum_from_html(self, html_data: str):
 
@@ -332,14 +567,23 @@ class SimulatedLIBS(object):
 
     def get_ion_spectra(self):
 
-        if self.webscraping == "dynamic" and self.ion_spectra is not None:
+        if self.ion_spectra is not None:
             return self.ion_spectra
         else:
             raise ValueError(
-                "Data retrieval requires webscraping method set to 'dynamic' and successful data acquisition."
+                "NIST ion spectra are unavailable because data acquisition failed."
             )
 
-    def save_to_csv(self, filepath: str):
+    def save_to_csv(self, filepath: str, include_all_columns: bool = True):
+        """Save the complete NIST CSV, or the legacy wavelength/intensity pair."""
+        if include_all_columns:
+            if not getattr(self, "nist_csv_text", None):
+                raise ValueError("Complete NIST CSV data are unavailable.")
+            with open(filepath, "w", encoding="utf-8", newline="") as csv_file:
+                csv_file.write(self.nist_csv_text)
+                csv_file.write("\n")
+            return
+
         self.interpolated_spectrum.to_csv(path_or_buf=filepath, index=False)
 
     @staticmethod
