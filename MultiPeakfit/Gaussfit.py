@@ -51,6 +51,8 @@ def Bilateral_peak_fit(
     extra_segment_signal,
     min_points=3,
     plot=False,
+    elementname=None,
+    target='KI',
 ):
 
     #转化数组
@@ -272,7 +274,7 @@ def Bilateral_peak_fit(
     }
 
 
-    if plot:
+    if plot :
         plt.figure(figsize=(7, 5))
 
         left_extra_mask = extra_x < seg_left
@@ -858,20 +860,21 @@ class GaussMultiPeakFitter:
 
     def plot(self, peak_wl, peak_int):
         plt.figure(figsize=(7,5))
-        plt.fill_between(self.wl, 0, self.rel_int, color='tab:blue', alpha=0.5, linewidth=0, zorder=1)
-        plt.plot(self.wl, self.rel_int, color='tab:blue', linewidth=4.2, label='wl-int', zorder=2)
+        plt.plot(self.wl, self.rel_int, color='tab:blue', linewidth=2.5, label='wl-int', zorder=2)
 
         if self.component_fits:
-            for idx, y_comp in enumerate(self.component_fits):
-                plt.fill_between(self.wl, 0, y_comp, color='tab:green', alpha=0.5, linewidth=0, zorder=1)
-                if idx == 0:
-                    plt.plot(self.wl, y_comp, color='tab:green', linewidth=4.2, alpha=0.85, label='Gaussian Components', zorder=3)
+            component_label_used = False
+            for y_comp in self.component_fits:
+                if np.allclose(np.asarray(y_comp, dtype=float), 0.0):
+                    continue
+                if not component_label_used:
+                    plt.plot(self.wl, y_comp, color='tab:green', linewidth=2.5, alpha=0.85, label='Gaussian Components', zorder=3)
+                    component_label_used = True
                 else:
-                    plt.plot(self.wl, y_comp, color='tab:green', linewidth=4.2, alpha=0.85, zorder=3)
+                    plt.plot(self.wl, y_comp, color='tab:green', linewidth=2.5, alpha=0.85, zorder=3)
 
         if self.fitted_params:
-            plt.fill_between(self.wl, 0, self.total_fit, color='tab:orange', alpha=0.5, linewidth=0, zorder=1)
-            plt.plot(self.wl, self.total_fit, color='tab:orange', linewidth=4.2, linestyle='--', label='Gaussian Sum Fit', zorder=4)
+            plt.plot(self.wl, self.total_fit, color='tab:orange', linewidth=2.5, linestyle='--', label='Gaussian Sum Fit', zorder=4)
             plt.scatter(self.fitted_mu, self.fitted_amp, color='tab:green', s=28, label='Fitted Peaks', zorder=6)
 
         plt.xlabel('Wavelength (nm)', fontsize=15, fontweight="semibold")
@@ -883,11 +886,11 @@ class GaussMultiPeakFitter:
             label.set_fontweight("semibold")
         for label in plt.gca().get_yticklabels():
             label.set_fontweight("semibold")
-        plt.vlines(peak_wl, ymin=0, ymax=peak_int, colors='tab:red', linestyles='--', linewidth=4.2, zorder=4)
+        plt.vlines(peak_wl, ymin=0, ymax=peak_int, colors='tab:red', linestyles='--', linewidth=2.5, zorder=4)
         plt.scatter(peak_wl, peak_int, color='tab:red', s=36, label='Local Extrema', zorder=5)
 
-        # plt.grid(alpha=0.3)
-        # plt.legend(loc='upper right', prop={"weight": "semibold", "size": 12}, frameon=False)
+        plt.grid(alpha=0.3)
+        plt.legend(loc='upper right', prop={"weight": "semibold", "size": 12}, frameon=False)
         plt.tight_layout()
         plt.show()
 

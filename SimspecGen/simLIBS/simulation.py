@@ -24,6 +24,9 @@ import urllib3
 
 urllib3.disable_warnings()
 
+BROWSER_TIMEOUT_SECONDS = 420
+CHROMEDRIVER_TRANSPORT_TIMEOUT_SECONDS = 540
+
 
 class CompositionError(Exception):
     pass
@@ -138,6 +141,10 @@ class SimulatedLIBS(object):
 
                 service = Service(ChromeDriverManager().install())
                 self.driver = webdriver.Chrome(service=service, options=options)
+                self.driver.command_executor.client_config.timeout = (
+                    CHROMEDRIVER_TRANSPORT_TIMEOUT_SECONDS
+                )
+                self.driver.set_page_load_timeout(BROWSER_TIMEOUT_SECONDS)
                 try:
                     self.retrieve_data_dynamic()
                 finally:
@@ -210,7 +217,7 @@ class SimulatedLIBS(object):
         """
         site = self.get_site()
         self.driver.get(site)
-        resolution_input = WebDriverWait(self.driver, 5).until(
+        resolution_input = WebDriverWait(self.driver, BROWSER_TIMEOUT_SECONDS).until(
             EC.presence_of_element_located(
                 (By.XPATH, "/html/body/div/div[1]/div[1]/form/div[3]/div/input")
             )
@@ -218,14 +225,14 @@ class SimulatedLIBS(object):
         resolution_input.clear()
         resolution_input.send_keys(str(self.resolution))
 
-        button_recalculate = WebDriverWait(self.driver, 2).until(
+        button_recalculate = WebDriverWait(self.driver, BROWSER_TIMEOUT_SECONDS).until(
             EC.presence_of_element_located(
                 (By.XPATH, "/html/body/div/div[1]/div[1]/form/button")
             )
         )
         button_recalculate.click()
 
-        button_csv = WebDriverWait(self.driver, 2).until(
+        button_csv = WebDriverWait(self.driver, BROWSER_TIMEOUT_SECONDS).until(
             EC.presence_of_element_located(
                 (By.XPATH, "/html/body/div/div[2]/button[2]")
             )

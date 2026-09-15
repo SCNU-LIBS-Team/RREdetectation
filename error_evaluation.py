@@ -22,7 +22,7 @@ def read_csv_with_fallback(file_path, header=0, encodings=None):
 
     raise ValueError(f'无法读取文件: {file_path}。尝试编码: {encodings}。最后错误: {last_error}')
 
-file_path = r'D:\LIBS\RREdetectation\Elements_database\FeI.csv'
+file_path = r'D:\LIBS\RREdetectation\Elements_database\FeII.csv'
 df_raw = read_csv_with_fallback(file_path, header=1)
 # file_path = r'D:\LIBS\RREdetectation\Rareearth_pt3\YII.csv'
 # df_raw = read_csv_with_fallback(file_path, header=0)
@@ -345,7 +345,7 @@ def plot_dU_sum_dT_vs_T_from_df(df_input, t_min=500, t_max=20000, num=2000, save
     plt.grid(alpha=0.3)
     plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
     plt.tight_layout()
-    plt.savefig(save_path, dpi=300)
+    # plt.savefig(save_path, dpi=300)
     plt.show()
 
 
@@ -413,7 +413,5 @@ def Intensity_Factor(A,g,E,T):
 
 #第三部分开发强度因子
 # Intensity_Factor(A, g, E, T=10000)
-
-
 # plot_two_exponentials(x_min=0, x_max=5, num=500)
 

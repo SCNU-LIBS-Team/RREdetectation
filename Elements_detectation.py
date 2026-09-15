@@ -657,10 +657,10 @@ def compute_element_confidence_shape(
             plt.tight_layout()
                     
           ### --- 新增波形标注逻辑 --- ###
-            plt.figure(figsize=(7, 5), facecolor='black')
+            plt.figure(figsize=(7, 5), facecolor='white')
             ax = plt.gca()
-            ax.set_facecolor('black')
-            plt.plot(global_wl, global_intensity, color='white', linewidth=4, label='Original Spectrum')
+            ax.set_facecolor('white')
+            plt.plot(global_wl, global_intensity, color='black', linewidth=4, label='Original Spectrum')
 
             # 标出所有理论谱线位置（浅蓝色线）
             for line_idx, wl in enumerate(element_wl):
@@ -684,18 +684,18 @@ def compute_element_confidence_shape(
 
             for spine in ax.spines.values():
                 spine.set_linewidth(1.8)
-                spine.set_color('white')
+                spine.set_color('black')
             for label in ax.get_xticklabels():
                 label.set_fontweight("semibold")
-                label.set_color('white')
+                label.set_color('black')
             for label in ax.get_yticklabels():
                 label.set_fontweight("semibold")
-                label.set_color('white')
+                label.set_color('black')
 
-            plt.title(f'Original Spectrum with {element_name} Peaks Marked', fontsize=20, fontweight="semibold", color='white')
-            plt.xlabel('Wavelength (nm)', fontsize=15, fontweight="semibold", color='white')
-            plt.ylabel('Intensity', fontsize=15, fontweight="semibold", color='white')
-            plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, length=6, width=2.0, labelsize=12, colors='white')
+            plt.title(f'Original Spectrum with {element_name} Peaks Marked', fontsize=20, fontweight="semibold", color='black')
+            plt.xlabel('Wavelength (nm)', fontsize=15, fontweight="semibold", color='black')
+            plt.ylabel('Intensity', fontsize=15, fontweight="semibold", color='black')
+            plt.tick_params(axis='both', which='major', direction='in', top=True, right=True, length=6, width=2.0, labelsize=12, colors='black')
             plt.grid(False)
             # plt.legend(loc="upper right", prop={"weight": "semibold", "size": 12}, frameon=False)
             plt.tight_layout()
@@ -1720,6 +1720,7 @@ def MultiPeakFit(
                             f"选中用于拟合的所有基体元素最强前 {len(strongest_lines)} 条谱线: {strongest_line_summary}",
                             GREEN,
                         ))
+                        print("")
 
                     #拟合数值显示
                     if plot_fit_windows and segment_wl.size > 0 and element_name==plottarget:
@@ -1787,7 +1788,7 @@ def MultiPeakFit(
                         plt.show()
                                 
                     
-                    segment_signal,fit_info=Bilateral_peak_fit(segment_wl,segment_signal, extra_segment_wl,extra_segment_signal,min_points=3,plot=False)
+                    segment_signal,fit_info=Bilateral_peak_fit(segment_wl,segment_signal, extra_segment_wl,extra_segment_signal,min_points=3,plot=True,elementname=element_name,target=plottarget)
 
                     
                     #数据清洗    
@@ -1979,7 +1980,7 @@ scan_t_step=100
 AutoElemTempMarkMode=False #自动扫描有置信度稀土元素并在输出中标注温度敏感性
 specifybotton = False  # True: 遍历全部文件，仅输出目标元素；False: 只跑 target_files，输出全部元素 （全文件，单元素）
 checkallbutton=False#是否检测文件内的全部光谱 （全文件）
-plotbotton=True#是否绘图展示Boltzmann图
+plotbotton=False#是否绘图展示Boltzmann图
 save2csvbotton=False #是否保存稀土元素置信度结果到CSV
 printbotton=True #是否打印元素检测结果
 Titerationbotton=False #是否启用温度迭代算法
