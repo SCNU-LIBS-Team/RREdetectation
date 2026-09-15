@@ -274,7 +274,8 @@ def Bilateral_peak_fit(
     }
 
 
-    if plot :
+
+    if plot and target==elementname:
         plt.figure(figsize=(7, 5))
 
         left_extra_mask = extra_x < seg_left

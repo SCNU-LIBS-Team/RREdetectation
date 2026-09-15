@@ -11,7 +11,11 @@ contents=pd.read_csv(r"D:\LIBS\RREdetectation\SimspecGen\saved\contents.csv")
 FLAG_COLUMN = "generated_flag"
 
 if FLAG_COLUMN not in contents.columns:
-    contents[FLAG_COLUMN] = ""
+    contents[FLAG_COLUMN] = pd.Series("", index=contents.index, dtype="string")
+else:
+    # An all-empty CSV column is inferred as float64/NaN by pandas. Convert it
+    # explicitly so newer pandas versions allow completion marker values like G.
+    contents[FLAG_COLUMN] = contents[FLAG_COLUMN].fillna("").astype("string")
 
 
 def get_pending_count():

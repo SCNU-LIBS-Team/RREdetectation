@@ -153,3 +153,15 @@ def test_generator_entry_points_use_static_mode():
 
     assert source.count("webscraping='static'") == 3
     assert "webscraping='dynamic'" not in source
+    assert 'contents[FLAG_COLUMN].fillna("").astype("string")' in source
+
+
+def test_string_completion_flag_accepts_g_after_empty_csv_values():
+    contents = pd.DataFrame({"generated_flag": [float("nan"), float("nan")]})
+    contents["generated_flag"] = (
+        contents["generated_flag"].fillna("").astype("string")
+    )
+
+    contents.at[0, "generated_flag"] = "G"
+
+    assert contents["generated_flag"].tolist() == ["G", ""]
