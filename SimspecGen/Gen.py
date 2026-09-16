@@ -215,7 +215,8 @@ def run_generate_with_auto_restart(retry_wait_seconds=10,mode='generate',file_na
 
         print(f"检测到剩余任务 {pending_before} 条，开始运行生成任务。")
         try:
-            generate_spectra(mode=mode,file_name=file_name,resolution=3000,Te=1.5,Ne=1e17,low_w=200,upper_w=900)
+            
+            generate_spectra(mode='random',file_name="07840",resolution=3000,Te=0.86,Ne=1e17,low_w=200,upper_w=700)
             pending_after = get_pending_count()
             if pending_after == 0:
                 print("本轮运行后所有任务已完成。")
@@ -231,5 +232,5 @@ def run_generate_with_auto_restart(retry_wait_seconds=10,mode='generate',file_na
             time.sleep(retry_wait_seconds)
 
 
-generate_spectra(mode='random',file_name="07840",resolution=3000,Te=0.86,Ne=1e17,low_w=200,upper_w=700)
+# generate_spectra(mode='random',file_name="07840",resolution=3000,Te=0.86,Ne=1e17,low_w=200,upper_w=700)
 run_generate_with_auto_restart(retry_wait_seconds=10,mode='debug',file_name="070099")
