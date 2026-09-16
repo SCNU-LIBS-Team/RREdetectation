@@ -1961,9 +1961,9 @@ target_path=signal_path11 #光谱路径·
 I_file_list = glob.glob(os.path.join(target_path, "*.csv"))
 I_elements_list = [os.path.splitext(os.path.basename(f))[0] for f in I_file_list]
 # print(I_elements_list)
-target_files=['03116_95_random'] #待测光谱文件名列表（不带扩展名）
+target_files=['03124_95_random'] #待测光谱文件名列表（不带扩展名）
 target_element='Pr' #指定元素（仅在 specifybotton=True 时生效）
-plottarget='TmII'#指定绘图元素（仅在 plotbotton=True 时生效）
+plottarget='PrII'#指定绘图元素（仅在 plotbotton=True 时生效）
 
 # 手动多峰补救峰位：命中元素后优先使用，覆盖粗检测已匹配谱线和 normalized_pure_element 自动选线，单位 nm。
 # key 可写完整谱线名如 "YbII"，也可写基元素名如 "Yb"。

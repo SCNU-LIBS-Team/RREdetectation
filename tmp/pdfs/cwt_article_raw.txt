@@ -1,0 +1,634 @@
+Continuous-wavelet-transform-based automatic
+curve fitting method for laser-induced
+breakdown spectroscopy
+WENBIN YANG,1,2
+BINCHENG LI,3,
+* JIANGNING ZHOU,1,2
+YANLING HAN,1
+AND QIANG WANG
+1
+1
+Institute of Optics and Electronics, Chinese Academy of Sciences, Chengdu 610209, China
+2
+University of Chinese Academy of Sciences, Beijing 100039, China
+3
+School of Optoelectronic Science and Engineering, University of Electronic Science and Technology of China, Chengdu 610054, China
+*Corresponding author: bcli@uestc.edu.cn
+Received 29 May 2018; revised 11 August 2018; accepted 12 August 2018; posted 13 August 2018 (Doc. ID 332790); published 7 September 2018
+In this work, an automatic curve fitting method based on a continuous-wavelet transform (CWT) is proposed to
+resolve overlapped peaks and to adaptively extract the major peaks in laser-induced breakdown spectroscopy
+(LIBS). From the local minimum of the second derivative of the LIBS spectrum calculated with CWT, the number
+of individual peaks is determined, and corresponding peak positions are estimated. The full width at half-
+maximums (FWHMs) of individual peaks are estimated from the separation of two maxima siding the minimum.
+A threshold is introduced to eliminate the small peaks and therefore reduce the number of fitting parameters and
+adaptively extract the major peaks with different spectral intensities. The Trust-Region algorithm is used for
+parameter optimization. The proposed method is used to analyze both simulated LIBS spectra and experimental
+overlapped peaks. Both simulated and experimental results show that the proposed method can resolve over-
+lapped peaks even with a low separation degree, although the minimum resolvable separation degree depends
+on the FWHM ratio and strength ratio of individual peaks and the wavelet scale. In a LIBS calibration experiment
+of N2∕SF6 gasses mixture, after resolving the overlapped peaks with the proposed method, better linear corre-
+lations between the concentration and intensity of F (with an adjusted R-squared value 0.9972), as well as between
+the concentration ratio and intensity ratio of nitrogen to fluorine (with adjusted R-squared values >0.98 and
+0.99) are obtained. © 2018 Optical Society of America
+OCIS codes: (300.6365) Spectroscopy, laser induced breakdown; (070.4790) Spectrum analysis; (140.0140) Lasers and
+laser optics.
+https://doi.org/10.1364/AO.57.007526
+1. INTRODUCTION
+Laser-induced breakdown spectroscopy (LIBS) is widely used in
+many fields such as material analysis [1], environmental mon-
+itoring [2], biomedicine [3], archaeology [4], food safety [5],
+and so on. In principle, LIBS can analyze any matter, regardless
+of its physical state, be it solid [6], liquid [7] or gas [8], and it can
+detect all elements. However, the accuracy and reliability of the
+analysis are affected by peak overlapping, which commonly
+occurs in LIBS spectra due to various line-broadening mecha-
+nisms and the limitation of instrumental resolution. Besides, in
+many cases, the spectral analysis is performed manually and is
+therefore time-consuming, which makes online and real-time
+applications of LIBS somewhat difficult.
+In the past, signal processing methods such as the iterative
+deconvolution method [9], Wiener filtering [10], and the curve
+fitting method [11–14] were widely used to resolve overlapped
+peaks in LIBS spectra. However, the effectiveness of iterative
+deconvolution and Wiener filtering is influenced by the estima-
+tion accuracy of the broadening function. In addition, Wiener
+filtering also requires information on noise, such as the signal-
+to-noise ratio and power spectrum. On the other hand, the
+curve fitting method is more effective and is therefore the most
+commonly used approach in resolving overlapped peaks.
+Many researchers have focused on improving the accuracy of
+curve fitting. For example, Zhang et al. [12] proposed an initial
+estimation method in which appropriate initial values were ob-
+tained by applying a fractional differential theory. Tan et al.
+[13] proposed an error compensation method to achieve reso-
+lution and correction of overlapping peaks. Using an iterative
+procedure, the fitting residual was fed back to the overlapping
+peaks, and multiple curve fitting processes were performed to
+obtain a solution with a lower residual. Furthermore, an auto-
+matic modeling algorithm was also investigated for spectra data
+processing. Alsmeyer and Marquardt [14] proposed an iterative
+7526 Vol. 57, No. 26 / 10 September 2018 / Applied Optics Research Article
+1559-128X/18/267526-07 Journal © 2018 Optical Society of America
+automatic modeling algorithm. The shortcoming of these
+methods was the requirement of a large amount of calculation
+or iteration.
+In this work, an automatic curve fitting method is proposed
+to resolve the strongly overlapped peaks that could not be re-
+solved by a spectrometer and to achieve a better resolution for
+the spectrometer-measured LIBS spectral data. In this proposed
+method, the second derivative of the LIBS spectrum is calcu-
+lated by a continuous-wavelet transform (CWT). The number
+and positions of individual peaks of the LIBS spectrum are
+obtained from the local minimum of the second derivative.
+The full width at half-maximums (FWHMs) of individual
+peaks are estimated from the separation of the two maxima sid-
+ing the local minimum. In addition, a threshold is introduced
+to eliminate small peaks in the LIBS data and to adaptively
+extract the major peaks with different spectral intensities.
+Also in the proposed method, a Trust-Region algorithm is em-
+ployed to minimize the deviation between the mathematical
+model and the experimental LIBS spectrum. The effectiveness
+of the proposed method is demonstrated with both simulated
+and experimental LIBS spectra with overlapped peaks.
+2. THEORY
+Usually, in a curve fitting method to resolve overlapped peaks
+in LIBS spectra, there are three key factors: (1) an appropriate
+mathematical model to correctly describe the overlapped peaks
+in LIBS spectra. The line shapes of the LIBS peaks depend
+heavily on the line-broadening mechanisms in laser-induced
+plasma. The Lorentzian shape is commonly used when Stark
+broadening is dominant, while the Voigt shape is more accurate
+but requires additional fitting parameters; (2) an appropriate
+optimization method. The selected optimization method
+should have good convergence and global searching capabil-
+ities; (3) reasonable initial values for fitting parameters in
+the multi-parameter optimization. Appropriate initial fitting
+values can contribute to a faster convergence speed, a better
+fitting precision, a higher computation efficiency, and a shorter
+running time.
+A. Mathematical Model
+LIBS spectral lines usually show a Voigt profile due to various
+line-broadening mechanisms in laser-induced plasma [15].
+When the noise is filtered and the baseline is corrected in
+LIBS data, the LIBS spectrum represents the sum of emission
+lines and is expressed as follows:
+Ithλ 
+X
+M
+i1
+Ii · V λ; λ0,i, γi, βi  Ib, (1)
+with
+V λ; λ0, γ, β  β ·
+ﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃ
+4 ln 2
+π
+r
+·
+1
+γ
+· exp
+
+−4 ln 2
+
+λ − λ0
+γ
+2
+
+ 1 − β ·
+2
+π
+·
+γ
+4λ − λ02  γ2 , (2)
+where V λ; λ0,i, γi, βi represents an individual Voigt peak with
+wavelength λ and is described by a pseudo-Voigt function [16]
+shown in Eq. (2). Ii, λ0,i, and γi are the peak height, peak
+position, and FWHM, respectively. βi is a fractional parameter
+satisfying 0 ≤ βi ≤ 1. M and i are the number of the individual
+peaks and the serial number of the individual peaks, respec-
+tively. Ib is a constant background representing a residual
+background signal due to incomplete background correction.
+The parameters describing the individual peaks are simultane-
+ously determined by minimizing a square variance between
+the experimentally measured LIBS spectrum and the model
+calculation
+min
+Ii
+0, λi
+0, γi, βi, Ib
+
+
+
+Imλ −
+X
+M
+i1
+Ii
+0 · V λ; λ0,i, γi, βi − Ib
+
+
+
+, (3)
+where Imλ is the measured LIBS spectrum.
+Before multi-parameter minimization, the number of indi-
+vidual peaks in the LIBS spectrum has to be determined first. In
+addition, as the accuracy of the minimization depends largely
+on the selection of initial parameters, a reasonable estimation of
+the initial values is essential to the accurate extraction of the
+LIBS spectrum. The initial values include the number, posi-
+tions, heights, and FWHMs of the individual peaks.
+B. Performance of Multi-Parameter Optimization
+An adjusted R-squared and root mean squared error (RMSE)
+are chosen to evaluate the performance of the multi-parameter
+minimization, that is,
+RMSE 
+(
+1
+N
+X
+N
+j1
+Imλj − Ithλj2
+)1∕2
+, (4)
+Radj  1 −
+
+N − 1
+N − p
+
+SSE
+SST
+, (5)
+where Imλj is the measured spectrum, and Ithλj is the
+model spectrum calculated with Eq. (1). N is the point number
+of spectrum, and p is the number of regression coefficients. SSE
+is the sum of squared error, and SST is the sum of squared total.
+C. Number and Positions of Individual Peaks
+For a LIBS spectrum, the second derivative of the spectral func-
+tion is usually used to determine the number and position of
+individual peaks, due to the fact that each peak produces a local
+minimum in the corresponding second derivative. In this paper,
+a CWT is used to calculate the second derivative and to
+determine the number and position of individual peaks.
+Mathematically, the CWT in L2
+R can be represented as [17]
+W f a, b  f  ψa,b  a−1∕2
+Z
+R
+f xψ
+
+x − a
+b
+
+dt,
+a ∈ R
+− f0g, b ∈ R, (6)
+where f x is the signal, a is a scale, b is a translation, ψx is a
+mother wavelet, ψa,bx  jaj−1∕2
+ψx−b
+a  is the scaled and trans-
+lated wavelet, and W f is a wavelet coefficient. In this work, the
+Mexican Hat wavelet ψx  2ﬃﬃ
+3
+p π−1∕4
+1 − x2
+e−x2∕2
+is selected
+as the mother wavelet [18]. The CWT of signal f x is
+described as
+Research Article Vol. 57, No. 26 / 10 September 2018 / Applied Optics 7527
+W f a,bf xψa,bx
+
+2
+ﬃﬃﬃ
+3
+p π−1∕4
+a−1∕2
+Z
+R
+f x
+
+1−
+
+x−b
+a
+2
+
+e−1
+2x−b∕a2
+dx
+−
+2
+ﬃﬃﬃ
+3
+p π−1∕4
+a3∕2
+·
+d2
+db2
+
+f xexp
+
+−
+1
+2
+·
+
+x
+a
+2
+
+:
+(7)
+W f a, b is proportional to a Gaussian smoothed second
+derivative of the signal. Therefore, CWT can be used to
+approximately calculate the second derivative, and it can effec-
+tively suppress the noise interference and improve the accuracy
+of peak detection.
+As an example, the CWT of a Voigt peak is shown in Fig. 1.
+A peak produces a local minimum in the second derivative, so
+the local minimum can be used to determine the position of
+this individual peak. However, as shown in Fig. 2, artifacts may
+arise in the wavelet transform calculation when the wavelet
+scale approaches the measurement interval or the wavelet
+position approaches the edges of the data set. Gregoire et al.
+[19] proposed a method to circumvent this issue by modifying
+the discrete wavelet in the direct transform calculation
+Ψa,bx 
+
+αψa,bx, if ψa,bx ≥ 0
+βψa,bx, if ψa,bx < 0
+, (8)
+where α and β are chosen such that Ψa,bx has no zeroth and
+first moments and has wavelet energy equal to that of the
+mother wavelet
+P
+X Ψa,bxδx 
+R
+ψa,bxdx. However, this
+method brings complexity for programming, even though it
+has good performance.
+In this work, a simple method to avoid the interference of
+artifacts is proposed. As shown in Fig. 1, for a real peak there is
+always one maximum on each side of the minimum, and the
+interference of artifacts can therefore be eliminated by checking
+the two maxima on both sides of the minimum. Due to arti-
+facts only occurring at the edges of the data set, only the first
+and last paired maximum/minimum need to be checked. The
+first minimum must be excluded if the first maximum is located
+on the right of the first minimum. Similarly, the last minimum
+must be excluded if the last maximum is located on the left of
+the last minimum. As shown in Fig. 2, the proposed algorithm
+can effectively avoid the interference of artifacts and improve
+peak detection accuracy.
+D. FWHMs and Heights of Individual Peaks
+To effectively determine FWHMs of the individual peaks, the
+relationship between FWHM and Δx (as shown in Fig. 1, Δx is
+defined as the separation of two maxima on both sides of the
+minimum) is analyzed. As shown in Fig. 3, an approximately
+linear relationship exists between Δx and FWHM, which de-
+pends slightly on the wavelet scale value. FWHM can therefore
+be estimated roughly from the fitted linear relationship pre-
+sented in Fig. 3, which is obtained by a least square method.
+In this work, the FWHM is estimated to be ∼0.7Δx.
+A simple approach to determine an initial height value I0
+i
+for an individual peak is described as follows: find the intensity
+Imλ0,i at peak position λ0,i and take the minimum of the spec-
+trum as the background Ib. Then a reasonable initial value is
+the net intensity I0
+i  Imλ0,i − Ib.
+E. Optimization Algorithms
+The key steps of the proposed automatic curve fitting method
+are described as follows:
+1. Select an appropriate wavelet scale according to the
+signal-to-noise ratio (SNR) and perform CWT on the original
+signal to obtain the second derivative. A smaller scale can obtain
+a higher resolution for peak detection, but it is more sensitive to
+noise. A larger scale can achieve a better noise suppression
+effect, but the resolution for peak detection will be reduced.
+Determine the number and positions of individual peaks from
+Fig. 1. Voigt peak and corresponding CWT results.
+Fig. 2. Comparison of peak detection results between the original
+and improved algorithms.
+Fig. 3. Relationship between Δx and FWHM with different wavelet
+scales.
+7528 Vol. 57, No. 26 / 10 September 2018 / Applied Optics Research Article
+the local minimum of the second derivative. Eliminate the
+interference of artifacts by the above-mentioned method.
+2. Set a threshold and extract only individual peaks in
+which the corresponding minimum values are greater than
+that threshold. This threshold is introduced for adaptively
+extracting the major peaks with different spectral intensities
+in the LIBS spectrum. Those peaks that satisfy the condition
+jyj ≥ ξ · jyjmax will be extracted, where ξ is the threshold, and
+jyj is the absolute value of the local minimum of the second
+derivative.
+3. Determine the FWHMs of individual peaks from the
+separation of the two maxima on both sides of the minimum.
+As FWHMs are strongly influenced by Stark broadening,
+which depends on energy level, particle species, and ionization
+state, all FWHMs are fitted independently in our algorithm.
+4. Determine the heights of the individual peaks.
+5. Minimize Eq. (3) using the Trust-Region algorithm to
+determine simultaneously the parameters of the individual
+peaks.
+6. Calculate the LIBS spectrum and compare to the
+measurements.
+In the proposed curve fitting method, all calculations are
+performed with a program written in MATLAB. A threshold
+of 0.01 can satisfy most cases. The scale a is related to the in-
+strumental resolution; after the instrument is selected, the scale
+a can be pre-set and will not change in most cases. On the other
+hand, parameters such as number, positions, FWHMs, and
+heights of the individual peaks can be estimated automatically
+by the proposed method. From this sense, the proposed curve
+fitting method can be realized automatically to analyze the
+LIBS spectrum.
+3. SIMULATION AND EXPERIMENT
+Several LIBS spectra with overlapped peaks of different param-
+eters (separation degree, peak height, and FWHM) are simu-
+lated and used to verify the feasibility of the proposed curve
+fitting method for resolving overlapped peaks. Each simulated
+spectrum is composed of two noise-free Voigt peaks. The sep-
+aration degree is defined by κ  jλ0,1 − λ0,2j∕2γ1  γ2, and
+λ0 and γ are the peak position and FWHM of individual peaks,
+respectively [12]. A wavelength interval of 0.05 nm is chosen
+according to the spectral resolution of the spectrometer used in
+our experiment.
+In addition, the proposed curve fitting method is also
+applied to resolve individual peaks in experimental LIBS spec-
+tra. The LIBS experimental setup is described as follows.
+A Q-switched 1064 nm Nd:YAG laser (Continuum Surelite,
+with maximum pulse energy 700 mJ, pulse width 18 ns,
+and repetition rate 1–10 Hz) is focused into gas samples (com-
+positions of N2∕SF6 gas mixtures are listed in Table 1) by a
+focusing lens with a 50 mm focal length. The plasma emission
+is detected and recorded by a HORIBA iHR320 JY spectrom-
+eter (equipped with a 1200 grooves/mm grating and the cor-
+responding wavelength interval is 0.052 nm) equipped with an
+intensified charge-coupled device (ICCD). For LIBS spectrum
+measurements, the laser pulse energy is 50 mJ and the repeti-
+tion rate is 5 Hz. The slit width of the spectrometer is set to
+50 μm. The wavelength of the spectrometer is calibrated by a
+mercury lamp, and its spectral response is calibrated by a
+tungsten lamp and a deuterium lamp. Instrumental line-
+broadening is measured by a single-frequency He–Ne laser (with
+center wavelength 632.8 nm and FWHM 0.29 pm). With
+50 μm slit width, the instrumental broadening shows a
+Lorentzian profile with a FWHM of 0.1367 nm, and its effect
+on the measured LIBS spectrum is considered in the data
+processing.
+4. RESULTS AND DISCUSSION
+The simulated LIBS spectra with overlapped peaks of different
+parameters and corresponding resolving results with the pro-
+posed curve fitting method are shown in Fig. 4. The scale
+of CWT is chosen to be a  0.48, the FWHMs of the indi-
+vidual peaks are chosen as γ1  0.18 nm and γ2  0.22 nm in
+Figs. 4(a) and 4(b), γ1  0.18 nm and γ2  0.36 nm in
+Figs. 4(c) and 4(d), respectively. The results show that the pro-
+posed method can accurately resolve the overlapped peaks, even
+with a small separation degree, but the minimum resolvable
+separation degree κm depends on the FWHM ratio γ1∕γ2
+and strength ratio I1∕I2 of the two individual peaks.
+Figure 5 shows how spectral parameters such as strength ra-
+tio I1∕I2, FWHM ratio γ1∕γ2, and wavelet scale a influence
+the resolving of individual peaks with the proposed method. As
+shown in Fig. 5(a), the peak height (intensity) ratio I1∕I2 also
+affect κm. κm increases with the increasing difference of peak
+heights. Figure 5(b) shows the relationship between κm and
+γ1∕γ2. As FWHM ratio increases, κm first increases, reaches
+a maximum, and then decreases. Therefore, a larger difference
+between γ1 and γ2 results in a smaller κm. Figure 5(c) shows the
+relationship between κm and the scale a. The result indicates
+that a smaller scale a contributes to a better resolving perfor-
+mance of individual peaks. From the results presented in Fig. 5,
+the minimum resolvable separation degree is dependent largely
+on the strength ratio, the FWHM ratio, as well as the wavelet
+scale. In the case that the spectrometer resolution is 0.05 nm
+(a  0.48) and the FWHMs of the two individual peaks are
+comparable, the lowest minimum resolvable separation degree
+is approximately 0.27 [as shown in Fig. 5(a)].
+Experimentally, as an example, Fig. 6(a) shows the measured
+LIBS spectrum of 37.5%N2  62.5%SF6 gas mixture in the
+wavelength range of 400–850 nm. The proposed method is
+applied to resolve individual peaks in two overlapping regions
+as marked by red boxes in Fig. 6(a). The corresponding curve
+fitting results are shown in Figs. 6(b) and 6(c), respectively. The
+measured spectra, the corresponding curve fitting results, the
+individual peak profiles, and the corresponding positions
+(which were obtained by CWT with scale a  0.5 and
+Table 1. Components of N2∕SF6 Gasses Mixture Used in
+the Experiment
+Element
+Concentration (%)
+Sample 1 Sample 2 Sample 3 Sample 4 Sample 5
+F 0.8333 0.8108 0.7692 0.7317 0.6977
+S 0.1389 0.1351 0.1282 0.1220 0.1163
+N 0.0278 0.0541 0.1026 0.1463 0.1861
+Research Article Vol. 57, No. 26 / 10 September 2018 / Applied Optics 7529
+ξ  0.01) are presented in the upper diagram, and the model
+residuals are shown in the lower diagram in Figs. 6(b) and 6(c),
+respectively. The adjusted R-squared values are 0.9974 in
+Fig. 6(b) and 0.9980 in Fig. 6(c). All experimental data are
+ASCII format, and the sizes are 7890, 195, and 105 points
+for a wavelength range of 400–850 nm, 816–826 nm, and
+729–735 nm, respectively. The algorithm running times are
+2.4 s and 2.3 s for 816–826 nm and 729–735 nm, respectively.
+The results clearly indicate that the experimental LIBS spec-
+trum with severely overlapped peaks can be accurately resolved
+by the proposed curve fitting method. It is noted that the re-
+lationship of FWHM ∼ 0.7Δx may deviate as the overlapping
+degree increases (for example, FWHM ∼ 0.6Δx or 0.5Δx
+might become more reasonable). Still, the estimated FWHMs
+are reasonable, and the fitting results converge. However, the
+Fig. 4. Simulated LIBS spectra with overlapped peaks of different
+parameters and corresponding results resolving with the proposed
+method. (a) κ  0.34, I1∕I2  1; (b) κ  0.50, I1∕I2  0.1;
+(c) κ  0.34, I1∕I2  10; and (d) κ  0.28, I1∕I2  0.1.
+Fig. 5. Relationship between (a) the minimum resolvable separation
+degree κm and strength ratio I1∕I2, calculated with scale of
+CWT a  0.48, FWHMs of individual peaks γ1  0.18 nm and
+γ2  0.22 nm. (b) The minimum resolvable separation degree κm
+and FWHM ratio γ1∕γ2, calculated with a  0.48, strength ratio
+of individual peaks I1∕I2  1. (c) The minimum resolvable separa-
+tion degree κm and wavelet scale a, calculated with γ1  0.18 nm and
+γ2  0.22 nm, strength ratio of individual peaks I1∕I2  1.
+7530 Vol. 57, No. 26 / 10 September 2018 / Applied Optics Research Article
+algorithm might fail if the SNRs of the LIBS spectrum data are
+too low.
+To verify the effectiveness of the proposed curve fitting
+method in LIBS data processing for composition analysis ap-
+plication, a calibration experiment with N2∕SF6 gas mixtures
+of different concentration ratios listed in Table 1 is performed.
+The calibration results before and after resolving the overlapped
+peaks with the proposed method are shown in Fig. 7. In
+Fig. 7(a), calibration curves are obtained between the concen-
+tration and intensity of the F 730.901 nm line [the first indi-
+vidual peak shown in Fig. 6(b)] in the LIBS spectrum. The
+fitted intensity represents the peak height after resolving, which
+is obtained from Eq. (1), while peak intensity represents the
+measured peak intensity, with the peak position obtained via
+the proposed method. Comparing the calibration results before
+and after resolving the overlapped peaks with the proposed
+method, the linear fit between the F 730.901 nm line intensity
+and F concentration is improved from R2
+ 0.8731 to 0.9972
+by effectively resolving the overlapped peaks, even with a
+low separation degree (∼0.40, calculated value), with the pro-
+posed curve fitting method. Furthermore, N 818.4861 nm,
+Fig. 6. (a) LIBS spectrum of N2∕SF6 gas mixture and resolved over-
+lapping peaks in different wavelength regions (b) 729–735 nm and
+(c) 816–826 nm.
+Fig. 7. (a) Calibration curves between the F concentration and
+intensity of the F 730.901 nm line; (b)–(d) the calibration results
+between the N/F concentration ratio and intensity ratio of
+(b) N 818.4861 nm, (c) N 821.0715 nm, and (d) N 822.3128 nm
+to the F 823.077 nm line.
+Research Article Vol. 57, No. 26 / 10 September 2018 / Applied Optics 7531
+N 821.0715 nm, N 822.3128 nm, and F 823.077 nm lines
+[the first, fourth, sixth, and seventh individual peaks in
+Fig. 6(c)] can also be selected to establish calibration curves
+for N/F composition analysis, as shown in Figs. 7(b)–7(d).
+The calibration curves are established between the N/F concen-
+tration ratio and the intensity ratio of the corresponding nitro-
+gen line to the fluorine F 823.077 nm line. The F 823.077 nm
+line is chosen as the internal standard line. After resolving the
+overlapped peaks with the proposed method, the resulting
+adjusted R-squared values improve from 0.9776 to 0.9831,
+0.9823 to 0.9906, and 0.9806 to 0.9902, respectively, indicat-
+ing better linear fits between the N/F concentration ratio and
+the intensity ratio of nitrogen to fluorine lines. Furthermore,
+the performance of the proposed method further improves
+with the increasing overlapped degree. These results demon-
+strate that the proposed curve fitting method is effective in
+accurately extracting the line parameters of individual peaks
+in LIBS data for quantitative composition analysis.
+5. CONCLUSIONS
+In conclusion, a CWT-based automatic curve fitting method
+was proposed for resolving severely overlapped peaks in the
+LIBS spectrum. CWT was employed to calculate the second
+derivative of the LIBS spectrum, from which the number, po-
+sitions, and FWHM linewidths of individual peaks were deter-
+mined and used as initial parameter values in multi-parameter
+optimization to accurately extract the spectral parameters of
+major individual peaks in the LIBS data. Experimentally, for
+LIBS analysis of a N2∕SF6 gas mixture, the extracted spectral
+parameters from severely overlapping peaks were used to estab-
+lish a calibration curve between F concentration and a LIBS
+intensity of F 730.901 nm line with a better linear fit (with
+adjusted R-squared value improved from 0.8731 to 0.9972),
+as well as between the N/F concentration ratio and intensity
+ratio of the corresponding nitrogen line to fluorine F
+823.077 nm line (with adjusted R-squared value improved
+to be >0.98 and 0.99) for quantitative composition analysis.
+Furthermore, even better performance is expected with more
+seriously overlapped peaks. The proposed automatic curve fit-
+ting method has great potential for online and real-time appli-
+cation of LIBS, as well as for other spectral signal processing.
+REFERENCES
+1. F. Ruan, J. Qi, C. Yan, H. Tang, T. Zhang, and H. Li, “Quantitative
+detection of harmful elements in alloy steel by LIBS technique and
+sequential backward selection-random forest (SBS-RF),” J. Anal.
+At. Spectrom. 32, 2194–2199 (2017).
+2. G. Gallou, J. B. Sirven, C. Dutouquet, O. Le Bihan, and E. Frejafon,
+“Aerosols analysis by LIBS for monitoring of air pollution by industrial
+sources,” Aerosol Sci. Technol. 45, 918–926 (2011).
+3. I. Ahmed, R. Ahmed, J. Yang, A. W. L. Law, Y. Zhang, and C. Lau,
+“Elemental analysis of the thyroid by laser induced breakdown spec-
+troscopy,” Biomed. Opt. Express 8, 4865–4871 (2017).
+4. A. Brysbaert, P. Siozos, M. Vetters, A. Philippidis, and D. Anglos,
+“Materials analyses of pyrotechnological objects from LBA Tiryns,
+Greece, by means of laser-induced breakdown spectroscopy (LIBS):
+results and a critical assessment of the method,” J. Archaeol. Sci. 83,
+49–61 (2017).
+5. Y. W. Chu, S. S. Tang, S. X. Ma, Y. Y. Ma, Z. Q. Hao, Y. M. Guo, L. B.
+Guo, Y. F. Lu, and X. Y. Zeng, “Accuracy and stability improvement for
+meat species identification using multiplicative scatter correction and
+laser-induced breakdown spectroscopy,” Opt. Express 26, 10119–
+10127 (2018).
+6. Z. Ramezanian, S. M. R. Darbani, and A. E. Majd, “Effect of self-
+absorption correction on surface hardness estimation of Fe-Cr-Ni
+alloys via LIBS,” Appl. Opt. 56, 6917–6922 (2017).
+7. Q. Lin, F. Bian, Z. Wei, S. Wang, and Y. Duan, “A hydrogel-based
+solidification method for the direct analysis of liquid samples by laser-
+nduced breakdown spectroscopy,” J. Anal. At. Spectrom. 32, 1412–
+1419 (2017).
+8. P. S. Hsu, M. Gragston, Y. Wu, Z. L. Zhang, A. K. Patnaik, J. Kiefer, S.
+Roy, and J. R. Gord, “Sensitivity, stability and precision of quantitative
+Ns-LIBS-based fuel-air-ratio measurements for methane-air flames at
+1–11 bar,” Appl. Opt. 55, 8042–8048 (2016).
+9. P. A. Jansson, Deconvolution with Applications in Spectroscopy
+(Academic, 1984), p. 102.
+10. W. J. Liu, B. C. Li, Y. L. Han, and Z. C. Qu, “Analysis of deconvolution
+algorithm based on spectral sampling rate,” Laser Optoelectron. Prog.
+49, 043001 (2012).
+11. W. Huang, T. L. E. Henderson, A. M. Bond, and K. B. Oldham,
+“Curve fitting to resolve overlapping voltammetric peaks: model and
+examples,” Anal. Chim. Acta 304, 1–15 (1995).
+12. B. Zhang, H. B. Yu, L. X. Sun, Y. Xin, and Z. B. Cong, “A method for
+resolving overlapped peaks in laser-induced breakdown spectros-
+copy (LIBS),” Appl. Spectrosc. 67, 1087–1097 (2013).
+13. B. Tan, M. Huang, Q. B. Zhu, Y. Guo, and J. W. Qin, “Decomposition
+and correction overlapping peaks of LIBS using an error compensa-
+tion method combined with curve fitting,” Appl. Opt. 56, 7116–7122
+(2017).
+14. F. Alsmeyer and W. Marquardt, “Automatic generation of peak-
+shaped models,” Appl. Spectrosc. 58, 986–994 (2004).
+15. C. O. Laux, T. G. Spence, C. H. Kruger, and R. N. Zare, “Optical
+diagnostics of atmospheric pressure air plasmas,” Plasma Sources
+Sci. Technol. 12, 125–138 (2003).
+16. T. Ida, M. Ando, and H. Toraya, “Extended pseudo-Voigt function for
+approximating the Voigt profile,” J. Appl. Crystallogr. 33, 1311–1316
+(2000).
+17. A. Wee, D. B. Grayden, Y. G. Zhu, K. P. Duran, and D. Smith,
+“A continuous wavelet transform algorithm for peak detection,”
+Electrophoresis 29, 4215–4225 (2008).
+18. P. Du, W. A. Kibbe, and S. M. Lin, “Improved peak detection in mass
+spectrum by incorporating continuous wavelet transform-based
+pattern matching,” Bioinformatics 22, 2059–2065 (2006).
+19. J. M. Gregoire, D. Dale, and R. B. van Dover, “A wavelet transform
+algorithm for peak detection and application to powder x-ray diffrac-
+tion data,” Rev. Sci. Instrum. 82, 015105 (2011).
+7532 Vol. 57, No. 26 / 10 September 2018 / Applied Optics Research Article
+

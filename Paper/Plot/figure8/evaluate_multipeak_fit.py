@@ -5,9 +5,10 @@ The script deliberately reuses the ``if __name__ == '__main__'`` body from
 collect diagnostics; no detection, line-selection, side-peak removal, or
 multi-peak fitting logic is copied here.
 
-By default every CSV directly inside this directory is processed.  Each input
-gets a same-named result under ``evaluation_results`` so generated CSV files
-cannot be picked up as spectra on the next run.
+By default every spectrum listed by ``Randomrareearth_contents.csv`` and found
+directly inside this directory is processed.  Only fitted rare-earth elements
+whose generated abundance is positive are exported, and all spectra are
+combined into one CSV under ``evaluation_results``.
 """
 
 from __future__ import annotations
@@ -33,6 +34,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DETECTOR_PATH = REPO_ROOT / "Elements_detectation.py"
 DEFAULT_OUTPUT_DIR = SCRIPT_DIR / "evaluation_results"
+DEFAULT_CONTENTS_PATH = SCRIPT_DIR / "Randomrareearth_contents.csv"
+DEFAULT_OUTPUT_NAME = "multipeak_fit_results.csv"
 RARE_EARTH_ELEMENTS = {
     "Y",
     "LA",
@@ -52,11 +55,15 @@ RARE_EARTH_ELEMENTS = {
 }
 
 OUTPUT_COLUMNS = [
+    "光谱名称",
     "粒子种类",
     "拟合区间(nm)",
     "未去除旁峰的区间(nm)",
     "选线数据",
     "RMSE",
+    "RMSE/nm",
+    "真实强度",
+    "拟合强度",
     "强度误差",
     "强度误差比例(%)",
 ]
@@ -69,7 +76,13 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "filenames",
         nargs="*",
-        help="可选：仅处理指定 CSV（可写文件名或不带 .csv 的文件名）；默认处理本目录全部 CSV。",
+        help="可选：仅处理指定 CSV（可写文件名或不带 .csv 的文件名）；默认处理含量表中列出的全部光谱。",
+    )
+    parser.add_argument(
+        "--contents-file",
+        type=Path,
+        default=DEFAULT_CONTENTS_PATH,
+        help="稀土真实含量表；默认是本目录下的 Randomrareearth_contents.csv。",
     )
     parser.add_argument(
         "--output-dir",
@@ -77,12 +90,63 @@ def _parse_args() -> argparse.Namespace:
         default=DEFAULT_OUTPUT_DIR,
         help="结果目录；默认是本目录下的 evaluation_results。",
     )
+    parser.add_argument(
+        "--output-name",
+        default=DEFAULT_OUTPUT_NAME,
+        help=f"合并结果文件名；默认是 {DEFAULT_OUTPUT_NAME}。",
+    )
     return parser.parse_args()
 
 
-def _resolve_inputs(filenames: list[str]) -> list[Path]:
+def _load_present_rare_earths(contents_path: Path) -> dict[str, set[str]]:
+    if not contents_path.is_file():
+        raise FileNotFoundError(f"找不到稀土真实含量表：{contents_path}")
+
+    contents = pd.read_csv(contents_path, header=0, encoding="utf-8-sig")
+    if "file_name" not in contents.columns:
+        raise ValueError(f"稀土真实含量表缺少 file_name 列：{contents_path}")
+
+    element_columns: dict[str, str] = {}
+    for column in contents.columns:
+        match = re.fullmatch(r"([A-Za-z]{1,2})_at%", str(column).strip())
+        if match is None:
+            continue
+        element = match.group(1).upper()
+        if element in RARE_EARTH_ELEMENTS:
+            element_columns[element] = str(column)
+
+    if not element_columns:
+        raise ValueError(f"稀土真实含量表中没有可用的 <元素>_at% 列：{contents_path}")
+
+    present_by_spectrum: dict[str, set[str]] = {}
+    for _, row in contents.iterrows():
+        file_name = str(row["file_name"]).strip()
+        if not file_name or file_name.lower() == "nan":
+            continue
+        spectrum_name = Path(file_name).stem
+        present = present_by_spectrum.setdefault(spectrum_name, set())
+        for element, column in element_columns.items():
+            abundance = pd.to_numeric(pd.Series([row[column]]), errors="coerce").iloc[0]
+            if pd.notna(abundance) and float(abundance) > 0.0:
+                present.add(element)
+
+    if not present_by_spectrum:
+        raise ValueError(f"稀土真实含量表中没有有效的光谱记录：{contents_path}")
+    return present_by_spectrum
+
+
+def _resolve_inputs(
+    filenames: list[str],
+    available_spectrum_names: set[str] | None = None,
+) -> list[Path]:
     if not filenames:
-        inputs = sorted(path for path in SCRIPT_DIR.glob("*.csv") if path.is_file())
+        if available_spectrum_names is None:
+            inputs = sorted(path for path in SCRIPT_DIR.glob("*.csv") if path.is_file())
+        else:
+            inputs = [
+                (SCRIPT_DIR / f"{spectrum_name}.csv").resolve()
+                for spectrum_name in sorted(available_spectrum_names)
+            ]
     else:
         inputs = []
         for filename in filenames:
@@ -93,12 +157,25 @@ def _resolve_inputs(filenames: list[str]) -> list[Path]:
                 requested = SCRIPT_DIR / requested.name
             inputs.append(requested.resolve())
 
+        if available_spectrum_names is not None:
+            unlisted = [path.name for path in inputs if path.stem not in available_spectrum_names]
+            if unlisted:
+                raise ValueError(
+                    "指定文件未列在稀土真实含量表中：" + ", ".join(unlisted)
+                )
+
     missing = [str(path) for path in inputs if not path.is_file()]
     if missing:
         raise FileNotFoundError("找不到待测光谱：" + ", ".join(missing))
     if not inputs:
         raise FileNotFoundError(f"{SCRIPT_DIR} 下没有待测 CSV。")
     return inputs
+
+
+def _resolve_contents_path(contents_path: Path) -> Path:
+    if contents_path.is_absolute():
+        return contents_path.resolve()
+    return (Path.cwd() / contents_path).resolve()
 
 
 def _is_main_guard(node: ast.If) -> bool:
@@ -441,6 +518,7 @@ def _build_output_rows(
     input_path: Path,
     spectrum: pd.DataFrame,
     diagnostics: list[dict[str, object]],
+    present_rare_earths: set[str],
 ) -> list[dict[str, object]]:
     columns_by_particle = _particle_columns(spectrum)
     output_rows: list[dict[str, object]] = []
@@ -450,13 +528,22 @@ def _build_output_rows(
             continue
 
         particle = str(diagnostic["particle"])
-        if not _is_rare_earth_particle(particle):
+        particle_element = _particle_element_symbol(particle)
+        if not particle_element or particle_element not in present_rare_earths:
             continue
 
         particle_column = columns_by_particle.get(_canonical_particle_name(particle))
         fit_interval = diagnostic["fit_interval"]
         if not isinstance(fit_interval, tuple):
             continue
+
+        rmse = float(diagnostic["rmse"])
+        fit_window_length = abs(float(fit_interval[1]) - float(fit_interval[0]))
+        rmse_per_nm = (
+            rmse / fit_window_length
+            if np.isfinite(rmse) and np.isfinite(fit_window_length) and fit_window_length > 0.0
+            else np.nan
+        )
 
         # A particle omitted from the simulation CSV has zero true
         # contribution.  Likewise, if its column exists but has no local peak
@@ -489,11 +576,15 @@ def _build_output_rows(
 
         output_rows.append(
             {
+                "光谱名称": input_path.name,
                 "粒子种类": particle,
                 "拟合区间(nm)": _format_interval(fit_interval),
                 "未去除旁峰的区间(nm)": _format_interval(diagnostic["unremoved_interval"]),
                 "选线数据": str(diagnostic["selected_lines"]),
-                "RMSE": float(diagnostic["rmse"]),
+                "RMSE": rmse,
+                "RMSE/nm": float(rmse_per_nm),
+                "真实强度": float(true_intensity),
+                "拟合强度": float(fitted_amplitude),
                 "强度误差": float(intensity_error),
                 "强度误差比例(%)": float(intensity_error_percent),
             }
@@ -502,11 +593,54 @@ def _build_output_rows(
     return output_rows
 
 
+def _write_combined_output(output_path: Path, rows: list[dict[str, object]]) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output = pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
+    rmse_per_nm_values = pd.to_numeric(
+        output["RMSE/nm"],
+        errors="coerce",
+    )
+    finite_rmse_per_nm_values = rmse_per_nm_values[np.isfinite(rmse_per_nm_values)]
+    error_percentages = pd.to_numeric(
+        output["强度误差比例(%)"],
+        errors="coerce",
+    )
+    finite_error_percentages = error_percentages[np.isfinite(error_percentages)]
+
+    error_summary_row: dict[str, object] = {column: np.nan for column in OUTPUT_COLUMNS}
+    error_summary_row["光谱名称"] = "强度误差比例平均值"
+    if not finite_error_percentages.empty:
+        error_summary_row["强度误差比例(%)"] = float(finite_error_percentages.mean())
+
+    rmse_summary_row: dict[str, object] = {column: np.nan for column in OUTPUT_COLUMNS}
+    rmse_summary_row["光谱名称"] = "RMSE/nm平均值"
+    if not finite_rmse_per_nm_values.empty:
+        rmse_summary_row["RMSE/nm"] = float(finite_rmse_per_nm_values.mean())
+
+    output = pd.concat(
+        [
+            output,
+            pd.DataFrame(
+                [error_summary_row, rmse_summary_row],
+                columns=OUTPUT_COLUMNS,
+            ),
+        ],
+        ignore_index=True,
+    )
+    output.to_csv(
+        output_path,
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+
 def main() -> int:
     args = _parse_args()
-    input_paths = _resolve_inputs(args.filenames)
+    contents_path = _resolve_contents_path(args.contents_file)
+    present_by_spectrum = _load_present_rare_earths(contents_path)
+    input_paths = _resolve_inputs(args.filenames, set(present_by_spectrum))
     output_dir = args.output_dir.resolve()
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / args.output_name
 
     spectra = {
         input_path.stem: pd.read_csv(input_path, header=0, encoding="utf-8-sig")
@@ -514,21 +648,19 @@ def main() -> int:
     }
     diagnostics = _run_real_workflow(input_paths)
 
+    all_rows: list[dict[str, object]] = []
     for input_path in input_paths:
         rows = _build_output_rows(
             input_path,
             spectra[input_path.stem],
             diagnostics,
+            present_by_spectrum.get(input_path.stem, set()),
         )
-        output_path = output_dir / input_path.name
-        pd.DataFrame(rows, columns=OUTPUT_COLUMNS).to_csv(
-            output_path,
-            index=False,
-            encoding="utf-8-sig",
-        )
-        print(
-            f"[{input_path.name}] 已写入全部 {len(rows)} 条多峰拟合记录：{output_path}"
-        )
+        all_rows.extend(rows)
+        print(f"[{input_path.name}] 保留 {len(rows)} 条真实存在稀土元素的多峰拟合记录。")
+
+    _write_combined_output(output_path, all_rows)
+    print(f"已合并写入 {len(all_rows)} 条多峰拟合记录：{output_path}")
 
     return 0
 
